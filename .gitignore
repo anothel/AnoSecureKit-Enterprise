@@ -1,0 +1,18 @@
+# Build outputs
+build*/
+cmake-build-*/
+out/
+dist/
+
+# Local editor state
+.vscode/
+.idea/
+.vs/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Proprietary drop-ins should be supplied by private access control, not committed accidentally.
+third_party/anocrypto/*
+!third_party/anocrypto/README.md
