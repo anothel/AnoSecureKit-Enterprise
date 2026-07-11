@@ -16,3 +16,8 @@ Recommended contents:
 - API reference.
 - Integration examples.
 - Support and vulnerability-reporting contacts.
+
+Stage the complete delivery in an immutable directory, record its source Git
+commit or tag and build metadata, then generate `MANIFEST.sha256` using the
+scripts documented in `packaging/README.md`. Verify the manifest before delivery.
+The manifest covers delivered files but does not provide publisher authenticity.

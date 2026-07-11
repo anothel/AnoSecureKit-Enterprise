@@ -3,6 +3,7 @@ build*/
 cmake-build-*/
 out/
 dist/
+/MANIFEST.sha256
 
 # Local editor state
 .vscode/
