@@ -7,7 +7,7 @@
 Do not report security vulnerabilities through public GitHub issues.
 
 Preferred path: open a private report through GitHub Security Advisories:
-<https://github.com/anothel/anosecurekit/security/advisories/new>.
+<https://github.com/anothel/AnoSecureKit-Community/security/advisories/new>.
 
 If that path is unavailable, use a private contact method listed on the
 maintainer GitHub profile: <https://github.com/anothel>. Do not publish details
@@ -56,6 +56,12 @@ Out of scope:
 - compromised operating systems, filesystems, shells, or build hosts
 - unsupported OpenSSL versions
 - misuse of APIs after documented preconditions are ignored
+
+## Security Claims
+
+AnoSecureKit Community uses OpenSSL 3.x as its default production backend. It
+does not include AnoCrypto, does not provide an AnoCrypto backend, and does not
+make KCMVP, FIPS, certification, validation, or public-sector approval claims.
 
 ## Security Release Notes
 

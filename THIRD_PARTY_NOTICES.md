@@ -5,7 +5,8 @@
 This repository bundles `third_party/anosecurekit-community` as its public base
 SDK. Those files remain licensed under the Mozilla Public License 2.0. See
 `third_party/anosecurekit-community/LICENSE`. Preserve all applicable MPL-2.0
-notices and source-code obligations in distributions.
+notices and source-code obligations in distributions. Version and verification
+details are recorded in `docs/COMMUNITY_DEPENDENCY.md`.
 
 ## Dependency through Community: OpenSSL
 
