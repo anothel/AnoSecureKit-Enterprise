@@ -11,7 +11,7 @@ Download these files from the same GitHub Release:
 
 - `SHA256SUMS.txt`
 - The source archive you plan to use, for example
-  `anosecurekit-0.2.2-source.tar.gz`
+  `anosecurekit-0.3.0-source.tar.gz`
 - The binary archive for your platform, if you use one
 - `anosecurekit-X.Y.Z-release.spdx.json`, if you need SBOM metadata
 
@@ -28,7 +28,7 @@ sha256sum -c SHA256SUMS.txt
 On Windows PowerShell, compare each listed digest with:
 
 ```powershell
-Get-FileHash .\anosecurekit-0.2.2-source.tar.gz -Algorithm SHA256
+Get-FileHash .\anosecurekit-0.3.0-source.tar.gz -Algorithm SHA256
 ```
 
 The digest must match the corresponding line in `SHA256SUMS.txt`.
@@ -38,12 +38,12 @@ The digest must match the corresponding line in `SHA256SUMS.txt`.
 Use GitHub CLI:
 
 ```sh
-gh attestation verify SHA256SUMS.txt --repo anothel/anosecurekit
-gh attestation verify anosecurekit-0.2.2-source.tar.gz --repo anothel/anosecurekit
+gh attestation verify SHA256SUMS.txt --repo anothel/AnoSecureKit-Community
+gh attestation verify anosecurekit-0.3.0-source.tar.gz --repo anothel/AnoSecureKit-Community
 ```
 
 Replace the archive name with the asset you downloaded. Verification should
-point back to the `anothel/anosecurekit` repository and the release workflow.
+point back to the `anothel/AnoSecureKit-Community` repository and the release workflow.
 
 ## Check The SBOM
 
@@ -69,6 +69,6 @@ model match your deployment.
 
 Successful checksum and attestation verification only shows that the downloaded
 assets match the release workflow outputs for this repository. It does not
-prove that AnoSecureKit is externally audited, that OpenSSL is configured for FIPS
-mode, or that the software is appropriate for a high-risk system without your
-own review.
+prove that AnoSecureKit is externally audited, that OpenSSL is configured for
+your deployment policy, or that the software is appropriate for a high-risk
+system without your own review.

@@ -304,7 +304,7 @@ _anosecurekit_forbid_terms(
   "${_anosecurekit_roadmap_text}"
   "Public error/API shape review"
   "Public object-lifecycle review"
-  "OpenSSL provider/FIPS policy")
+  "OpenSSL provider policy")
 
 _anosecurekit_forbid_terms(
   "roadmap analysis dump"
@@ -554,7 +554,8 @@ _anosecurekit_require_terms(
   "does not create an"
   "`OSSL_LIB_CTX`"
   "does not set property queries"
-  "FIPS"
+  "Provider Responsibility"
+  "compliance approval claims"
   "`anosecurekit::error_code::backend_failure`"
   "`anosecurekit::error_code::authentication_failed`"
   "`anosecurekit::error_code::invalid_packet`"
@@ -826,7 +827,8 @@ _anosecurekit_require_terms(
   "${_anosecurekit_release_checklist_text}"
   "GitHub artifact attestations"
   "anosecurekit-X.Y.Z-release.spdx.json"
-  "gh attestation verify SHA256SUMS.txt --repo anothel/anosecurekit"
+  "Release title `AnoSecureKit Community vX.Y.Z`"
+  "gh attestation verify SHA256SUMS.txt --repo anothel/AnoSecureKit-Community"
   "sha256sum -c SHA256SUMS.txt"
   "docs/RELEASE_NOTES.md"
   "Do not introduce a separate `CHANGELOG.md`"
@@ -842,7 +844,7 @@ _anosecurekit_require_terms(
   "SHA256SUMS.txt"
   "sha256sum -c SHA256SUMS.txt"
   "Get-FileHash"
-  "gh attestation verify SHA256SUMS.txt --repo anothel/anosecurekit"
+  "gh attestation verify SHA256SUMS.txt --repo anothel/AnoSecureKit-Community"
   "anosecurekit-X.Y.Z-release.spdx.json"
   "Source vs Binary Archives"
   "What This Does Not Prove")
@@ -864,18 +866,26 @@ _anosecurekit_require_terms(
   "current release notes"
   "${_anosecurekit_release_notes_text}"
   "## v${ANOSECUREKIT_PROJECT_VERSION}"
-  "`anosecurekit verify-file`"
-  "`anosecurekit verify-file-password`"
-  "checked basic C++ example"
-  "negative compatibility coverage"
-  "release SPDX SBOM"
-  "GitHub provenance attestation checks"
-  "Homebrew, Conan, and vcpkg recipe draft generation"
-  "`spdx-check`, `legacy-name-check`, and `cli-docs-check`"
+  "first published Community release"
+  "pre-Community internal development milestones"
+  "were not published as AnoSecureKit Community releases"
+  "public `MPL-2.0` edition"
+  "`AnoSecureKit-Community`"
+  "identity as `anosecurekit` and `anosecurekit::anosecurekit`"
+  "OpenSSL 3.x as the sole Community production backend"
+  "rollback policy"
+  "external proprietary module boundary"
+  "no AnoCrypto"
+  "no KCMVP or FIPS validation claim"
+  "separate commercial terms"
+  "121/121 unit and CLI tests"
+  "package, install/export, consumer, source rebuild, checksum, SBOM"
+  "No breaking public C++ API change."
+  "No CLI, package, namespace, or CMake target change."
+  "No cryptographic behavior change."
+  "No `SKT1`, `SKF1`, or `SKP1` format change."
   "`anosecurekit file sealing v1`"
-  "No intentional `SKT1` or `SKP1` format change."
-  "Intentional pre-release `SKF1` compatibility break"
-  "Breaking rename from the previous SecureKit surface")
+  "compatibility-sensitive `SKF1` HKDF label")
 
 _anosecurekit_require_terms(
   "license policy docs"
@@ -885,7 +895,12 @@ _anosecurekit_require_terms(
   "Commercial use is allowed"
   "Closed-source application use is allowed"
   "file-level copyleft"
-  "Private Or Commercial Native Crypto Assets")
+  "external proprietary cryptographic module"
+  "managed outside this"
+  "not shipped in Community"
+  "separate commercial terms"
+  "does not change the `MPL-2.0` license of Community files"
+  "No external proprietary source is included in this repository")
 
 _anosecurekit_require_terms(
   "documentation guide"
@@ -903,7 +918,11 @@ _anosecurekit_require_terms(
   "AnoSecureKit License"
   "MPL-2.0"
   "Modified files"
-  "Native crypto boundary")
+  "External proprietary module boundary"
+  "separate commercial"
+  "not included in Community"
+  "using an external module does not change"
+  "license of Community files")
 
 _anosecurekit_require_terms(
   "release hygiene scripts"
@@ -923,12 +942,12 @@ _anosecurekit_require_terms(
   "SHA256SUMS.txt"
   "file(SHA256"
   "file(SHA512"
-  "https://github.com/anothel/anosecurekit/releases/download/v\${ANOSECUREKIT_PROJECT_VERSION}/")
+  "https://github.com/anothel/AnoSecureKit-Community/releases/download/v\${ANOSECUREKIT_PROJECT_VERSION}/")
 
 _anosecurekit_require_terms(
   "SECURITY private advisory path"
   "${_anosecurekit_security_text}"
-  "https://github.com/anothel/anosecurekit/security/advisories/new"
+  "https://github.com/anothel/AnoSecureKit-Community/security/advisories/new"
   "https://github.com/anothel"
   "Do not publish details")
 _anosecurekit_require_terms(
@@ -1016,7 +1035,7 @@ _anosecurekit_require_terms(
   "negative fixture"
   "default library context"
   "provider configuration"
-  "FIPS providers"
+  "provider configurations"
   "Release assets are checksummed and provenance-attested by GitHub Actions"
   "Release assets include a generated SPDX SBOM")
 
