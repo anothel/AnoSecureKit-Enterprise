@@ -1,12 +1,26 @@
 # Third-Party Notices
 
-## AnoSecureKit Community
+## Bundled: AnoSecureKit Community
 
-This scaffold vendors `third_party/anosecurekit-community` as the public
-MPL-2.0 base SDK. Keep the MPL-2.0 license file and any modified-file disclosure
-obligations with customer distributions.
+This repository bundles `third_party/anosecurekit-community` as its public base
+SDK. Those files remain licensed under the Mozilla Public License 2.0. See
+`third_party/anosecurekit-community/LICENSE`. Preserve all applicable MPL-2.0
+notices and source-code obligations in distributions.
 
-## AnoCrypto Core
+## Dependency through Community: OpenSSL
 
-`third_party/anocrypto` is a placeholder for the private/commercial AnoCrypto
-Core repository or package. No AnoCrypto source is included in this scaffold.
+AnoSecureKit Community requires OpenSSL Crypto 3.0 or newer as its current
+production backend. OpenSSL is governed by its own license terms. This
+repository does not bundle OpenSSL source or binaries; any distribution that
+includes them must include the applicable OpenSSL license and notices.
+
+## Other bundled third-party components
+
+No other third-party component is bundled outside the AnoSecureKit Community
+subtree.
+
+## Optional external dependency: AnoCrypto
+
+AnoCrypto is not bundled in this repository or its current distribution. If
+supplied externally, it remains proprietary software governed by separate
+commercial terms. It is not licensed by this repository's `LICENSE` file.

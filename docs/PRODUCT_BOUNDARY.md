@@ -2,24 +2,25 @@
 
 ## AnoSecureKit Community
 
-Public MPL-2.0 C++20 SDK using OpenSSL 3.x as the public production backend.
-Community remains the open compatibility and trust base.
+Bundled public C++20 SDK governed by MPL-2.0. It uses OpenSSL 3.x as its current
+production backend and remains the open compatibility and trust base.
 
 ## AnoSecureKit Enterprise
 
-Private/commercial SDK layer. Enterprise owns customer packaging, deployment
-policy, support materials, commercial integration, and AnoCrypto backend wiring.
+Proprietary repository-owned SDK layer. Enterprise owns its wrapper, customer
+packaging, deployment policy, support materials, and commercial integration.
 
 ## AnoCrypto Core
 
-Private/commercial C99 cryptographic module. AnoCrypto is the intended core
-commercial asset and KCMVP-oriented backend, but it is not included in this
-scaffold.
+Optional external cryptographic dependency. AnoCrypto is not included in this
+repository and, when supplied, remains governed by separate commercial terms.
+No KCMVP or FIPS validation is claimed for AnoSecureKit Enterprise or AnoCrypto.
 
 ## Boundary Rules
 
-- Do not commit AnoCrypto proprietary source into Community.
-- Do not claim KCMVP validation before validation exists.
+- Do not commit or vendor AnoCrypto source, headers, binaries, or packages in
+  this repository.
+- Do not claim KCMVP or FIPS validation before validation exists.
 - Keep MPL-2.0 notices for Community files when vendored into Enterprise.
 - Keep Enterprise-only code outside MPL-covered Community files unless you are
   intentionally contributing those modifications back under MPL-2.0.

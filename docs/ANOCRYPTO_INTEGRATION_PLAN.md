@@ -6,7 +6,7 @@ placeholder.
 ## Minimum integration gate
 
 1. Stable C99 API and ABI policy.
-2. CMake package or vendorable private source tree.
+2. Externally supplied CMake package or source tree outside this repository.
 3. Known-answer tests for each algorithm.
 4. Differential tests against OpenSSL-backed Community behavior where applicable.
 5. Format compatibility fixtures for Enterprise packet/file formats.
@@ -24,3 +24,5 @@ placeholder.
 
 The first implementation should be limited to a small compatibility surface:
 randomness, SHA-2, HMAC, KDF, AEAD/file sealing primitives, and self-test status.
+AnoCrypto source, headers, binaries, and package contents must remain outside
+this repository.

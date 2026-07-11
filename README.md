@@ -8,7 +8,7 @@ This scaffold contains:
 - a vendored AnoSecureKit Community source tree under `third_party/anosecurekit-community`;
 - an Enterprise wrapper target, `anosecurekit_enterprise`;
 - product-boundary, packaging, and KCMVP-preparation documents;
-- a placeholder location for the private AnoCrypto Core module.
+- a documented boundary for optional, externally supplied AnoCrypto integration.
 
 It intentionally does **not** contain AnoCrypto source code, license activation,
 customer contracts, or a KCMVP-validated cryptographic module.
@@ -26,12 +26,12 @@ by default so it can build as an Enterprise library layer.
 
 ## Enable AnoCrypto integration later
 
-When the private AnoCrypto Core repository/package exists, supply it through one
-of these approaches:
+When an AnoCrypto package exists, supply it externally through one of these
+approaches:
 
 1. private package: `find_package(anocrypto CONFIG REQUIRED)`;
-2. private subtree/submodule: `third_party/anocrypto/CMakeLists.txt`;
-3. internal build system package feed.
+2. source tree outside this repository through `ANOCRYPTO_ROOT`;
+3. internal package feed.
 
 Then configure:
 
@@ -41,3 +41,9 @@ cmake -S . -B build-enterprise   -DANOSECUREKIT_ENTERPRISE_ENABLE_ANOCRYPTO=ON  
 
 Do not document AnoCrypto as available to customers until the backend passes the
 compatibility, security, licensing, and release evidence gates in `docs/`.
+
+## Licensing
+
+Enterprise-owned files are proprietary commercial software. See [LICENSE](LICENSE)
+for the canonical repository notice and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+for bundled and external dependency boundaries.

@@ -6,7 +6,7 @@ Recommended contents:
 
 - AnoSecureKit Enterprise headers and libraries.
 - AnoSecureKit Community MPL-2.0 notices and source-offer/materials as required.
-- AnoCrypto Core binaries/source access according to contract.
+- AnoCrypto materials only when supplied externally under a separate contract.
 - SBOM.
 - Checksums and provenance notes.
 - Security policy.

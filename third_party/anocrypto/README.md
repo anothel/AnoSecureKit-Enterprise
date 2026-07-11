@@ -1,17 +1,10 @@
-# AnoCrypto Core Placeholder
+# External AnoCrypto Boundary
 
-This directory is reserved for the private/commercial AnoCrypto Core repository
-or package.
+This README documents the external AnoCrypto integration boundary. Do not place
+AnoCrypto source, headers, binaries, or package contents in this repository.
 
-No AnoCrypto source code is included in this scaffold.
+AnoCrypto is not included. If supplied externally, it is governed by separate
+commercial terms.
 
-Expected future shape:
-
-```text
-include/anocrypto/
-src/
-tests/
-vectors/
-docs/kcmvp/
-cmake/
-```
+Use an external package or a source tree outside this repository through the
+documented CMake integration options.
