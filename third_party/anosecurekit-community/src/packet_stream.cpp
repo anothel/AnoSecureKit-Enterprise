@@ -7,8 +7,8 @@
 #include <span>
 
 #include "aead_internal.hpp"
-#include "crypto_backend.hpp"
-#include "wipe.hpp"
+#include "backend/crypto_backend.hpp"
+#include "internal/secure_wipe.hpp"
 
 namespace
 {

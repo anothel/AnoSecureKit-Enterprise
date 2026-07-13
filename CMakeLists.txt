@@ -4,68 +4,120 @@ cmake_minimum_required(VERSION 3.20)
 project(
   anosecurekit_enterprise
   VERSION 0.1.0
-  DESCRIPTION "AnoSecureKit Enterprise scaffold"
+  DESCRIPTION "AnoSecureKit Enterprise"
   LANGUAGES CXX)
 
+include(CTest)
 include(GNUInstallDirs)
 
 option(ANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY "Use bundled Community source" ON)
-option(ANOSECUREKIT_ENTERPRISE_ENABLE_ANOCRYPTO "Enable private AnoCrypto backend integration" OFF)
+set(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND "openssl" CACHE STRING
+  "Enterprise crypto profile: openssl or anocrypto-c")
+set_property(CACHE ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND PROPERTY STRINGS openssl anocrypto-c)
+if(DEFINED ANOSECUREKIT_ENTERPRISE_ENABLE_ANOCRYPTO)
+  message(FATAL_ERROR
+    "ANOSECUREKIT_ENTERPRISE_ENABLE_ANOCRYPTO is obsolete. Use "
+    "-DANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND=openssl or anocrypto-c.")
+endif()
+set(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET "" CACHE STRING
+  "Existing non-imported OBJECT_LIBRARY implementing the AnoSecureKit provider contract for AnoCrypto-C")
+
+if(NOT ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl"
+   AND NOT ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
+  message(FATAL_ERROR
+    "Unsupported ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND='${ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND}'. "
+    "Expected 'openssl' or 'anocrypto-c'.")
+endif()
+
+if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
+  find_package(AnoCryptoC CONFIG REQUIRED)
+  if(NOT TARGET AnoCryptoC::AnoCryptoC)
+    message(FATAL_ERROR
+      "AnoCrypto-C profile requires imported target AnoCryptoC::AnoCryptoC")
+  endif()
+  if(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET STREQUAL "")
+    message(FATAL_ERROR
+      "AnoCrypto-C profile is fail-closed until a complete Enterprise provider adapter is supplied. "
+      "Set ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET to an existing non-imported "
+      "OBJECT_LIBRARY that implements the full AnoSecureKit provider contract.")
+  endif()
+  if(NOT TARGET "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET}")
+    message(FATAL_ERROR
+      "ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET does not name an existing target")
+  endif()
+  get_target_property(_enterprise_provider_imported
+    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET}" IMPORTED)
+  get_target_property(_enterprise_provider_type
+    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET}" TYPE)
+  if(_enterprise_provider_imported OR NOT _enterprise_provider_type STREQUAL "OBJECT_LIBRARY")
+    message(FATAL_ERROR
+      "AnoCrypto-C provider target must be a non-imported OBJECT_LIBRARY adapter, not AnoCryptoC::AnoCryptoC itself")
+  endif()
+endif()
 
 if(ANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY)
   set(ANOSECUREKIT_BUILD_TESTS OFF CACHE BOOL "" FORCE)
   set(ANOSECUREKIT_BUILD_CLI OFF CACHE BOOL "" FORCE)
   set(ANOSECUREKIT_INSTALL_CLI OFF CACHE BOOL "" FORCE)
   set(ANOSECUREKIT_BUILD_FUZZ OFF CACHE BOOL "" FORCE)
+  if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
+    set(ANOSECUREKIT_CRYPTO_BACKEND openssl CACHE STRING "" FORCE)
+    set(ANOSECUREKIT_EXTERNAL_BACKEND_TARGET "" CACHE STRING "" FORCE)
+  else()
+    set(ANOSECUREKIT_CRYPTO_BACKEND external CACHE STRING "" FORCE)
+    set(ANOSECUREKIT_EXTERNAL_BACKEND_TARGET
+      "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET}" CACHE STRING "" FORCE)
+  endif()
   add_subdirectory(third_party/anosecurekit-community EXCLUDE_FROM_ALL)
 else()
-  find_package(anosecurekit CONFIG REQUIRED)
-endif()
-
-if(ANOSECUREKIT_ENTERPRISE_ENABLE_ANOCRYPTO)
-  if(DEFINED ANOCRYPTO_ROOT AND EXISTS "${ANOCRYPTO_ROOT}/CMakeLists.txt")
-    add_subdirectory("${ANOCRYPTO_ROOT}" anocrypto-build EXCLUDE_FROM_ALL)
-  elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/anocrypto/CMakeLists.txt")
-    add_subdirectory(third_party/anocrypto EXCLUDE_FROM_ALL)
-  else()
-    find_package(anocrypto CONFIG REQUIRED)
+  if(NOT ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
+    message(FATAL_ERROR
+      "Non-bundled Community package mode currently supports only the openssl Enterprise profile. "
+      "The AnoCrypto-C profile requires Community's build-tree external provider hook.")
   endif()
+  find_package(anosecurekit 0.4 CONFIG REQUIRED)
 endif()
 
-add_library(anosecurekit_enterprise
-  src/enterprise.cpp)
-
+add_library(anosecurekit_enterprise src/enterprise.cpp)
 add_library(anosecurekit::enterprise ALIAS anosecurekit_enterprise)
-
 target_compile_features(anosecurekit_enterprise PUBLIC cxx_std_20)
-
 target_include_directories(anosecurekit_enterprise
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_link_libraries(anosecurekit_enterprise PUBLIC anosecurekit::anosecurekit)
 
-target_link_libraries(anosecurekit_enterprise
-  PUBLIC anosecurekit::anosecurekit)
-
-if(ANOSECUREKIT_ENTERPRISE_ENABLE_ANOCRYPTO)
-  target_compile_definitions(anosecurekit_enterprise PUBLIC ANOSECUREKIT_ENTERPRISE_HAS_ANOCRYPTO=1)
-  if(TARGET anocrypto::anocrypto)
-    target_link_libraries(anosecurekit_enterprise PUBLIC anocrypto::anocrypto)
-  elseif(TARGET anocrypto)
-    target_link_libraries(anosecurekit_enterprise PUBLIC anocrypto)
-  endif()
+if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
+  target_compile_definitions(anosecurekit_enterprise PUBLIC
+    ANOSECUREKIT_ENTERPRISE_BACKEND_OPENSSL=1)
+else()
+  target_compile_definitions(anosecurekit_enterprise PUBLIC
+    ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C=1)
+  target_link_libraries(anosecurekit_enterprise PRIVATE AnoCryptoC::AnoCryptoC)
 endif()
 
-add_executable(anosecurekit_enterprise_info
-  examples/info/main.cpp)
+add_executable(anosecurekit_enterprise_info examples/info/main.cpp)
 target_link_libraries(anosecurekit_enterprise_info PRIVATE anosecurekit::enterprise)
 target_compile_features(anosecurekit_enterprise_info PRIVATE cxx_std_20)
+
+if(BUILD_TESTING)
+  add_custom_target(enterprise-profile-config-check
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DENTERPRISE_BINARY_ROOT=${CMAKE_CURRENT_BINARY_DIR}/profile-config-check
+      -DENTERPRISE_GENERATOR=${CMAKE_GENERATOR}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_profile_config.cmake
+    USES_TERMINAL)
+
+  add_executable(anosecurekit_enterprise_profile_test tests/profile_test.cpp)
+  target_link_libraries(anosecurekit_enterprise_profile_test PRIVATE anosecurekit::enterprise)
+  target_compile_features(anosecurekit_enterprise_profile_test PRIVATE cxx_std_20)
+  add_test(NAME enterprise.profile COMMAND anosecurekit_enterprise_profile_test)
+endif()
 
 install(TARGETS anosecurekit_enterprise
   EXPORT anosecurekitEnterpriseTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
-install(DIRECTORY include/anosecurekit_enterprise
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY include/anosecurekit_enterprise DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

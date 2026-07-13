@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(
   anosecurekit
-  VERSION 0.3.0
+  VERSION 0.4.0
   DESCRIPTION "AnoSecureKit Community security utilities"
   LANGUAGES CXX)
 
@@ -12,15 +12,59 @@ include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
 set(ANOSECUREKIT_CRYPTO_BACKEND "openssl" CACHE STRING
-  "Crypto backend for AnoSecureKit Community. Only openssl is supported.")
-set_property(CACHE ANOSECUREKIT_CRYPTO_BACKEND PROPERTY STRINGS openssl)
+  "Crypto backend for AnoSecureKit. Community ships openssl; external is build-tree only.")
+set_property(CACHE ANOSECUREKIT_CRYPTO_BACKEND PROPERTY STRINGS openssl external)
+set(ANOSECUREKIT_EXTERNAL_BACKEND_TARGET "" CACHE STRING
+  "Existing non-imported OBJECT provider target used with ANOSECUREKIT_CRYPTO_BACKEND=external")
 
+set(_anosecurekit_external_backend FALSE)
 if(ANOSECUREKIT_CRYPTO_BACKEND STREQUAL "openssl")
   find_package(OpenSSL 3.0 REQUIRED COMPONENTS Crypto)
+elseif(ANOSECUREKIT_CRYPTO_BACKEND STREQUAL "external")
+  set(_anosecurekit_external_backend TRUE)
+
+  if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    message(FATAL_ERROR
+      "ANOSECUREKIT_CRYPTO_BACKEND=external is a build-tree-only integration hook. "
+      "Define the provider target in a parent project, then add AnoSecureKit with add_subdirectory().")
+  endif()
+
+  if(ANOSECUREKIT_EXTERNAL_BACKEND_TARGET STREQUAL "")
+    message(FATAL_ERROR
+      "ANOSECUREKIT_CRYPTO_BACKEND=external requires "
+      "ANOSECUREKIT_EXTERNAL_BACKEND_TARGET to name an existing provider target.")
+  endif()
+
+  if(NOT TARGET "${ANOSECUREKIT_EXTERNAL_BACKEND_TARGET}")
+    message(FATAL_ERROR
+      "ANOSECUREKIT_EXTERNAL_BACKEND_TARGET='${ANOSECUREKIT_EXTERNAL_BACKEND_TARGET}' "
+      "does not name an existing target.")
+  endif()
+
+  get_target_property(_anosecurekit_external_backend_imported
+    "${ANOSECUREKIT_EXTERNAL_BACKEND_TARGET}" IMPORTED)
+  if(_anosecurekit_external_backend_imported)
+    message(FATAL_ERROR
+      "ANOSECUREKIT_EXTERNAL_BACKEND_TARGET must name a non-imported provider adapter target, "
+      "not the external cryptographic module target itself.")
+  endif()
+
+  get_target_property(_anosecurekit_external_backend_type
+    "${ANOSECUREKIT_EXTERNAL_BACKEND_TARGET}" TYPE)
+  if(NOT _anosecurekit_external_backend_type STREQUAL "OBJECT_LIBRARY")
+    message(FATAL_ERROR
+      "ANOSECUREKIT_EXTERNAL_BACKEND_TARGET must be an OBJECT_LIBRARY target so the provider "
+      "implementation is linked into the build-tree product without an installed dependency; "
+      "got '${_anosecurekit_external_backend_type}'.")
+  endif()
+
+  message(STATUS
+    "AnoSecureKit external provider hook enabled with target "
+    "'${ANOSECUREKIT_EXTERNAL_BACKEND_TARGET}' (build-tree only)")
 else()
   message(FATAL_ERROR
     "Unsupported ANOSECUREKIT_CRYPTO_BACKEND='${ANOSECUREKIT_CRYPTO_BACKEND}'. "
-    "Expected 'openssl'.")
+    "Expected 'openssl' or 'external'.")
 endif()
 
 if(WIN32)
@@ -37,8 +81,19 @@ option(ANOSECUREKIT_INSTALL_CLI "Install AnoSecureKit CLI" ON)
 option(ANOSECUREKIT_BUILD_FUZZ "Build AnoSecureKit libFuzzer targets" OFF)
 option(ANOSECUREKIT_ENABLE_COVERAGE "Build with GCC/Clang coverage instrumentation" OFF)
 
-if(ANOSECUREKIT_INSTALL_CLI AND NOT ANOSECUREKIT_BUILD_CLI)
+if(NOT _anosecurekit_external_backend
+    AND ANOSECUREKIT_INSTALL_CLI
+    AND NOT ANOSECUREKIT_BUILD_CLI)
   message(FATAL_ERROR "ANOSECUREKIT_INSTALL_CLI=ON requires ANOSECUREKIT_BUILD_CLI=ON")
+endif()
+
+if(_anosecurekit_external_backend)
+  message(STATUS
+    "AnoSecureKit external provider mode is build-tree only; Community install, export, and CPack rules are disabled")
+  if(ANOSECUREKIT_INSTALL_CLI)
+    message(STATUS
+      "ANOSECUREKIT_INSTALL_CLI is ignored for the build-tree-only external provider profile")
+  endif()
 endif()
 
 set(_anosecurekit_compile_options)
@@ -86,17 +141,24 @@ else()
     USES_TERMINAL)
 endif()
 
+set(_anosecurekit_backend_sources)
+if(ANOSECUREKIT_CRYPTO_BACKEND STREQUAL "openssl")
+  list(APPEND _anosecurekit_backend_sources
+    src/backend/crypto_backend_openssl.cpp)
+endif()
+
 add_library(anosecurekit
   src/aead.cpp
   src/base64.cpp
   src/compare.cpp
-  src/crypto_backend.cpp
+  ${_anosecurekit_backend_sources}
   src/error.cpp
   src/file_crypto.cpp
   src/file.cpp
   src/file_io.cpp
   src/hash.cpp
   src/hex.cpp
+  src/internal/secure_wipe.cpp
   src/key_wrap.cpp
   src/packet_stream.cpp
   src/random.cpp
@@ -109,11 +171,31 @@ target_compile_features(anosecurekit PUBLIC cxx_std_20)
 target_include_directories(anosecurekit
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>)
 
 if(ANOSECUREKIT_CRYPTO_BACKEND STREQUAL "openssl")
   target_link_libraries(anosecurekit PUBLIC OpenSSL::Crypto)
   target_compile_definitions(anosecurekit PRIVATE ANOSECUREKIT_CRYPTO_BACKEND_OPENSSL=1)
+else()
+  target_include_directories("${ANOSECUREKIT_EXTERNAL_BACKEND_TARGET}"
+    PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/include"
+      "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  target_compile_features("${ANOSECUREKIT_EXTERNAL_BACKEND_TARGET}" PRIVATE cxx_std_20)
+  target_compile_definitions("${ANOSECUREKIT_EXTERNAL_BACKEND_TARGET}" PRIVATE
+    ANOSECUREKIT_BUILDING_LIBRARY
+    ANOSECUREKIT_EXTERNAL_BACKEND_PROVIDER=1)
+  if(BUILD_SHARED_LIBS)
+    set_property(TARGET "${ANOSECUREKIT_EXTERNAL_BACKEND_TARGET}"
+      PROPERTY POSITION_INDEPENDENT_CODE ON)
+    target_compile_definitions("${ANOSECUREKIT_EXTERNAL_BACKEND_TARGET}" PRIVATE
+      ANOSECUREKIT_SHARED)
+  endif()
+
+  target_link_libraries(anosecurekit PRIVATE "${ANOSECUREKIT_EXTERNAL_BACKEND_TARGET}")
+  target_compile_definitions(anosecurekit PRIVATE ANOSECUREKIT_CRYPTO_BACKEND_EXTERNAL=1)
 endif()
 
 target_compile_definitions(anosecurekit PRIVATE
@@ -153,6 +235,30 @@ add_custom_target(legacy-name-check
   COMMAND ${CMAKE_COMMAND}
     -DANOSECUREKIT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_legacy_identifiers.cmake
+  USES_TERMINAL)
+
+add_custom_target(backend-boundary-check
+  COMMAND ${CMAKE_COMMAND}
+    -DANOSECUREKIT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_backend_boundary.cmake
+  USES_TERMINAL)
+
+add_custom_target(external-backend-hook-check
+  COMMAND ${CMAKE_COMMAND}
+    -DANOSECUREKIT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+    -DANOSECUREKIT_CHECK_ROOT=${CMAKE_CURRENT_BINARY_DIR}/external-backend-hook-check
+    -DANOSECUREKIT_BUILD_CONFIG=$<CONFIG>
+    -DANOSECUREKIT_DEFAULT_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DANOSECUREKIT_CMAKE_GENERATOR=${CMAKE_GENERATOR}
+    -DANOSECUREKIT_CMAKE_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}
+    -DANOSECUREKIT_CMAKE_GENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}
+    -DANOSECUREKIT_CMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+    -DANOSECUREKIT_CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+    -DVCPKG_TARGET_TRIPLET=${VCPKG_TARGET_TRIPLET}
+    -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR}
+    -DANOSECUREKIT_OPENSSL_RUNTIME_DIR=${ANOSECUREKIT_OPENSSL_RUNTIME_DIR}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/package/check_external_backend_hook.cmake
   USES_TERMINAL)
 
 if(ANOSECUREKIT_BUILD_CLI)
@@ -230,7 +336,9 @@ if(ANOSECUREKIT_BUILD_FUZZ)
     USES_TERMINAL)
 endif()
 
-if(ANOSECUREKIT_BUILD_CLI AND ANOSECUREKIT_INSTALL_CLI)
+if(NOT _anosecurekit_external_backend
+    AND ANOSECUREKIT_BUILD_CLI
+    AND ANOSECUREKIT_INSTALL_CLI)
   add_custom_target(package-check
     COMMAND ${CMAKE_COMMAND}
       -DANOSECUREKIT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -263,12 +371,14 @@ if(ANOSECUREKIT_BUILD_CLI AND ANOSECUREKIT_INSTALL_CLI)
     USES_TERMINAL)
 else()
   add_custom_target(package-check
-    COMMAND ${CMAKE_COMMAND} -E echo "package-check requires ANOSECUREKIT_BUILD_CLI=ON and ANOSECUREKIT_INSTALL_CLI=ON because release validation requires installed CLI"
+    COMMAND ${CMAKE_COMMAND} -E echo "package-check is available only for the installed Community OpenSSL profile with CLI enabled"
     COMMAND ${CMAKE_COMMAND} -E false
     USES_TERMINAL)
 endif()
 
-if(ANOSECUREKIT_BUILD_CLI AND ANOSECUREKIT_INSTALL_CLI)
+if(NOT _anosecurekit_external_backend
+    AND ANOSECUREKIT_BUILD_CLI
+    AND ANOSECUREKIT_INSTALL_CLI)
   add_custom_target(dogfood-check
     COMMAND ${CMAKE_COMMAND}
       -DANOSECUREKIT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -298,7 +408,7 @@ if(ANOSECUREKIT_BUILD_CLI AND ANOSECUREKIT_INSTALL_CLI)
     USES_TERMINAL)
 else()
   add_custom_target(dogfood-check
-    COMMAND ${CMAKE_COMMAND} -E echo "dogfood-check requires ANOSECUREKIT_BUILD_CLI=ON and ANOSECUREKIT_INSTALL_CLI=ON"
+    COMMAND ${CMAKE_COMMAND} -E echo "dogfood-check is available only for the installed Community OpenSSL profile with CLI enabled"
     COMMAND ${CMAKE_COMMAND} -E false
     USES_TERMINAL)
 endif()
@@ -312,6 +422,12 @@ add_custom_target(release-workflow-check
   USES_TERMINAL)
 
 option(ANOSECUREKIT_BUILD_TESTS "Build AnoSecureKit tests" ${BUILD_TESTING})
+set(ANOSECUREKIT_TEST_PARALLEL_LEVEL "4" CACHE STRING
+  "Parallel test/build jobs used by check and nested provider parity validation")
+if(NOT ANOSECUREKIT_TEST_PARALLEL_LEVEL MATCHES "^[1-9][0-9]*$")
+  message(FATAL_ERROR
+    "ANOSECUREKIT_TEST_PARALLEL_LEVEL must be a positive integer")
+endif()
 
 if(ANOSECUREKIT_BUILD_TESTS)
   find_package(GTest CONFIG QUIET)
@@ -392,6 +508,7 @@ if(ANOSECUREKIT_BUILD_TESTS)
       --test-dir ${CMAKE_CURRENT_BINARY_DIR}
       --build-config $<CONFIG>
       --output-on-failure
+      --parallel ${ANOSECUREKIT_TEST_PARALLEL_LEVEL}
     DEPENDS ${_anosecurekit_check_dependencies}
     USES_TERMINAL)
 
@@ -418,7 +535,49 @@ if(ANOSECUREKIT_BUILD_TESTS)
   endif()
 endif()
 
-if(TARGET check AND ANOSECUREKIT_BUILD_CLI AND ANOSECUREKIT_INSTALL_CLI)
+if(TARGET check)
+  set(_anosecurekit_googletest_source_dir "")
+  if(DEFINED googletest_SOURCE_DIR
+      AND EXISTS "${googletest_SOURCE_DIR}/CMakeLists.txt")
+    set(_anosecurekit_googletest_source_dir "${googletest_SOURCE_DIR}")
+  endif()
+
+  add_custom_target(external-backend-parity-check
+    COMMAND ${CMAKE_COMMAND}
+      -DANOSECUREKIT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DANOSECUREKIT_PARENT_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+      -DANOSECUREKIT_CHECK_ROOT=${CMAKE_CURRENT_BINARY_DIR}/external-backend-parity-check
+      -DANOSECUREKIT_BUILD_CONFIG=$<CONFIG>
+      -DANOSECUREKIT_DEFAULT_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DANOSECUREKIT_CMAKE_GENERATOR=${CMAKE_GENERATOR}
+      -DANOSECUREKIT_CMAKE_GENERATOR_PLATFORM=${CMAKE_GENERATOR_PLATFORM}
+      -DANOSECUREKIT_CMAKE_GENERATOR_TOOLSET=${CMAKE_GENERATOR_TOOLSET}
+      -DANOSECUREKIT_CMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+      -DANOSECUREKIT_CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
+      -DVCPKG_TARGET_TRIPLET=${VCPKG_TARGET_TRIPLET}
+      -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR}
+      -DANOSECUREKIT_OPENSSL_RUNTIME_DIR=${ANOSECUREKIT_OPENSSL_RUNTIME_DIR}
+      -DANOSECUREKIT_CTEST_COMMAND=${CMAKE_CTEST_COMMAND}
+      -DANOSECUREKIT_TEST_PARALLEL_LEVEL=${ANOSECUREKIT_TEST_PARALLEL_LEVEL}
+      -DANOSECUREKIT_GTEST_DIR=${GTest_DIR}
+      -DANOSECUREKIT_GOOGLETEST_SOURCE_DIR=${_anosecurekit_googletest_source_dir}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/package/check_external_backend_parity.cmake
+    DEPENDS anosecurekit_tests
+    USES_TERMINAL)
+else()
+  add_custom_target(external-backend-parity-check
+    COMMAND ${CMAKE_COMMAND} -E echo "external-backend-parity-check requires ANOSECUREKIT_BUILD_TESTS=ON"
+    COMMAND ${CMAKE_COMMAND} -E false
+    USES_TERMINAL)
+endif()
+
+if(_anosecurekit_external_backend)
+  add_custom_target(release-preflight
+    COMMAND ${CMAKE_COMMAND} -E echo "release-preflight is available only for the shipped Community OpenSSL profile"
+    COMMAND ${CMAKE_COMMAND} -E false
+    USES_TERMINAL)
+elseif(TARGET check AND ANOSECUREKIT_BUILD_CLI AND ANOSECUREKIT_INSTALL_CLI)
   add_custom_target(release-preflight
     COMMAND ${CMAKE_COMMAND}
       -DANOSECUREKIT_PACKAGE_CHECK_ROOT=${CMAKE_CURRENT_BINARY_DIR}/package-check
@@ -444,6 +603,9 @@ if(TARGET check AND ANOSECUREKIT_BUILD_CLI AND ANOSECUREKIT_INSTALL_CLI)
       release-workflow-check
       spdx-check
       legacy-name-check
+      backend-boundary-check
+      external-backend-hook-check
+      external-backend-parity-check
       cli-docs-check
     USES_TERMINAL)
 elseif(TARGET check)
@@ -458,6 +620,7 @@ else()
     USES_TERMINAL)
 endif()
 
+if(NOT _anosecurekit_external_backend)
 install(
   TARGETS anosecurekit
   EXPORT anosecurekitTargets
@@ -523,3 +686,5 @@ set(CPACK_SOURCE_IGNORE_FILES
   "\\.user$")
 set(CPACK_VERBATIM_VARIABLES YES)
 include(CPack)
+
+endif()

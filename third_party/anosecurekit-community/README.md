@@ -125,7 +125,9 @@ For the canonical documentation map, see
 [`docs/DOCUMENTATION_GUIDE.md`](docs/DOCUMENTATION_GUIDE.md).
 
 For product-edition boundaries, see [`docs/EDITIONS.md`](docs/EDITIONS.md) and
-[`docs/ANOCRYPTO_BOUNDARY.md`](docs/ANOCRYPTO_BOUNDARY.md).
+[`docs/ANOCRYPTO_BOUNDARY.md`](docs/ANOCRYPTO_BOUNDARY.md). The approved
+internal provider-seam direction is documented in
+[`docs/BACKEND_ARCHITECTURE.md`](docs/BACKEND_ARCHITECTURE.md).
 
 ## Requirements
 
@@ -192,16 +194,31 @@ archive URL and checksum.
 | Option | Default | Use |
 | --- | --- | --- |
 | `ANOSECUREKIT_BUILD_TESTS` | `BUILD_TESTING` | Build unit, fixture, and CLI tests. |
+| `ANOSECUREKIT_TEST_PARALLEL_LEVEL` | `4` | Parallel jobs used by `check` and nested external-provider parity validation. Must be a positive integer. |
 | `ANOSECUREKIT_BUILD_CLI` | `ON` | Build the `anosecurekit` CLI executable. |
 | `ANOSECUREKIT_INSTALL_CLI` | `ON` | Install the CLI. Requires `ANOSECUREKIT_BUILD_CLI=ON`. |
 | `ANOSECUREKIT_BUILD_FUZZ` | `OFF` | Build optional libFuzzer smoke targets. See [docs/FUZZING.md](docs/FUZZING.md). |
 | `ANOSECUREKIT_ENABLE_COVERAGE` | `OFF` | Add GCC/Clang coverage instrumentation for the non-blocking `coverage-report` target. See [docs/COVERAGE.md](docs/COVERAGE.md). |
 | `ANOSECUREKIT_WARNINGS_AS_ERRORS` | `OFF` | Treat AnoSecureKit compiler warnings as errors. |
-| `ANOSECUREKIT_CRYPTO_BACKEND` | `openssl` | Select the crypto backend. `openssl` is the only Community production backend. |
+| `ANOSECUREKIT_CRYPTO_BACKEND` | `openssl` | Select `openssl` for the shipped Community provider or `external` for the internal build-tree integration hook. |
+| `ANOSECUREKIT_EXTERNAL_BACKEND_TARGET` | empty | Existing non-imported `OBJECT_LIBRARY` provider target required by the build-tree-only `external` mode. |
+
+The shipped Community profile is `ANOSECUREKIT_CRYPTO_BACKEND=openssl`. The
+`external` value is an internal build-tree hook for a parent project that defines
+an `OBJECT_LIBRARY` provider target before adding AnoSecureKit with
+`add_subdirectory()`. It is not installed, packaged, or supported as a Community
+provider, and a missing or invalid target fails configuration. Run
+`external-backend-hook-check` to verify the positive and fail-closed configuration paths.
+With tests enabled, run `external-backend-parity-check` to execute the same
+public API, fixture, CLI, example, benchmark-smoke, and documentation checks
+through an externally injected provider object. Set
+`ANOSECUREKIT_TEST_PARALLEL_LEVEL` at configure time to tune both the top-level
+CTest run and the nested provider-parity build/test run without editing scripts.
 
 Release package check targets `package-check` and `release-preflight`
-require `ANOSECUREKIT_BUILD_CLI=ON` and `ANOSECUREKIT_INSTALL_CLI=ON` because they
-install and run the CLI. Library-only consumers can disable tests and the CLI:
+require the OpenSSL profile plus `ANOSECUREKIT_BUILD_CLI=ON` and
+`ANOSECUREKIT_INSTALL_CLI=ON` because they install and run the CLI. Library-only
+consumers can disable tests and the CLI:
 
 ```sh
 cmake -S . -B build-lib-only \
@@ -264,7 +281,7 @@ artifact attestations for release assets, writes a release SPDX SBOM, and
 creates or updates the GitHub Release.
 
 The tag version must match the CMake project version. For example,
-`project(... VERSION 0.3.0)` should be released with tag `v0.3.0`.
+`project(... VERSION 0.4.0)` should be released with tag `v0.4.0`.
 
 Local release preflight:
 
@@ -320,7 +337,7 @@ include(FetchContent)
 
 FetchContent_Declare(
   anosecurekit
-  URL https://github.com/anothel/AnoSecureKit-Community/releases/download/v0.3.0/anosecurekit-0.3.0-source.tar.gz
+  URL https://github.com/anothel/AnoSecureKit-Community/releases/download/v0.4.0/anosecurekit-0.4.0-source.tar.gz
   URL_HASH SHA256=<release archive checksum>)
 
 FetchContent_MakeAvailable(anosecurekit)
@@ -624,7 +641,8 @@ Public API shape decisions are documented in
 is documented in
 [docs/OPENSSL_POLICY.md](docs/OPENSSL_POLICY.md).
 Internal ownership boundaries and split gates are documented in
-[docs/INTERNALS.md](docs/INTERNALS.md).
+[docs/INTERNALS.md](docs/INTERNALS.md). The internal backend/provider design is
+documented in [docs/BACKEND_ARCHITECTURE.md](docs/BACKEND_ARCHITECTURE.md).
 
 ## AES-256-GCM Packet Format
 

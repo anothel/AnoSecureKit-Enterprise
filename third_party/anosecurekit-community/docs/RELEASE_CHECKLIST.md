@@ -7,7 +7,7 @@ for tags matching `v*`.
 
 ## 1. Choose The Version
 
-- Decide the next semantic version, for example `0.3.0`.
+- Decide the next semantic version, for example `0.4.0`.
 - Update `project(... VERSION x.y.z)` in `CMakeLists.txt`.
 - Confirm `SECURITY.md`, `docs/FORMAT.md`, and `docs/SECURITY_MODEL.md` still
   match the shipped behavior.
@@ -43,13 +43,19 @@ enabled:
 cmake --build build --config Release --target release-preflight
 ```
 
+The configured `ANOSECUREKIT_TEST_PARALLEL_LEVEL` (default `4`) is used by both
+the top-level test run and nested external-provider parity validation. Increase
+it only when the release worker has matching CPU and memory capacity.
+
 `package-check` must install AnoSecureKit, run the installed CLI, build a consumer
 project, create CPack binary and source archives, inspect archive contents,
 extract one source archive, build from that extracted source, install it, and
 run `anosecurekit --version`.
 
 `release-preflight` runs `check`, `package-check`, `release-workflow-check`,
-`spdx-check`, `legacy-name-check`, and `cli-docs-check`, then checks SemVer
+`spdx-check`, `legacy-name-check`, `backend-boundary-check`,
+`external-backend-hook-check`, `external-backend-parity-check`, and
+`cli-docs-check`, then checks SemVer
 shape, README and release-checklist version examples, documented local target
 names, package artifact version prefixes, staged release assets,
 `SHA256SUMS.txt`, the release SPDX SBOM, and release provenance attestation
@@ -78,11 +84,11 @@ Do not create the version tag from an unverified commit.
 Create the tag on the verified `main` commit:
 
 ```sh
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.4.0
+git push origin v0.4.0
 ```
 
-Replace `v0.3.0` with the version chosen in step 1.
+Replace `v0.4.0` with the version chosen in step 1.
 
 ## 6. Verify The GitHub Release
 
@@ -106,7 +112,7 @@ attestations for the checksum file and at least one archive:
 ```sh
 sha256sum -c SHA256SUMS.txt
 gh attestation verify SHA256SUMS.txt --repo anothel/AnoSecureKit-Community
-gh attestation verify anosecurekit-0.3.0-source.tar.gz --repo anothel/AnoSecureKit-Community
+gh attestation verify anosecurekit-0.4.0-source.tar.gz --repo anothel/AnoSecureKit-Community
 ```
 
 Replace the archive name with the released version and asset you downloaded.

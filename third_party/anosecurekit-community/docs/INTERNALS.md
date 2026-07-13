@@ -2,16 +2,20 @@
 
 # AnoSecureKit Internal Boundaries
 
-This document records current implementation ownership. It is not a public API
-contract.
+This document records current implementation ownership and the approved provider
+refactor direction. It is not a public API or provider ABI contract.
 
 ## Current Ownership
 
 - `src/aead.cpp`: one-shot `SKT1` packet encryption/decryption through the
   packet APIs.
-- `src/crypto_backend.cpp`: private crypto backend boundary for hashes, HMAC,
-  HKDF, RNG, scrypt, one-shot AES-256-GCM chunk operations, and stateful
-  AES-GCM packet streaming. OpenSSL is the current default implementation.
+- `src/backend/crypto_backend.hpp`: private cryptographic operation contract.
+- `src/backend/crypto_backend_openssl.cpp`: OpenSSL implementation for hashes,
+  HMAC, HKDF, RNG, scrypt, one-shot AES-256-GCM chunk operations, and stateful
+  AES-GCM packet streaming.
+- `src/internal/secure_wipe.hpp` and `src/internal/secure_wipe.cpp`: backend-neutral
+  secure-wipe helper used by common packet, file, key-management, and backend
+  cleanup paths. It deliberately has no OpenSSL header or symbol dependency.
 - `src/packet_stream.cpp`: move-only `SKT1` packet streaming state machines.
   `packet_decryptor::update()` returns unverified plaintext until `finalize()`
   succeeds.
@@ -23,7 +27,7 @@ contract.
   shared by the file implementation units.
 - `src/file_crypto.cpp`: `SKF1`/`SKP1` header parse/serialize, file key
   derivation, password KDF checks, chunk nonce/AAD construction, and chunk
-  AES-256-GCM.
+  AEAD orchestration through the private backend boundary.
 - `src/file_io.cpp`: file input, exclusive temp-output creation, durable commit,
   cleanup, and stream read/write helpers.
 - `src/cli/main.cpp`: CLI executable entry point.
@@ -32,24 +36,61 @@ contract.
 - `tests/fixtures`: stable byte-level compatibility vectors and negative
   fixtures for documented reject rules.
 
+## Approved Provider Refactor
+
+The public and installed surface is preserved while provider-specific code uses the
+internal layout:
+
+```text
+src/backend/crypto_backend.hpp
+src/backend/crypto_backend_openssl.cpp
+src/internal/secure_wipe.*
+```
+
+The Community final target remains OpenSSL-backed. The `backend-boundary-check`
+target prevents OpenSSL implementation details from leaking back into common source.
+A build-tree-only external provider hook is available for Enterprise integration.
+It requires a parent-defined provider `OBJECT_LIBRARY`, is excluded from the installed
+Community package surface, and does not make AnoCrypto-C a Community backend.
+
+See `docs/BACKEND_ARCHITECTURE.md` for responsibilities, capability rules,
+ownership, and the no-fallback policy.
+
 ## Split Gates
 
 Internal splits are allowed only when they reduce active maintenance risk. They
 must not change public C++ APIs, CLI command shape, or `SKT1`/`SKF1`/`SKP1`
-format behavior.
+format behavior. They must also preserve the public package identity.
+
+Provider work must additionally ensure:
+
+- OpenSSL remains the only shipped Community provider;
+- common code contains no OpenSSL types after the relevant boundary is moved;
+- a missing external provider or capability fails closed;
+- proprietary adapters remain outside Community;
+- the AnoCrypto-C profile cannot acquire an OpenSSL production dependency by
+  fallback or transitive linkage.
 
 Keep file and CLI internals private. Further splits require repeated edit
-conflicts, a smaller safety fix, or a test-protected behavior change that is
-hard to review in the current files.
+conflicts, a smaller safety fix, or a test-protected behavior change that is hard
+to review in the current files. Introduce a separately exported core target only
+if the smaller internal provider seam proves insufficient and the added package
+surface has a written compatibility policy.
 
 ## Required Checks
 
 Any internal split must run:
 
 ```sh
+cmake --build build --config Release --target external-backend-hook-check
+cmake --build build --config Release --target external-backend-parity-check
 cmake --build build --config Release --target check
 cmake --build build --config Release --target release-preflight
 ```
+
+Configure `ANOSECUREKIT_TEST_PARALLEL_LEVEL` with a positive integer when the
+default of 4 is too low or high for the local/CI worker. The same value is used
+by the top-level `check` target and nested external-provider parity validation.
 
 If the split touches package installation, CLI usage, release assets, or public
 headers, run the smallest matching package or CLI check before
