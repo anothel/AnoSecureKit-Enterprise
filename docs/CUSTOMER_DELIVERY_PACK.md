@@ -28,7 +28,19 @@ The manifest covers delivered files but does not provide publisher authenticity.
 
 ## Current delivery status
 
-The `enterprise-package-check` target verifies the OpenSSL profile's staged
-install and independent CMake consumer. This is a package-consumption gate, not
-a completed customer archive, installer, SBOM, signature, support agreement, or
-legal approval.
+The OpenSSL profile now has two delivery gates:
+
+```sh
+cmake --build build --target enterprise-package-check
+cmake --build build --target enterprise-delivery-check
+```
+
+The second target creates CPack ZIP/TGZ install archives, a separate Community
+source-offer archive, `BUILD_METADATA.txt`, an SPDX 2.3 delivery SBOM, and
+`SHA256SUMS.txt`. It extracts and verifies the archives and checks that private
+provider headers, Enterprise implementation sources, and AnoCrypto-C payloads
+are absent.
+
+This is still not a signed release, support agreement, legal approval, or
+KCMVP/FIPS validation claim. Checksums detect changes but do not authenticate
+the publisher.

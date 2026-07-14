@@ -1,0 +1,21 @@
+<!-- SPDX-License-Identifier: LicenseRef-AnoSecureKit-Enterprise-Proprietary -->
+
+# AnoSecureKit Enterprise @PROJECT_VERSION@ Delivery
+
+Profile: `@ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND@`
+
+Community baseline: `v@ANOSECUREKIT_ENTERPRISE_COMMUNITY_VERSION@`
+
+This delivery contains the installable AnoSecureKit Enterprise OpenSSL profile,
+its bundled AnoSecureKit Community runtime/development package, licensing and
+third-party notices, build metadata, checksums, and an SPDX 2.3 delivery SBOM.
+A separate Community source-offer archive is provided for the MPL-2.0-covered
+Community component.
+
+The delivery does **not** contain AnoCrypto-C source, headers, binaries, or a
+production AnoCrypto-C provider adapter. It does not make a KCMVP or FIPS
+validation claim.
+
+Verify `SHA256SUMS.txt` before using the assets. Checksums detect changes but do
+not by themselves authenticate the publisher. Review `LICENSE`,
+`THIRD_PARTY_NOTICES.md`, and `BUILD_METADATA.txt` before deployment.

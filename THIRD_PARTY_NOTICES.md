@@ -20,8 +20,8 @@ includes them must include the applicable OpenSSL license and notices.
 No other third-party component is bundled outside the AnoSecureKit Community
 subtree.
 
-## Optional external dependency: AnoCrypto
+## Optional external dependency: AnoCrypto-C
 
-AnoCrypto is not bundled in this repository or its current distribution. If
+AnoCrypto-C is not bundled in this repository or its current distribution. If
 supplied externally, it remains proprietary software governed by separate
 commercial terms. It is not licensed by this repository's `LICENSE` file.

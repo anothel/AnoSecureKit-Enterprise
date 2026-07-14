@@ -135,6 +135,17 @@ if(_ready_installed_files)
 ${_ready_installed_files_text}")
 endif()
 
+execute_process(
+  COMMAND "${CMAKE_COMMAND}" --build "${ENTERPRISE_BINARY_ROOT}/ready-build"
+    --config Release --target enterprise-delivery-check --parallel 4
+  RESULT_VARIABLE _ready_delivery_result
+  OUTPUT_VARIABLE _ready_delivery_out
+  ERROR_VARIABLE _ready_delivery_err)
+if(_ready_delivery_result EQUAL 0)
+  message(FATAL_ERROR
+    "ready: incomplete AnoCrypto-C profile unexpectedly produced a customer-delivery package")
+endif()
+
 find_program(_enterprise_ldd_executable NAMES ldd)
 if(_enterprise_ldd_executable)
   set(_ready_build "${ENTERPRISE_BINARY_ROOT}/ready-build")

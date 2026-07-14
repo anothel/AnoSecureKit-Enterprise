@@ -67,3 +67,15 @@ The AnoCrypto-C profile is not installable until all of the following are true:
 - customer delivery, license, security, and validation claims are reviewed.
 
 A build-tree mock or metadata-only adapter is never a customer-delivery package.
+
+## Customer delivery archive gate
+
+For the bundled OpenSSL profile, run:
+
+```sh
+cmake --build build --target enterprise-delivery-check
+```
+
+The output directory contains CPack ZIP/TGZ install archives, a Community
+source-offer ZIP, delivery metadata, an SPDX 2.3 SBOM, and `SHA256SUMS.txt`. See
+`docs/DELIVERY_VERIFICATION.md` for the verification contract.

@@ -38,16 +38,22 @@ documentation before generating the manifest. A checksum detects package changes
 but does not authenticate the package or its publisher.
 
 
-## Current package gate
+## Current package gates
 
 With `BUILD_TESTING=ON` and the bundled OpenSSL profile selected, run:
 
 ```sh
 cmake --build build --target enterprise-package-check
+cmake --build build --target enterprise-delivery-check
 ```
 
-The gate verifies the staged Community and Enterprise installs, required
-licenses/notices, both CMake package configs, the exported
-`anosecurekit::enterprise` target, and an independent installed consumer. It
-also confirms that the private provider runtime contract header is not exposed
-as installed customer API.
+`enterprise-package-check` verifies the staged Community and Enterprise
+installs, required licenses/notices, both CMake package configs, the exported
+`anosecurekit::enterprise` target, and an independent installed consumer.
+
+`enterprise-delivery-check` then stages an immutable install, generates and
+verifies `MANIFEST.sha256`, creates ZIP/TGZ install archives through a dedicated
+CPack project, creates a separate MPL-covered Community source-offer archive,
+generates an SPDX 2.3 delivery SBOM and `SHA256SUMS.txt`, extracts every archive,
+and checks that private runtime headers, Enterprise implementation sources, and
+AnoCrypto-C payloads are absent.

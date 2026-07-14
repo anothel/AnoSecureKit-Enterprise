@@ -54,6 +54,21 @@ Run `enterprise-package-check` to stage an install and build an independent
 consumer. The incomplete AnoCrypto-C profile intentionally exports and installs
 nothing. See [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
+
+## Customer delivery archives
+
+The bundled OpenSSL profile can stage verified customer-delivery assets with:
+
+```sh
+cmake --build build --target enterprise-delivery-check
+```
+
+The gate creates CPack ZIP/TGZ install archives, a separate MPL-2.0 Community
+source-offer archive, SPDX 2.3 delivery SBOM, build metadata, and
+`SHA256SUMS.txt`, then extracts and verifies the archives. The incomplete
+AnoCrypto-C profile remains non-installable and cannot produce delivery assets.
+See [docs/DELIVERY_VERIFICATION.md](docs/DELIVERY_VERIFICATION.md).
+
 ## Licensing
 
 Enterprise-owned files are proprietary commercial software. Community files

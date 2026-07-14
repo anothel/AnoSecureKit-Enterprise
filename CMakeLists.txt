@@ -11,6 +11,8 @@ include(CTest)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
+set(ANOSECUREKIT_ENTERPRISE_COMMUNITY_VERSION "0.4.0")
+
 option(ANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY "Use bundled Community source" ON)
 option(ANOSECUREKIT_ENTERPRISE_INSTALL_INFO "Install the Enterprise diagnostic executable" ON)
 set(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND "openssl" CACHE STRING
@@ -217,6 +219,26 @@ add_executable(anosecurekit_enterprise_info examples/info/main.cpp)
 target_link_libraries(anosecurekit_enterprise_info PRIVATE anosecurekit::enterprise)
 target_compile_features(anosecurekit_enterprise_info PRIVATE cxx_std_20)
 
+find_package(Git QUIET)
+set(_anosecurekit_enterprise_source_revision "not-recorded")
+if(Git_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+  execute_process(
+    COMMAND "${GIT_EXECUTABLE}" rev-parse HEAD
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    RESULT_VARIABLE _enterprise_git_result
+    OUTPUT_VARIABLE _enterprise_git_revision
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET)
+  if(_enterprise_git_result EQUAL 0 AND NOT _enterprise_git_revision STREQUAL "")
+    set(_anosecurekit_enterprise_source_revision "${_enterprise_git_revision}")
+  endif()
+endif()
+
+configure_file(
+  packaging/DELIVERY_README.md.in
+  ${CMAKE_CURRENT_BINARY_DIR}/DELIVERY_README.md
+  @ONLY)
+
 if(BUILD_TESTING)
   add_custom_target(enterprise-profile-config-check
     COMMAND ${CMAKE_COMMAND}
@@ -262,6 +284,7 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     docs/PRODUCT_BOUNDARY.md
     docs/PROVIDER_CAPABILITY_CONTRACT.md
     docs/PROVIDER_RUNTIME_CONTRACT.md
+    docs/DELIVERY_VERIFICATION.md
     DESTINATION ${CMAKE_INSTALL_DATADIR}/anosecurekit-enterprise)
 
   if(ANOSECUREKIT_ENTERPRISE_INSTALL_INFO)
@@ -321,10 +344,58 @@ if(BUILD_TESTING)
         -DENTERPRISE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/package/check_installed_consumer.cmake)
     set_tests_properties(enterprise.installed-consumer PROPERTIES LABELS "package;consumer")
+
+    add_custom_target(enterprise-delivery-check
+      COMMAND ${CMAKE_COMMAND}
+        -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DENTERPRISE_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+        -DENTERPRISE_DELIVERY_ROOT=${CMAKE_CURRENT_BINARY_DIR}/enterprise-delivery-check
+        -DENTERPRISE_BUILD_CONFIG=$<CONFIG>
+        -DENTERPRISE_DEFAULT_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DENTERPRISE_GENERATOR=${CMAKE_GENERATOR}
+        -DENTERPRISE_CMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+        -DENTERPRISE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DENTERPRISE_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}
+        -DENTERPRISE_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}
+        -DENTERPRISE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
+        -DENTERPRISE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
+        -DENTERPRISE_PROJECT_VERSION=${PROJECT_VERSION}
+        -DENTERPRISE_COMMUNITY_VERSION=${ANOSECUREKIT_ENTERPRISE_COMMUNITY_VERSION}
+        -DENTERPRISE_SOURCE_REVISION=${_anosecurekit_enterprise_source_revision}
+        -DENTERPRISE_CPACK_COMMAND=${CMAKE_CPACK_COMMAND}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/package/check_delivery_package.cmake
+      DEPENDS anosecurekit_enterprise anosecurekit_enterprise_info
+      USES_TERMINAL)
+    add_test(NAME enterprise.delivery-package
+      COMMAND ${CMAKE_COMMAND}
+        -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DENTERPRISE_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+        -DENTERPRISE_DELIVERY_ROOT=${CMAKE_CURRENT_BINARY_DIR}/enterprise-delivery-test
+        -DENTERPRISE_BUILD_CONFIG=$<CONFIG>
+        -DENTERPRISE_DEFAULT_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DENTERPRISE_GENERATOR=${CMAKE_GENERATOR}
+        -DENTERPRISE_CMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+        -DENTERPRISE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DENTERPRISE_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}
+        -DENTERPRISE_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}
+        -DENTERPRISE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}
+        -DENTERPRISE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
+        -DENTERPRISE_PROJECT_VERSION=${PROJECT_VERSION}
+        -DENTERPRISE_COMMUNITY_VERSION=${ANOSECUREKIT_ENTERPRISE_COMMUNITY_VERSION}
+        -DENTERPRISE_SOURCE_REVISION=${_anosecurekit_enterprise_source_revision}
+        -DENTERPRISE_CPACK_COMMAND=${CMAKE_CPACK_COMMAND}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/package/check_delivery_package.cmake)
+    set_tests_properties(enterprise.delivery-package PROPERTIES LABELS "package;delivery")
   else()
     add_custom_target(enterprise-package-check
       COMMAND ${CMAKE_COMMAND} -E echo
         "enterprise-package-check requires the bundled Community OpenSSL delivery profile"
+      COMMAND ${CMAKE_COMMAND} -E false
+      USES_TERMINAL)
+
+    add_custom_target(enterprise-delivery-check
+      COMMAND ${CMAKE_COMMAND} -E echo
+        "enterprise-delivery-check requires the bundled Community OpenSSL delivery profile"
       COMMAND ${CMAKE_COMMAND} -E false
       USES_TERMINAL)
   endif()
