@@ -21,6 +21,14 @@ if(DEFINED ANOSECUREKIT_ENTERPRISE_ENABLE_ANOCRYPTO)
 endif()
 set(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET "" CACHE STRING
   "Existing non-imported OBJECT_LIBRARY implementing the AnoSecureKit provider contract for AnoCrypto-C")
+set(_anosecurekit_enterprise_required_capabilities
+  sha256
+  hmac-sha256
+  hkdf-sha256
+  random
+  scrypt
+  aes256-gcm
+  aes256-gcm-stream)
 
 if(NOT ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl"
    AND NOT ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
@@ -52,6 +60,50 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
   if(_enterprise_provider_imported OR NOT _enterprise_provider_type STREQUAL "OBJECT_LIBRARY")
     message(FATAL_ERROR
       "AnoCrypto-C provider target must be a non-imported OBJECT_LIBRARY adapter, not AnoCryptoC::AnoCryptoC itself")
+  endif()
+
+  get_target_property(_enterprise_provider_backend_id
+    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET}"
+    ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID)
+  if(NOT _enterprise_provider_backend_id STREQUAL "anocrypto-c")
+    message(FATAL_ERROR
+      "AnoCrypto-C provider target must set target property "
+      "ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID to 'anocrypto-c'")
+  endif()
+
+  get_target_property(_enterprise_provider_capabilities
+    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET}"
+    ANOSECUREKIT_ENTERPRISE_PROVIDER_CAPABILITIES)
+  if(NOT _enterprise_provider_capabilities
+     OR _enterprise_provider_capabilities STREQUAL "_enterprise_provider_capabilities-NOTFOUND")
+    message(FATAL_ERROR
+      "AnoCrypto-C provider target must declare "
+      "ANOSECUREKIT_ENTERPRISE_PROVIDER_CAPABILITIES")
+  endif()
+
+  set(_enterprise_missing_capabilities "")
+  foreach(_required_capability IN LISTS _anosecurekit_enterprise_required_capabilities)
+    if(NOT _required_capability IN_LIST _enterprise_provider_capabilities)
+      list(APPEND _enterprise_missing_capabilities "${_required_capability}")
+    endif()
+  endforeach()
+  if(_enterprise_missing_capabilities)
+    list(JOIN _enterprise_missing_capabilities ", " _enterprise_missing_capabilities_text)
+    message(FATAL_ERROR
+      "AnoCrypto-C provider is incomplete for the Enterprise production profile. "
+      "Missing required capabilities: ${_enterprise_missing_capabilities_text}. "
+      "No OpenSSL fallback is permitted.")
+  endif()
+
+  get_target_property(_enterprise_provider_link_libraries
+    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET}" LINK_LIBRARIES)
+  if(NOT _enterprise_provider_link_libraries
+     OR _enterprise_provider_link_libraries STREQUAL "_enterprise_provider_link_libraries-NOTFOUND")
+    set(_enterprise_provider_link_libraries "")
+  endif()
+  if(NOT "AnoCryptoC::AnoCryptoC" IN_LIST _enterprise_provider_link_libraries)
+    message(FATAL_ERROR
+      "AnoCrypto-C provider target must link AnoCryptoC::AnoCryptoC directly")
   endif()
 endif()
 
@@ -92,7 +144,8 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     ANOSECUREKIT_ENTERPRISE_BACKEND_OPENSSL=1)
 else()
   target_compile_definitions(anosecurekit_enterprise PUBLIC
-    ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C=1)
+    ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C=1
+    ANOSECUREKIT_ENTERPRISE_BACKEND_CAPABILITY_COMPLETE=1)
   target_link_libraries(anosecurekit_enterprise PRIVATE AnoCryptoC::AnoCryptoC)
 endif()
 

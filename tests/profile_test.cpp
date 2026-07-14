@@ -11,5 +11,11 @@ int main()
     assert(backend_profile_name() == "openssl");
     assert(backend_profile_ready());
     assert(!anocrypto_backend_available());
+    assert(required_backend_capabilities().size() == 7);
+    for (const auto capability : required_backend_capabilities())
+    {
+        assert(backend_supports(capability));
+        assert(!backend_capability_name(capability).empty());
+    }
     return 0;
 }

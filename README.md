@@ -37,3 +37,15 @@ See [docs/BACKEND_PROFILES.md](docs/BACKEND_PROFILES.md) and
 Enterprise-owned files are proprietary commercial software. Community files
 remain MPL-2.0. AnoCrypto-C is external and separately licensed. See
 [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## AnoCrypto-C provider capability contract
+
+The `anocrypto-c` profile remains fail-closed. A proprietary provider `OBJECT_LIBRARY` must declare:
+
+- `ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID=anocrypto-c`;
+- `ANOSECUREKIT_ENTERPRISE_PROVIDER_CAPABILITIES` containing `sha256`, `hmac-sha256`, `hkdf-sha256`, `random`, `scrypt`, `aes256-gcm`, and `aes256-gcm-stream`;
+- a direct link to `AnoCryptoC::AnoCryptoC`.
+
+The profile does not configure when any required capability is missing. Partial AnoCrypto-C support is not silently completed with OpenSSL.
+
+See [docs/PROVIDER_CAPABILITY_CONTRACT.md](docs/PROVIDER_CAPABILITY_CONTRACT.md) for the target metadata and runtime-gate requirements.
