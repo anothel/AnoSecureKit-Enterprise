@@ -51,3 +51,6 @@ The workflow has read-only repository permissions and contains no release-upload
 Publisher authentication, signing, provenance attestations, support approval, and legal
 approval remain separate future gates. The incomplete AnoCrypto-C profile cannot install
 or produce delivery artifacts.
+
+When hosted execution is unavailable, [DEFERRED_CI_STATUS.md](DEFERRED_CI_STATUS.md)
+records local evidence, deferred remote checks, and the customer-release block.
