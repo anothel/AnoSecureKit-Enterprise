@@ -51,6 +51,23 @@ enum class backend_module_state
     self_test_running,
     operational,
     error,
+    shutdown,
+};
+
+enum class backend_operation_status
+{
+    success,
+    invalid_argument,
+    buffer_too_small,
+    unsupported,
+    not_approved,
+    not_operational,
+    entropy_failure,
+    reseed_required,
+    authentication_failed,
+    integrity_failure,
+    resource_exhausted,
+    internal_error,
 };
 
 enum class backend_self_test_status
@@ -81,6 +98,7 @@ backend_runtime_info current_backend_runtime() noexcept;
 std::string_view backend_runtime_status_name(backend_runtime_status status) noexcept;
 std::string_view backend_module_state_name(backend_module_state state) noexcept;
 std::string_view backend_self_test_status_name(backend_self_test_status status) noexcept;
+std::string_view backend_operation_status_name(backend_operation_status status) noexcept;
 
 } // namespace anosecurekit_enterprise
 

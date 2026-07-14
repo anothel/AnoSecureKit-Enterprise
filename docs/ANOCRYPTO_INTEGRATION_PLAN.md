@@ -7,9 +7,16 @@ not copied into this repository.
 ## Package contract
 
 ```cmake
-find_package(AnoCryptoC CONFIG REQUIRED)
+find_package(AnoCryptoC 0.1.0 EXACT CONFIG REQUIRED)
 target_link_libraries(provider PRIVATE AnoCryptoC::AnoCryptoC)
 ```
+
+The verified baseline is commit
+`cf0f3c425dd265c7509fb64a6123db97f71055dd`, runtime identity
+`0.1.0-p1-33-release-rehearsal`, build identity ABI `1`, and 69 public symbols.
+Version matching alone is insufficient; package digest and runtime identity
+verification are mandatory. See
+[ANOCRYPTO_C_PINNED_CONTRACT.md](ANOCRYPTO_C_PINNED_CONTRACT.md).
 
 ## Implemented gates
 
@@ -31,16 +38,16 @@ runtime capability reporting. The OpenSSL profile supplies a built-in
 implementation. Mock AnoCrypto-C adapters verify ready, self-test-failed, and
 invalid-contract behavior.
 
-Concrete AnoCrypto-C lifecycle calls are not implemented from inferred function
-signatures. The next integration change must use a pinned external package and
-its exact installed headers.
+The exact native public headers and initial lifecycle/service symbols are now
+verified and pinned. Concrete AnoCrypto-C calls and status conversion remain
+unimplemented; the existing AnoCrypto-C tests use mock adapters.
 
 ## Remaining implementation
 
-1. Pin the AnoCrypto-C package version and capture its installed public headers.
-2. Implement the real lifecycle/runtime adapter against those exact APIs.
-3. Map native status/error codes.
-4. Map SHA-256, HMAC-SHA-256, and random using confirmed APIs.
+1. Approve and record the package/archive digest.
+2. Implement the real lifecycle/runtime adapter against the pinned APIs.
+3. Map native lifecycle and operation statuses separately.
+4. Map SHA-256, HMAC-SHA-256, and platform-backed random using confirmed APIs.
 5. Fail closed for missing HKDF, AEAD, streaming, key-wrap, and password-KDF
    capabilities until AnoCrypto-C supplies them.
 6. Run the Community API/fixture suite through the profile.
@@ -57,6 +64,6 @@ its exact installed headers.
 6. Compare runtime capabilities against the complete product requirement.
 7. Only then enable public API parity tests and production packaging.
 
-The current known AnoCrypto-C feature set is not sufficient for the full
-production gate because HKDF, scrypt, AES-GCM, and streaming AEAD remain
-unavailable or unconfirmed.
+The verified AnoCrypto-C feature set is not sufficient for the full production
+gate because HKDF-SHA-256, scrypt, AES-256-GCM, streaming AEAD, and key wrapping
+are absent.

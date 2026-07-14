@@ -73,6 +73,35 @@ int main()
         return 12;
     }
 
+    if (backend_module_state_name(backend_module_state::unavailable) != "unavailable"
+        || backend_module_state_name(backend_module_state::uninitialized) != "uninitialized"
+        || backend_module_state_name(backend_module_state::self_test_running) != "self-test-running"
+        || backend_module_state_name(backend_module_state::operational) != "operational"
+        || backend_module_state_name(backend_module_state::error) != "error"
+        || backend_module_state_name(backend_module_state::shutdown) != "shutdown")
+    {
+        shutdown_backend();
+        return 13;
+    }
+
+    if (backend_operation_status_name(backend_operation_status::success) != "success"
+        || backend_operation_status_name(backend_operation_status::invalid_argument) != "invalid-argument"
+        || backend_operation_status_name(backend_operation_status::buffer_too_small) != "buffer-too-small"
+        || backend_operation_status_name(backend_operation_status::unsupported) != "unsupported"
+        || backend_operation_status_name(backend_operation_status::not_approved) != "not-approved"
+        || backend_operation_status_name(backend_operation_status::not_operational) != "not-operational"
+        || backend_operation_status_name(backend_operation_status::entropy_failure) != "entropy-failure"
+        || backend_operation_status_name(backend_operation_status::reseed_required) != "reseed-required"
+        || backend_operation_status_name(backend_operation_status::authentication_failed) != "authentication-failed"
+        || backend_operation_status_name(backend_operation_status::integrity_failure) != "integrity-failure"
+        || backend_operation_status_name(backend_operation_status::resource_exhausted) != "resource-exhausted"
+        || backend_operation_status_name(backend_operation_status::internal_error) != "internal-error"
+        || backend_operation_status_name(static_cast<backend_operation_status>(-1)) != "unknown")
+    {
+        shutdown_backend();
+        return 14;
+    }
+
     shutdown_backend();
     return 0;
 }

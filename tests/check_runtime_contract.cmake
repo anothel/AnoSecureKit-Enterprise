@@ -10,6 +10,8 @@ set(_fake_prefix "${ENTERPRISE_BINARY_ROOT}/fake-prefix")
 file(MAKE_DIRECTORY "${_fake_prefix}/lib/cmake/AnoCryptoC")
 file(WRITE "${_fake_prefix}/lib/cmake/AnoCryptoC/AnoCryptoCConfig.cmake"
   "if(NOT TARGET AnoCryptoC::AnoCryptoC)\n  add_library(AnoCryptoC::AnoCryptoC INTERFACE IMPORTED)\nendif()\n")
+file(WRITE "${_fake_prefix}/lib/cmake/AnoCryptoC/AnoCryptoCConfigVersion.cmake"
+  "set(PACKAGE_VERSION \"0.1.0\")\nset(PACKAGE_VERSION_COMPATIBLE TRUE)\nset(PACKAGE_VERSION_EXACT TRUE)\n")
 
 set(_complete_capabilities "sha256;hmac-sha256;hkdf-sha256;random;scrypt;aes256-gcm;aes256-gcm-stream")
 
@@ -113,6 +115,12 @@ require_output(ready "Backend module version: mock-0.1.0")
 require_output(ready "Runtime status: ready")
 require_output(ready "Module state: operational")
 require_output(ready "Self-test status: passed")
+
+write_runtime_fixture(shutdown 1 not_operational not_operational shutdown passed "mock-0.1.0" "mock-build-shutdown")
+build_and_run_fixture(shutdown)
+require_output(shutdown "Profile ready: no")
+require_output(shutdown "Runtime status: not-operational")
+require_output(shutdown "Module state: shutdown")
 
 set(_ready_install "${ENTERPRISE_BINARY_ROOT}/ready-install")
 execute_process(

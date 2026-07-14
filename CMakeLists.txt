@@ -67,7 +67,7 @@ if(NOT ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl"
 endif()
 
 if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
-  find_package(AnoCryptoC CONFIG REQUIRED)
+  find_package(AnoCryptoC 0.1.0 EXACT CONFIG REQUIRED)
   if(NOT TARGET AnoCryptoC::AnoCryptoC)
     message(FATAL_ERROR
       "AnoCrypto-C profile requires imported target AnoCryptoC::AnoCryptoC")

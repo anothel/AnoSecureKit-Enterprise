@@ -20,6 +20,13 @@ aes256-gcm-stream
 
 The list covers the primitives required by the current Community public API and the `SKT1`, `SKF1`, and `SKP1` formats. It does not assert that the external AnoCrypto-C package currently implements every item.
 
+The pinned `0.1.0-p1-33-release-rehearsal` baseline is ready to integrate for
+module lifecycle, self-test reporting, version/build identity, SHA-256,
+HMAC-SHA-256, HMAC_DRBG-SHA-256, and platform-backed random. It also implements
+SHA-384/SHA-512, matching HMAC variants, AES-CBC, AES-CMAC, and in-memory key
+handles. These additional services do not satisfy the missing product
+capabilities.
+
 ## Provider target metadata
 
 The proprietary provider adapter must be a non-imported CMake `OBJECT_LIBRARY` and set:
@@ -52,5 +59,9 @@ The static CMake capability declaration is only the first gate. Enterprise now a
 - absence of OpenSSL production linkage in the AnoCrypto-C profile.
 
 The runtime adapter is selected at link time and independently reports a capability mask. The production AnoCrypto-C implementation remains pending exact external header/API integration; current tests use mock adapters. See `PROVIDER_RUNTIME_CONTRACT.md`.
+
+HKDF-SHA-256, scrypt, AES-256-GCM, streaming AEAD, and key wrapping are absent
+from the pinned baseline and block full parity. They must not be declared in an
+actual adapter capability mask until implemented and verified.
 
 Static or mock metadata must not be treated as KCMVP or FIPS validation evidence.

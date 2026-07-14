@@ -37,6 +37,11 @@ The snapshot reports:
 - self-test status;
 - runtime capability mask.
 
+Module states have stable names: `unavailable`, `uninitialized`,
+`self-test-running`, `operational`, `error`, and `shutdown`. The AnoCrypto-C
+adapter must map all five native module states without collapsing shutdown into
+uninitialized.
+
 This is compile-time/link-time selection. Runtime plugin discovery, dynamic
 provider loading, and automatic backend fallback are not supported.
 
@@ -85,9 +90,20 @@ The test suite builds mock AnoCrypto-C runtime adapters for:
 - self-test failure;
 - invalid runtime contract version.
 
-The production AnoCrypto-C lifecycle adapter is intentionally not implemented
-from guessed function signatures. It must be completed against a pinned external
-AnoCrypto-C package and its exact public headers.
+The exact AnoCrypto-C lifecycle symbols and headers are recorded in
+[ANOCRYPTO_C_PINNED_CONTRACT.md](ANOCRYPTO_C_PINNED_CONTRACT.md). The production
+adapter still does not call them; current tests remain mock contract tests.
+
+## Operation status contract
+
+Lifecycle readiness and cryptographic operation results are separate. Public
+`backend_operation_status` values preserve `success`, invalid argument, buffer
+too small, unsupported, not approved, not operational, entropy failure, reseed
+required, authentication failure, integrity failure, resource exhaustion, and
+internal error. Unknown values render as `unknown`.
+
+Native conversion is deferred until the adapter includes the pinned AnoCrypto-C
+headers. Operation failures must not be collapsed into `backend_runtime_status`.
 
 ## Required adapter behavior
 
@@ -97,7 +113,7 @@ The eventual AnoCrypto-C adapter must:
 2. run or verify startup self-tests;
 3. expose the module's sticky error/non-operational state;
 4. provide stable module version and build identity strings;
-5. map native statuses to Enterprise runtime statuses without hiding failures;
+5. map native lifecycle and operation statuses without hiding failures;
 6. report only capabilities confirmed by the active module build;
 7. make shutdown safe and idempotent;
 8. never route failures or missing services to OpenSSL.

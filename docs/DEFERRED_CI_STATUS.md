@@ -83,6 +83,14 @@ The bundled Community subtree has no local diff and remains at Git tree
 `9b498f5431f217ac71e8d2e2c92df9e8b0122626`. Delivery verification recursively
 matched its generated v0.4.0 source-offer archive to that subtree.
 
+## AnoCrypto-C contract status
+
+The verified AnoCrypto-C API/package contract is pinned in
+`ANOCRYPTO_C_PINNED_CONTRACT.md`; the native adapter is not connected. Static
+package consumption and Windows/macOS hosted verification remain deferred. No
+approved package digest is recorded, so the AnoCrypto-C profile remains blocked
+and non-installable regardless of local OpenSSL-profile results.
+
 ## Remote checks not run
 
 No GitHub-hosted result is claimed for:

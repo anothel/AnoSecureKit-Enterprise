@@ -23,7 +23,8 @@ is verified with an independent `find_package()` consumer.
 
 This profile requires:
 
-- an external `AnoCryptoC` package;
+- an external exact-version `AnoCryptoC 0.1.0` package with approved digest and
+  runtime identity `0.1.0-p1-33-release-rehearsal`;
 - imported target `AnoCryptoC::AnoCryptoC`;
 - a non-imported Enterprise cryptographic provider `OBJECT_LIBRARY`;
 - a separate non-imported Enterprise lifecycle/diagnostic `OBJECT_LIBRARY`;
@@ -31,9 +32,10 @@ This profile requires:
   surface.
 
 The profile fails configuration or runtime readiness when any requirement is
-missing. It never falls back to OpenSSL. The current repository contains the
-contracts and mock verification, but not the real AnoCrypto-C lifecycle or
-cryptographic adapter implementation, so this profile is not production-ready.
+missing. It never falls back to OpenSSL. The native API is verified and pinned,
+but the current repository contains only contracts and mock verification, not
+the real lifecycle or cryptographic adapter, so this profile is not
+production-ready.
 It intentionally produces no install/export or customer-delivery package.
 
 ## Production capability gate
@@ -69,3 +71,5 @@ Runtime contract version `1` requires:
 
 AnoCrypto-C readiness requires `ready`, `operational`, `passed`, and the complete
 capability mask. See [PROVIDER_RUNTIME_CONTRACT.md](PROVIDER_RUNTIME_CONTRACT.md).
+The dependency identity and verified capability gaps are recorded in
+[ANOCRYPTO_C_PINNED_CONTRACT.md](ANOCRYPTO_C_PINNED_CONTRACT.md).

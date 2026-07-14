@@ -30,7 +30,10 @@ It is fail-closed and never silently uses OpenSSL for missing operations. The
 adapter is not yet complete, so this profile is not currently production-ready.
 
 See [docs/BACKEND_PROFILES.md](docs/BACKEND_PROFILES.md) and
-[docs/ANOCRYPTO_INTEGRATION_PLAN.md](docs/ANOCRYPTO_INTEGRATION_PLAN.md).
+[docs/ANOCRYPTO_INTEGRATION_PLAN.md](docs/ANOCRYPTO_INTEGRATION_PLAN.md). The
+verified external dependency identity, headers, lifecycle, status, licensing,
+and capability gaps are pinned in
+[docs/ANOCRYPTO_C_PINNED_CONTRACT.md](docs/ANOCRYPTO_C_PINNED_CONTRACT.md).
 
 
 ## Installable OpenSSL profile package
@@ -72,7 +75,9 @@ See [docs/DELIVERY_VERIFICATION.md](docs/DELIVERY_VERIFICATION.md).
 ## Licensing
 
 Enterprise-owned files are proprietary commercial software. Community files
-remain MPL-2.0. AnoCrypto-C is external and separately licensed. See
+remain MPL-2.0. AnoCrypto-C is external MPL-2.0 software and is not relicensed
+by Enterprise. Applicable source and notice obligations remain subject to legal
+review before delivery. See
 [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## AnoCrypto-C provider capability contract
@@ -113,10 +118,9 @@ contract, not a runtime plugin system. A wrong contract version, failed
 self-test, non-operational module state, or incomplete runtime capability mask
 keeps the profile unavailable.
 
-The current repository validates this boundary with mock adapters. It does not
-yet call concrete AnoCrypto-C lifecycle functions because the exact external
-header/API revision is not vendored here and function signatures are not
-inferred. See [docs/PROVIDER_RUNTIME_CONTRACT.md](docs/PROVIDER_RUNTIME_CONTRACT.md).
+The current repository validates this boundary with mock adapters. Exact native
+headers and symbols are pinned, but no concrete AnoCrypto-C function is called
+yet. See [docs/PROVIDER_RUNTIME_CONTRACT.md](docs/PROVIDER_RUNTIME_CONTRACT.md).
 
 
 ## CI and release gate

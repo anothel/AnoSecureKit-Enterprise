@@ -90,6 +90,8 @@ std::string_view backend_module_state_name(backend_module_state state) noexcept
         return "operational";
     case backend_module_state::error:
         return "error";
+    case backend_module_state::shutdown:
+        return "shutdown";
     }
     return "unknown";
 }
@@ -110,6 +112,38 @@ std::string_view backend_self_test_status_name(backend_self_test_status status) 
         return "passed";
     case backend_self_test_status::failed:
         return "failed";
+    }
+    return "unknown";
+}
+
+std::string_view backend_operation_status_name(backend_operation_status status) noexcept
+{
+    switch (status)
+    {
+    case backend_operation_status::success:
+        return "success";
+    case backend_operation_status::invalid_argument:
+        return "invalid-argument";
+    case backend_operation_status::buffer_too_small:
+        return "buffer-too-small";
+    case backend_operation_status::unsupported:
+        return "unsupported";
+    case backend_operation_status::not_approved:
+        return "not-approved";
+    case backend_operation_status::not_operational:
+        return "not-operational";
+    case backend_operation_status::entropy_failure:
+        return "entropy-failure";
+    case backend_operation_status::reseed_required:
+        return "reseed-required";
+    case backend_operation_status::authentication_failed:
+        return "authentication-failed";
+    case backend_operation_status::integrity_failure:
+        return "integrity-failure";
+    case backend_operation_status::resource_exhausted:
+        return "resource-exhausted";
+    case backend_operation_status::internal_error:
+        return "internal-error";
     }
     return "unknown";
 }

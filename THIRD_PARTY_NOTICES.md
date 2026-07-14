@@ -22,6 +22,9 @@ subtree.
 
 ## Optional external dependency: AnoCrypto-C
 
-AnoCrypto-C is not bundled in this repository or its current distribution. If
-supplied externally, it remains proprietary software governed by separate
-commercial terms. It is not licensed by this repository's `LICENSE` file.
+AnoCrypto-C is not bundled in this repository or its current distribution. The
+pinned external baseline is licensed under MPL-2.0 and is not relicensed by
+Enterprise. Preserve applicable MPL source and notice obligations. Commercial
+or private-repository use does not remove those obligations. Legal review is
+required before customer delivery; this notice is not legal advice. Identity
+details are recorded in `docs/ANOCRYPTO_C_PINNED_CONTRACT.md`.
