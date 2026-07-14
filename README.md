@@ -49,3 +49,34 @@ The `anocrypto-c` profile remains fail-closed. A proprietary provider `OBJECT_LI
 The profile does not configure when any required capability is missing. Partial AnoCrypto-C support is not silently completed with OpenSSL.
 
 See [docs/PROVIDER_CAPABILITY_CONTRACT.md](docs/PROVIDER_CAPABILITY_CONTRACT.md) for the target metadata and runtime-gate requirements.
+
+## Provider lifecycle and diagnostics contract
+
+Enterprise now exposes a compile-time-selected runtime contract for backend
+initialization, shutdown, self-test state, module state, module/build identity,
+and runtime capability reporting.
+
+The OpenSSL profile supplies the built-in baseline implementation. The
+AnoCrypto-C profile additionally requires a separate non-imported
+`OBJECT_LIBRARY` selected through:
+
+```text
+ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET
+```
+
+That target must declare:
+
+```cmake
+ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID=anocrypto-c
+ANOSECUREKIT_ENTERPRISE_RUNTIME_CONTRACT_VERSION=1
+```
+
+and link `AnoCryptoC::AnoCryptoC` directly. The runtime API is a link-time
+contract, not a runtime plugin system. A wrong contract version, failed
+self-test, non-operational module state, or incomplete runtime capability mask
+keeps the profile unavailable.
+
+The current repository validates this boundary with mock adapters. It does not
+yet call concrete AnoCrypto-C lifecycle functions because the exact external
+header/API revision is not vendored here and function signatures are not
+inferred. See [docs/PROVIDER_RUNTIME_CONTRACT.md](docs/PROVIDER_RUNTIME_CONTRACT.md).

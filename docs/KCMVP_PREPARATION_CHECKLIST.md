@@ -29,3 +29,11 @@ aligned with a future validation effort.
 - Vulnerability analysis.
 - Configuration management records.
 - Customer security policy document.
+
+## Enterprise runtime gate status
+
+Enterprise now has an engineering contract for module initialization, self-test
+status, operational state, module/build identity, and capability reporting.
+The OpenSSL profile and mock AnoCrypto-C adapters test the gate. This does not
+constitute module validation evidence; the real adapter must map the exact
+AnoCrypto-C validated package/API and environment.

@@ -9,8 +9,9 @@ and an explicit cryptographic backend profile.
 -DANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND=openssl
 ```
 
-This is the current working profile. It uses Community's official OpenSSL
-provider and adds the Enterprise layer.
+This working profile uses Community's official OpenSSL provider and adds the
+Enterprise layer. Its built-in runtime implementation reports the Community
+v0.4.0 provider identity, operational state, and full product capability mask.
 
 ## AnoCrypto-C profile
 
@@ -22,18 +23,19 @@ This profile requires:
 
 - an external `AnoCryptoC` package;
 - imported target `AnoCryptoC::AnoCryptoC`;
-- a non-imported Enterprise `OBJECT_LIBRARY` provider adapter implementing the
-  complete Community provider contract;
-- all capabilities required by the selected product surface.
+- a non-imported Enterprise cryptographic provider `OBJECT_LIBRARY`;
+- a separate non-imported Enterprise lifecycle/diagnostic `OBJECT_LIBRARY`;
+- complete static and runtime capabilities required by the selected product
+  surface.
 
-The profile fails configuration when any requirement is missing. It never falls
-back to OpenSSL. The current repository does not yet contain the complete
-AnoCrypto-C provider adapter, so this profile is intentionally not buildable as
-a production product yet.
+The profile fails configuration or runtime readiness when any requirement is
+missing. It never falls back to OpenSSL. The current repository contains the
+contracts and mock verification, but not the real AnoCrypto-C lifecycle or
+cryptographic adapter implementation, so this profile is not production-ready.
 
 ## Production capability gate
 
-The AnoCrypto-C profile requires the full Community v1 primitive surface before it is considered ready:
+The AnoCrypto-C profile requires the full Community v1 primitive surface:
 
 ```text
 sha256
@@ -45,4 +47,22 @@ aes256-gcm
 aes256-gcm-stream
 ```
 
-Provider targets identify themselves with `ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID` and declare capabilities with `ANOSECUREKIT_ENTERPRISE_PROVIDER_CAPABILITIES`. Configuration fails if the identity, capability set, or direct `AnoCryptoC::AnoCryptoC` linkage is missing. This is a production parity gate, not a claim that AnoCrypto-C currently implements every item.
+The cryptographic provider declares static capabilities through
+`ANOSECUREKIT_ENTERPRISE_PROVIDER_CAPABILITIES`. The runtime adapter reports an
+independent capability mask after module initialization and self-test. Both must
+cover the complete product requirement.
+
+## Runtime readiness gate
+
+Runtime contract version `1` requires:
+
+- initialization result;
+- shutdown;
+- runtime/module status;
+- self-test status;
+- module version;
+- build identity;
+- runtime capability mask.
+
+AnoCrypto-C readiness requires `ready`, `operational`, `passed`, and the complete
+capability mask. See [PROVIDER_RUNTIME_CONTRACT.md](PROVIDER_RUNTIME_CONTRACT.md).

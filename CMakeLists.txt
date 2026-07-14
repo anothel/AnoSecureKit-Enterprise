@@ -20,7 +20,9 @@ if(DEFINED ANOSECUREKIT_ENTERPRISE_ENABLE_ANOCRYPTO)
     "-DANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND=openssl or anocrypto-c.")
 endif()
 set(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET "" CACHE STRING
-  "Existing non-imported OBJECT_LIBRARY implementing the AnoSecureKit provider contract for AnoCrypto-C")
+  "Existing non-imported OBJECT_LIBRARY implementing the AnoSecureKit crypto provider contract for AnoCrypto-C")
+set(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET "" CACHE STRING
+  "Existing non-imported OBJECT_LIBRARY implementing the Enterprise AnoCrypto-C lifecycle/diagnostic contract")
 set(_anosecurekit_enterprise_required_capabilities
   sha256
   hmac-sha256
@@ -105,6 +107,51 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
     message(FATAL_ERROR
       "AnoCrypto-C provider target must link AnoCryptoC::AnoCryptoC directly")
   endif()
+
+  if(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET STREQUAL "")
+    message(FATAL_ERROR
+      "AnoCrypto-C profile requires a lifecycle/diagnostic adapter target. "
+      "Set ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET to an existing non-imported "
+      "OBJECT_LIBRARY implementing the Enterprise provider runtime contract.")
+  endif()
+  if(NOT TARGET "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}")
+    message(FATAL_ERROR
+      "ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET does not name an existing target")
+  endif()
+  get_target_property(_enterprise_runtime_imported
+    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}" IMPORTED)
+  get_target_property(_enterprise_runtime_type
+    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}" TYPE)
+  if(_enterprise_runtime_imported OR NOT _enterprise_runtime_type STREQUAL "OBJECT_LIBRARY")
+    message(FATAL_ERROR
+      "AnoCrypto-C runtime target must be a non-imported OBJECT_LIBRARY adapter")
+  endif()
+  get_target_property(_enterprise_runtime_backend_id
+    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}"
+    ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID)
+  if(NOT _enterprise_runtime_backend_id STREQUAL "anocrypto-c")
+    message(FATAL_ERROR
+      "AnoCrypto-C runtime target must set target property "
+      "ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID to 'anocrypto-c'")
+  endif()
+  get_target_property(_enterprise_runtime_contract_version
+    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}"
+    ANOSECUREKIT_ENTERPRISE_RUNTIME_CONTRACT_VERSION)
+  if(NOT _enterprise_runtime_contract_version STREQUAL "1")
+    message(FATAL_ERROR
+      "AnoCrypto-C runtime target must declare "
+      "ANOSECUREKIT_ENTERPRISE_RUNTIME_CONTRACT_VERSION=1")
+  endif()
+  get_target_property(_enterprise_runtime_link_libraries
+    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}" LINK_LIBRARIES)
+  if(NOT _enterprise_runtime_link_libraries
+     OR _enterprise_runtime_link_libraries STREQUAL "_enterprise_runtime_link_libraries-NOTFOUND")
+    set(_enterprise_runtime_link_libraries "")
+  endif()
+  if(NOT "AnoCryptoC::AnoCryptoC" IN_LIST _enterprise_runtime_link_libraries)
+    message(FATAL_ERROR
+      "AnoCrypto-C runtime target must link AnoCryptoC::AnoCryptoC directly")
+  endif()
 endif()
 
 if(ANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY)
@@ -130,7 +177,9 @@ else()
   find_package(anosecurekit 0.4 CONFIG REQUIRED)
 endif()
 
-add_library(anosecurekit_enterprise src/enterprise.cpp)
+add_library(anosecurekit_enterprise
+  src/enterprise.cpp
+  src/provider_runtime.cpp)
 add_library(anosecurekit::enterprise ALIAS anosecurekit_enterprise)
 target_compile_features(anosecurekit_enterprise PUBLIC cxx_std_20)
 target_include_directories(anosecurekit_enterprise
@@ -140,12 +189,17 @@ target_include_directories(anosecurekit_enterprise
 target_link_libraries(anosecurekit_enterprise PUBLIC anosecurekit::anosecurekit)
 
 if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
+  target_sources(anosecurekit_enterprise PRIVATE src/provider_runtime_openssl.cpp)
   target_compile_definitions(anosecurekit_enterprise PUBLIC
     ANOSECUREKIT_ENTERPRISE_BACKEND_OPENSSL=1)
 else()
+  target_include_directories("${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+  target_compile_features("${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}" PRIVATE cxx_std_20)
+  target_sources(anosecurekit_enterprise PRIVATE
+    $<TARGET_OBJECTS:${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}>)
   target_compile_definitions(anosecurekit_enterprise PUBLIC
-    ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C=1
-    ANOSECUREKIT_ENTERPRISE_BACKEND_CAPABILITY_COMPLETE=1)
+    ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C=1)
   target_link_libraries(anosecurekit_enterprise PRIVATE AnoCryptoC::AnoCryptoC)
 endif()
 
@@ -160,6 +214,14 @@ if(BUILD_TESTING)
       -DENTERPRISE_BINARY_ROOT=${CMAKE_CURRENT_BINARY_DIR}/profile-config-check
       -DENTERPRISE_GENERATOR=${CMAKE_GENERATOR}
       -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_profile_config.cmake
+    USES_TERMINAL)
+
+  add_custom_target(enterprise-runtime-contract-check
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DENTERPRISE_BINARY_ROOT=${CMAKE_CURRENT_BINARY_DIR}/runtime-contract-check
+      -DENTERPRISE_GENERATOR=${CMAKE_GENERATOR}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_runtime_contract.cmake
     USES_TERMINAL)
 
   add_executable(anosecurekit_enterprise_profile_test tests/profile_test.cpp)

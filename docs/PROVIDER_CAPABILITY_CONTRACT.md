@@ -39,9 +39,9 @@ Configuration fails when the identity, capability list, direct module link, targ
 
 A partial AnoCrypto-C provider is not promoted to the production profile. Missing services are not sent to OpenSSL and are not represented as available. Development work may implement capabilities incrementally, but production profile configuration remains blocked until the complete requirement set is met.
 
-## Runtime gate still required
+## Runtime gate implemented as a contract
 
-The static CMake capability declaration is only the first gate. A later implementation must also verify:
+The static CMake capability declaration is only the first gate. Enterprise now also defines runtime contract version `1` and verifies:
 
 - AnoCrypto-C module initialization;
 - startup self-test result;
@@ -51,4 +51,6 @@ The static CMake capability declaration is only the first gate. A later implemen
 - error/status translation;
 - absence of OpenSSL production linkage in the AnoCrypto-C profile.
 
-Static metadata must not be treated as KCMVP or FIPS validation evidence.
+The runtime adapter is selected at link time and independently reports a capability mask. The production AnoCrypto-C implementation remains pending exact external header/API integration; current tests use mock adapters. See `PROVIDER_RUNTIME_CONTRACT.md`.
+
+Static or mock metadata must not be treated as KCMVP or FIPS validation evidence.

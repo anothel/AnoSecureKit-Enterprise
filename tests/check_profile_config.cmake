@@ -36,13 +36,27 @@ expect_configure_failure(missing-adapter "AnoCrypto-C profile is fail-closed"
 
 
 
-function(write_provider_fixture name backend_id capabilities link_anocrypto)
+function(write_provider_fixture name backend_id capabilities link_anocrypto include_runtime runtime_backend_id runtime_contract_version runtime_link_anocrypto)
   set(_fixture "${ENTERPRISE_BINARY_ROOT}/${name}-source")
   file(MAKE_DIRECTORY "${_fixture}")
   file(WRITE "${_fixture}/provider.cpp" "int enterprise_provider_fixture_symbol = 0;\n")
+  file(WRITE "${_fixture}/runtime.cpp" "int enterprise_runtime_fixture_symbol = 0;\n")
   set(_link_line "")
   if(link_anocrypto)
     set(_link_line "target_link_libraries(test_provider PRIVATE AnoCryptoC::AnoCryptoC)\n")
+  endif()
+  set(_runtime_block "")
+  if(include_runtime)
+    set(_runtime_link_line "")
+    if(runtime_link_anocrypto)
+      set(_runtime_link_line "target_link_libraries(test_runtime PRIVATE AnoCryptoC::AnoCryptoC)\n")
+    endif()
+    string(CONCAT _runtime_block
+      "add_library(test_runtime OBJECT runtime.cpp)\n"
+      "set_property(TARGET test_runtime PROPERTY ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID \"${runtime_backend_id}\")\n"
+      "set_property(TARGET test_runtime PROPERTY ANOSECUREKIT_ENTERPRISE_RUNTIME_CONTRACT_VERSION \"${runtime_contract_version}\")\n"
+      "${_runtime_link_line}"
+      "set(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET test_runtime CACHE STRING \"\" FORCE)\n")
   endif()
   file(WRITE "${_fixture}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.20)\n"
@@ -52,13 +66,13 @@ function(write_provider_fixture name backend_id capabilities link_anocrypto)
 "set_property(TARGET test_provider PROPERTY ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID \"${backend_id}\")\n"
 "set_property(TARGET test_provider PROPERTY ANOSECUREKIT_ENTERPRISE_PROVIDER_CAPABILITIES \"${capabilities}\")\n"
 "${_link_line}"
+"${_runtime_block}"
 "set(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND anocrypto-c CACHE STRING \"\" FORCE)\n"
 "set(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET test_provider CACHE STRING \"\" FORCE)\n"
 "set(AnoCryptoC_DIR \"${_fake_prefix}/lib/cmake/AnoCryptoC\" CACHE PATH \"\" FORCE)\n"
 "add_subdirectory(\"${ENTERPRISE_SOURCE_DIR}\" enterprise)\n")
   set(${name}_SOURCE "${_fixture}" PARENT_SCOPE)
 endfunction()
-
 
 function(expect_fixture_success name)
   set(_source_var "${name}_SOURCE")
@@ -90,16 +104,30 @@ function(expect_fixture_failure name expected)
   endif()
 endfunction()
 
-write_provider_fixture(wrong-backend-id "openssl" "sha256;hmac-sha256;hkdf-sha256;random;scrypt;aes256-gcm;aes256-gcm-stream" TRUE)
+set(_complete_capabilities "sha256;hmac-sha256;hkdf-sha256;random;scrypt;aes256-gcm;aes256-gcm-stream")
+
+write_provider_fixture(wrong-backend-id "openssl" "${_complete_capabilities}" TRUE TRUE "anocrypto-c" "1" TRUE)
 expect_fixture_failure(wrong-backend-id "PROVIDER_BACKEND_ID to 'anocrypto-c'")
 
-write_provider_fixture(missing-capabilities "anocrypto-c" "sha256;hmac-sha256;random" TRUE)
+write_provider_fixture(missing-capabilities "anocrypto-c" "sha256;hmac-sha256;random" TRUE TRUE "anocrypto-c" "1" TRUE)
 expect_fixture_failure(missing-capabilities "Missing required capabilities: hkdf-sha256")
 
-write_provider_fixture(missing-module-link "anocrypto-c" "sha256;hmac-sha256;hkdf-sha256;random;scrypt;aes256-gcm;aes256-gcm-stream" FALSE)
-expect_fixture_failure(missing-module-link "must link AnoCryptoC::AnoCryptoC directly")
+write_provider_fixture(missing-module-link "anocrypto-c" "${_complete_capabilities}" FALSE TRUE "anocrypto-c" "1" TRUE)
+expect_fixture_failure(missing-module-link "provider target must link AnoCryptoC::AnoCryptoC directly")
 
-write_provider_fixture(complete-contract "anocrypto-c" "sha256;hmac-sha256;hkdf-sha256;random;scrypt;aes256-gcm;aes256-gcm-stream" TRUE)
+write_provider_fixture(missing-runtime-target "anocrypto-c" "${_complete_capabilities}" TRUE FALSE "" "" FALSE)
+expect_fixture_failure(missing-runtime-target "requires a lifecycle/diagnostic adapter target")
+
+write_provider_fixture(wrong-runtime-backend "anocrypto-c" "${_complete_capabilities}" TRUE TRUE "openssl" "1" TRUE)
+expect_fixture_failure(wrong-runtime-backend "runtime target must set target property")
+
+write_provider_fixture(wrong-runtime-version "anocrypto-c" "${_complete_capabilities}" TRUE TRUE "anocrypto-c" "2" TRUE)
+expect_fixture_failure(wrong-runtime-version "RUNTIME_CONTRACT_VERSION=1")
+
+write_provider_fixture(missing-runtime-module-link "anocrypto-c" "${_complete_capabilities}" TRUE TRUE "anocrypto-c" "1" FALSE)
+expect_fixture_failure(missing-runtime-module-link "runtime target must link AnoCryptoC::AnoCryptoC directly")
+
+write_provider_fixture(complete-contract "anocrypto-c" "${_complete_capabilities}" TRUE TRUE "anocrypto-c" "1" TRUE)
 expect_fixture_success(complete-contract)
 
 message(STATUS "Enterprise profile configuration checks passed")

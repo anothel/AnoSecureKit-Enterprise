@@ -37,18 +37,32 @@ constexpr std::array<crypto_backend_capability, 7> required_capabilities{
     crypto_backend_capability::aes256_gcm,
     crypto_backend_capability::aes256_gcm_stream,
 };
+constexpr crypto_backend_capability_mask required_capability_mask_value() noexcept
+{
+    crypto_backend_capability_mask mask = 0;
+    for (const auto capability : required_capabilities)
+    {
+        mask |= backend_capability_bit(capability);
+    }
+    return mask;
+}
 } // namespace
 
 bool backend_profile_ready() noexcept
 {
+    const auto runtime = current_backend_runtime();
+    if (runtime.status != backend_runtime_status::ready
+        || runtime.module_state != backend_module_state::operational
+        || (runtime.capability_mask & required_capability_mask_value())
+            != required_capability_mask_value())
+    {
+        return false;
+    }
 #ifdef ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C
-#ifdef ANOSECUREKIT_ENTERPRISE_BACKEND_CAPABILITY_COMPLETE
-    return true;
+    return runtime.self_test_status == backend_self_test_status::passed;
 #else
-    return false;
-#endif
-#else
-    return true;
+    return runtime.self_test_status == backend_self_test_status::not_applicable
+        || runtime.self_test_status == backend_self_test_status::passed;
 #endif
 }
 
@@ -62,20 +76,18 @@ std::span<const crypto_backend_capability> required_backend_capabilities() noexc
     return required_capabilities;
 }
 
+crypto_backend_capability_mask required_backend_capability_mask() noexcept
+{
+    return required_capability_mask_value();
+}
+
 bool backend_supports(crypto_backend_capability capability) noexcept
 {
     if (!backend_profile_ready())
     {
         return false;
     }
-    for (const auto required : required_capabilities)
-    {
-        if (required == capability)
-        {
-            return true;
-        }
-    }
-    return false;
+    return backend_capability_mask_has(current_backend_runtime().capability_mask, capability);
 }
 
 std::string_view backend_capability_name(crypto_backend_capability capability) noexcept
