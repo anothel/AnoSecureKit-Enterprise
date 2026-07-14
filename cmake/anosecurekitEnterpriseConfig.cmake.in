@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: LicenseRef-AnoSecureKit-Enterprise-Proprietary
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(anosecurekit 0.4 CONFIG REQUIRED)
+
+set(ANOSECUREKIT_ENTERPRISE_PACKAGE_VERSION "@PROJECT_VERSION@")
+set(ANOSECUREKIT_ENTERPRISE_PACKAGE_BACKEND_PROFILE "@ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND@")
+
+if(NOT ANOSECUREKIT_ENTERPRISE_PACKAGE_BACKEND_PROFILE STREQUAL "openssl")
+  set(anosecurekitEnterprise_FOUND FALSE)
+  set(anosecurekitEnterprise_NOT_FOUND_MESSAGE
+    "This installed AnoSecureKit Enterprise package was not produced from the supported OpenSSL delivery profile")
+  return()
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/anosecurekitEnterpriseTargets.cmake")
+check_required_components(anosecurekitEnterprise)

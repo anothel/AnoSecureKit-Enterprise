@@ -32,6 +32,28 @@ adapter is not yet complete, so this profile is not currently production-ready.
 See [docs/BACKEND_PROFILES.md](docs/BACKEND_PROFILES.md) and
 [docs/ANOCRYPTO_INTEGRATION_PLAN.md](docs/ANOCRYPTO_INTEGRATION_PLAN.md).
 
+
+## Installable OpenSSL profile package
+
+The verified OpenSSL delivery profile installs both the Community v0.4.0 CMake
+package and the Enterprise package into one prefix:
+
+```sh
+cmake --install build --config Release --prefix /path/to/prefix
+```
+
+Consumers use:
+
+```cmake
+find_package(anosecurekit 0.4 CONFIG REQUIRED)
+find_package(anosecurekitEnterprise 0.1 CONFIG REQUIRED)
+target_link_libraries(app PRIVATE anosecurekit::enterprise)
+```
+
+Run `enterprise-package-check` to stage an install and build an independent
+consumer. The incomplete AnoCrypto-C profile intentionally exports and installs
+nothing. See [docs/INSTALLATION.md](docs/INSTALLATION.md).
+
 ## Licensing
 
 Enterprise-owned files are proprietary commercial software. Community files

@@ -8,9 +8,11 @@ project(
   LANGUAGES CXX)
 
 include(CTest)
+include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
 option(ANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY "Use bundled Community source" ON)
+option(ANOSECUREKIT_ENTERPRISE_INSTALL_INFO "Install the Enterprise diagnostic executable" ON)
 set(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND "openssl" CACHE STRING
   "Enterprise crypto profile: openssl or anocrypto-c")
 set_property(CACHE ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND PROPERTY STRINGS openssl anocrypto-c)
@@ -167,7 +169,14 @@ if(ANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY)
     set(ANOSECUREKIT_EXTERNAL_BACKEND_TARGET
       "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET}" CACHE STRING "" FORCE)
   endif()
-  add_subdirectory(third_party/anosecurekit-community EXCLUDE_FROM_ALL)
+  if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
+    # The OpenSSL delivery profile installs the verified Community package and
+    # the Enterprise package together. The AnoCrypto-C build-tree profile remains
+    # non-installable until its real adapter and full capability parity exist.
+    add_subdirectory(third_party/anosecurekit-community)
+  else()
+    add_subdirectory(third_party/anosecurekit-community EXCLUDE_FROM_ALL)
+  endif()
 else()
   if(NOT ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     message(FATAL_ERROR
@@ -181,6 +190,7 @@ add_library(anosecurekit_enterprise
   src/enterprise.cpp
   src/provider_runtime.cpp)
 add_library(anosecurekit::enterprise ALIAS anosecurekit_enterprise)
+set_target_properties(anosecurekit_enterprise PROPERTIES EXPORT_NAME enterprise)
 target_compile_features(anosecurekit_enterprise PUBLIC cxx_std_20)
 target_include_directories(anosecurekit_enterprise
   PUBLIC
@@ -230,9 +240,92 @@ if(BUILD_TESTING)
   add_test(NAME enterprise.profile COMMAND anosecurekit_enterprise_profile_test)
 endif()
 
-install(TARGETS anosecurekit_enterprise
-  EXPORT anosecurekitEnterpriseTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
-install(DIRECTORY include/anosecurekit_enterprise DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
+  set(_anosecurekit_enterprise_cmake_install_dir
+    "${CMAKE_INSTALL_LIBDIR}/cmake/anosecurekitEnterprise")
+
+  install(TARGETS anosecurekit_enterprise
+    EXPORT anosecurekitEnterpriseTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  install(FILES
+    include/anosecurekit_enterprise/enterprise.hpp
+    include/anosecurekit_enterprise/provider_runtime.hpp
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/anosecurekit_enterprise)
+  install(FILES
+    LICENSE
+    THIRD_PARTY_NOTICES.md
+    README.md
+    docs/BACKEND_PROFILES.md
+    docs/INSTALLATION.md
+    docs/PRODUCT_BOUNDARY.md
+    docs/PROVIDER_CAPABILITY_CONTRACT.md
+    docs/PROVIDER_RUNTIME_CONTRACT.md
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/anosecurekit-enterprise)
+
+  if(ANOSECUREKIT_ENTERPRISE_INSTALL_INFO)
+    install(TARGETS anosecurekit_enterprise_info
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  endif()
+
+  install(EXPORT anosecurekitEnterpriseTargets
+    FILE anosecurekitEnterpriseTargets.cmake
+    NAMESPACE anosecurekit::
+    DESTINATION ${_anosecurekit_enterprise_cmake_install_dir})
+
+  configure_package_config_file(
+    cmake/anosecurekitEnterpriseConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/anosecurekitEnterpriseConfig.cmake
+    INSTALL_DESTINATION ${_anosecurekit_enterprise_cmake_install_dir})
+  write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/anosecurekitEnterpriseConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion)
+  install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/anosecurekitEnterpriseConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/anosecurekitEnterpriseConfigVersion.cmake
+    DESTINATION ${_anosecurekit_enterprise_cmake_install_dir})
+else()
+  message(STATUS
+    "AnoSecureKit Enterprise installation/export is disabled for the incomplete "
+    "AnoCrypto-C profile. No customer package may be produced until the real "
+    "adapter satisfies full capability and release gates.")
+endif()
+
+if(BUILD_TESTING)
+  if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl"
+     AND ANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY)
+    add_custom_target(enterprise-package-check
+      COMMAND ${CMAKE_COMMAND}
+        -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DENTERPRISE_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+        -DENTERPRISE_PACKAGE_CHECK_ROOT=${CMAKE_CURRENT_BINARY_DIR}/enterprise-package-check
+        -DENTERPRISE_BUILD_CONFIG=$<CONFIG>
+        -DENTERPRISE_DEFAULT_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DENTERPRISE_GENERATOR=${CMAKE_GENERATOR}
+        -DENTERPRISE_CMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+        -DENTERPRISE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/package/check_installed_consumer.cmake
+      DEPENDS anosecurekit_enterprise anosecurekit_enterprise_info
+      USES_TERMINAL)
+    add_test(NAME enterprise.installed-consumer
+      COMMAND ${CMAKE_COMMAND}
+        -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DENTERPRISE_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+        -DENTERPRISE_PACKAGE_CHECK_ROOT=${CMAKE_CURRENT_BINARY_DIR}/enterprise-installed-consumer-test
+        -DENTERPRISE_BUILD_CONFIG=$<CONFIG>
+        -DENTERPRISE_DEFAULT_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+        -DENTERPRISE_GENERATOR=${CMAKE_GENERATOR}
+        -DENTERPRISE_CMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}
+        -DENTERPRISE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/package/check_installed_consumer.cmake)
+    set_tests_properties(enterprise.installed-consumer PROPERTIES LABELS "package;consumer")
+  else()
+    add_custom_target(enterprise-package-check
+      COMMAND ${CMAKE_COMMAND} -E echo
+        "enterprise-package-check requires the bundled Community OpenSSL delivery profile"
+      COMMAND ${CMAKE_COMMAND} -E false
+      USES_TERMINAL)
+  endif()
+endif()

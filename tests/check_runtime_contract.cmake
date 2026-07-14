@@ -114,6 +114,27 @@ require_output(ready "Runtime status: ready")
 require_output(ready "Module state: operational")
 require_output(ready "Self-test status: passed")
 
+set(_ready_install "${ENTERPRISE_BINARY_ROOT}/ready-install")
+execute_process(
+  COMMAND "${CMAKE_COMMAND}" --install "${ENTERPRISE_BINARY_ROOT}/ready-build/enterprise"
+    --config Release --prefix "${_ready_install}"
+  RESULT_VARIABLE _ready_install_result
+  OUTPUT_VARIABLE _ready_install_out
+  ERROR_VARIABLE _ready_install_err)
+if(NOT _ready_install_result EQUAL 0)
+  string(CONCAT _ready_install_log "${_ready_install_out}" "${_ready_install_err}")
+  message(FATAL_ERROR "ready: incomplete AnoCrypto-C profile install command failed unexpectedly
+${_ready_install_log}")
+endif()
+file(GLOB_RECURSE _ready_installed_files LIST_DIRECTORIES FALSE "${_ready_install}/*")
+if(_ready_installed_files)
+  list(JOIN _ready_installed_files "
+" _ready_installed_files_text)
+  message(FATAL_ERROR
+    "ready: incomplete AnoCrypto-C profile must not produce installable customer files
+${_ready_installed_files_text}")
+endif()
+
 find_program(_enterprise_ldd_executable NAMES ldd)
 if(_enterprise_ldd_executable)
   set(_ready_build "${ENTERPRISE_BINARY_ROOT}/ready-build")

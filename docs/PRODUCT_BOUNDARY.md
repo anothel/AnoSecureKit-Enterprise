@@ -24,3 +24,11 @@ Enterprise owns the provider lifecycle/diagnostic contract and the future
 AnoCrypto-C adapter. Community remains unaware of AnoCrypto-C. The external
 module is consumed through its package target and is not copied into either
 AnoSecureKit repository.
+
+
+## Installation boundary
+
+Only the Enterprise OpenSSL profile currently has install/export rules and an
+installed-consumer gate. The incomplete AnoCrypto-C build-tree profile installs
+no customer-facing files. This prevents mock or metadata-only adapters from
+being mistaken for a deliverable Enterprise product.

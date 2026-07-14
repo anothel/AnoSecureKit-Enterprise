@@ -1,5 +1,9 @@
 # Packaging
 
+The OpenSSL profile now has a verified install/export/CMake-package path. The
+AnoCrypto-C profile remains non-installable until its real adapters and full
+capability gates are complete. See `docs/INSTALLATION.md`.
+
 This directory is reserved for private Enterprise packaging work:
 
 - customer binary archives;
@@ -32,3 +36,18 @@ temporary files. All other files under the delivery directory are included.
 Record the source Git commit or tag and relevant build metadata in the delivery
 documentation before generating the manifest. A checksum detects package changes
 but does not authenticate the package or its publisher.
+
+
+## Current package gate
+
+With `BUILD_TESTING=ON` and the bundled OpenSSL profile selected, run:
+
+```sh
+cmake --build build --target enterprise-package-check
+```
+
+The gate verifies the staged Community and Enterprise installs, required
+licenses/notices, both CMake package configs, the exported
+`anosecurekit::enterprise` target, and an independent installed consumer. It
+also confirms that the private provider runtime contract header is not exposed
+as installed customer API.

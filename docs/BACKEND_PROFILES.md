@@ -12,6 +12,8 @@ and an explicit cryptographic backend profile.
 This working profile uses Community's official OpenSSL provider and adds the
 Enterprise layer. Its built-in runtime implementation reports the Community
 v0.4.0 provider identity, operational state, and full product capability mask.
+It is currently the only installable/exported Enterprise delivery profile and
+is verified with an independent `find_package()` consumer.
 
 ## AnoCrypto-C profile
 
@@ -32,6 +34,7 @@ The profile fails configuration or runtime readiness when any requirement is
 missing. It never falls back to OpenSSL. The current repository contains the
 contracts and mock verification, but not the real AnoCrypto-C lifecycle or
 cryptographic adapter implementation, so this profile is not production-ready.
+It intentionally produces no install/export or customer-delivery package.
 
 ## Production capability gate
 
