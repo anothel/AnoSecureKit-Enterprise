@@ -79,3 +79,15 @@ cmake --build build --target enterprise-delivery-check
 The output directory contains CPack ZIP/TGZ install archives, a Community
 source-offer ZIP, delivery metadata, an SPDX 2.3 SBOM, and `SHA256SUMS.txt`. See
 `docs/DELIVERY_VERIFICATION.md` for the verification contract.
+
+
+## Release preflight
+
+For the bundled OpenSSL profile, run the complete local release gate with:
+
+```sh
+cmake --build build --config Release --target enterprise-release-preflight --parallel 4
+```
+
+CTest parallelism is controlled by the positive integer cache variable
+`ANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL`.

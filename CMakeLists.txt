@@ -11,6 +11,29 @@ include(CTest)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
+set(ANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL "4" CACHE STRING
+  "Parallel CTest jobs used by Enterprise check and release-preflight targets")
+if(NOT ANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL MATCHES "^[1-9][0-9]*$")
+  message(FATAL_ERROR
+    "ANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL must be a positive integer")
+endif()
+option(ANOSECUREKIT_ENTERPRISE_WARNINGS_AS_ERRORS
+  "Treat warnings in Enterprise-owned targets as errors" OFF)
+
+function(_anosecurekit_enterprise_apply_warnings target_name)
+  if(MSVC)
+    target_compile_options(${target_name} PRIVATE /W4)
+    if(ANOSECUREKIT_ENTERPRISE_WARNINGS_AS_ERRORS)
+      target_compile_options(${target_name} PRIVATE /WX)
+    endif()
+  else()
+    target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wpedantic)
+    if(ANOSECUREKIT_ENTERPRISE_WARNINGS_AS_ERRORS)
+      target_compile_options(${target_name} PRIVATE -Werror)
+    endif()
+  endif()
+endfunction()
+
 set(ANOSECUREKIT_ENTERPRISE_COMMUNITY_VERSION "0.4.0")
 
 option(ANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY "Use bundled Community source" ON)
@@ -199,6 +222,7 @@ target_include_directories(anosecurekit_enterprise
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_link_libraries(anosecurekit_enterprise PUBLIC anosecurekit::anosecurekit)
+_anosecurekit_enterprise_apply_warnings(anosecurekit_enterprise)
 
 if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
   target_sources(anosecurekit_enterprise PRIVATE src/provider_runtime_openssl.cpp)
@@ -218,6 +242,7 @@ endif()
 add_executable(anosecurekit_enterprise_info examples/info/main.cpp)
 target_link_libraries(anosecurekit_enterprise_info PRIVATE anosecurekit::enterprise)
 target_compile_features(anosecurekit_enterprise_info PRIVATE cxx_std_20)
+_anosecurekit_enterprise_apply_warnings(anosecurekit_enterprise_info)
 
 find_package(Git QUIET)
 set(_anosecurekit_enterprise_source_revision "not-recorded")
@@ -256,10 +281,24 @@ if(BUILD_TESTING)
       -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_runtime_contract.cmake
     USES_TERMINAL)
 
+  add_custom_target(enterprise-ci-policy-check
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_ci_policy.cmake
+    USES_TERMINAL)
+
+  add_test(NAME enterprise.ci-policy
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_ci_policy.cmake)
+  set_tests_properties(enterprise.ci-policy PROPERTIES LABELS "policy;ci")
+
   add_executable(anosecurekit_enterprise_profile_test tests/profile_test.cpp)
   target_link_libraries(anosecurekit_enterprise_profile_test PRIVATE anosecurekit::enterprise)
   target_compile_features(anosecurekit_enterprise_profile_test PRIVATE cxx_std_20)
+  _anosecurekit_enterprise_apply_warnings(anosecurekit_enterprise_profile_test)
   add_test(NAME enterprise.profile COMMAND anosecurekit_enterprise_profile_test)
+  set_tests_properties(enterprise.profile PROPERTIES LABELS "profile;runtime")
 endif()
 
 if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
@@ -280,6 +319,7 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     THIRD_PARTY_NOTICES.md
     README.md
     docs/BACKEND_PROFILES.md
+    docs/CI_AND_RELEASE_GATE.md
     docs/INSTALLATION.md
     docs/PRODUCT_BOUNDARY.md
     docs/PROVIDER_CAPABILITY_CONTRACT.md
@@ -396,6 +436,48 @@ if(BUILD_TESTING)
     add_custom_target(enterprise-delivery-check
       COMMAND ${CMAKE_COMMAND} -E echo
         "enterprise-delivery-check requires the bundled Community OpenSSL delivery profile"
+      COMMAND ${CMAKE_COMMAND} -E false
+      USES_TERMINAL)
+  endif()
+endif()
+if(BUILD_TESTING)
+  add_custom_target(enterprise-check
+    COMMAND ${CMAKE_CTEST_COMMAND}
+      --test-dir ${CMAKE_CURRENT_BINARY_DIR}
+      --build-config $<CONFIG>
+      --output-on-failure
+      --parallel ${ANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL}
+      --label-exclude package
+    DEPENDS anosecurekit_enterprise_profile_test anosecurekit_enterprise_info
+    USES_TERMINAL)
+
+  add_custom_target(enterprise-sanitizer-check
+    COMMAND ${CMAKE_CTEST_COMMAND}
+      --test-dir ${CMAKE_CURRENT_BINARY_DIR}
+      --build-config $<CONFIG>
+      --output-on-failure
+      --parallel ${ANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL}
+      --label-regex runtime
+    DEPENDS anosecurekit_enterprise_profile_test
+    USES_TERMINAL)
+
+  if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl"
+     AND ANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY)
+    add_custom_target(enterprise-release-preflight
+      COMMAND ${CMAKE_COMMAND} -E echo
+        "AnoSecureKit Enterprise OpenSSL release preflight passed"
+      DEPENDS
+        enterprise-check
+        enterprise-profile-config-check
+        enterprise-runtime-contract-check
+        enterprise-ci-policy-check
+        enterprise-package-check
+        enterprise-delivery-check
+      USES_TERMINAL)
+  else()
+    add_custom_target(enterprise-release-preflight
+      COMMAND ${CMAKE_COMMAND} -E echo
+        "enterprise-release-preflight requires the bundled Community OpenSSL delivery profile"
       COMMAND ${CMAKE_COMMAND} -E false
       USES_TERMINAL)
   endif()

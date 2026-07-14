@@ -44,3 +44,11 @@ are absent.
 This is still not a signed release, support agreement, legal approval, or
 KCMVP/FIPS validation claim. Checksums detect changes but do not authenticate
 the publisher.
+
+
+## Continuous verification
+
+`enterprise-release-preflight` combines profile, runtime, test, installed-consumer,
+delivery, and CI-policy checks. The private CI matrix runs this gate across supported
+build environments. Uploaded workflow artifacts are internal evidence and remain
+unsigned and unapproved for customer delivery.

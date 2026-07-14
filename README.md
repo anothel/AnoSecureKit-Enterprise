@@ -117,3 +117,8 @@ The current repository validates this boundary with mock adapters. It does not
 yet call concrete AnoCrypto-C lifecycle functions because the exact external
 header/API revision is not vendored here and function signatures are not
 inferred. See [docs/PROVIDER_RUNTIME_CONTRACT.md](docs/PROVIDER_RUNTIME_CONTRACT.md).
+
+
+## CI and release gate
+
+See `docs/CI_AND_RELEASE_GATE.md`.

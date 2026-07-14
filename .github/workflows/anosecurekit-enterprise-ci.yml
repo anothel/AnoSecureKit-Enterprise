@@ -1,0 +1,222 @@
+# SPDX-License-Identifier: LicenseRef-AnoSecureKit-Enterprise-Proprietary
+name: AnoSecureKit Enterprise CI
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: enterprise-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: ${{ matrix.os }} ${{ matrix.compiler }} ${{ matrix.build_type }} shared=${{ matrix.shared }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            compiler: gcc
+            cc: gcc
+            cxx: g++
+            build_type: Release
+            shared: 'OFF'
+          - os: ubuntu-latest
+            compiler: clang
+            cc: clang
+            cxx: clang++
+            build_type: Release
+            shared: 'OFF'
+          - os: ubuntu-latest
+            compiler: gcc
+            cc: gcc
+            cxx: g++
+            build_type: Release
+            shared: 'ON'
+          - os: windows-latest
+            compiler: msvc
+            build_type: Release
+            shared: 'ON'
+          - os: macos-latest
+            compiler: appleclang
+            cc: clang
+            cxx: clang++
+            build_type: Release
+            shared: 'OFF'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang libssl-dev ninja-build
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install ninja openssl@3
+
+      - name: Install Windows dependencies
+        if: runner.os == 'Windows'
+        run: vcpkg install openssl:x64-windows
+
+      - name: Configure Linux
+        if: runner.os == 'Linux'
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DBUILD_SHARED_LIBS=${{ matrix.shared }}
+          -DANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND=openssl
+          -DANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY=ON
+          -DANOSECUREKIT_ENTERPRISE_WARNINGS_AS_ERRORS=ON
+          -DANOSECUREKIT_WARNINGS_AS_ERRORS=ON
+          -DANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL=4
+
+      - name: Configure macOS
+        if: runner.os == 'macOS'
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DBUILD_SHARED_LIBS=${{ matrix.shared }}
+          -DANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND=openssl
+          -DANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY=ON
+          -DANOSECUREKIT_ENTERPRISE_WARNINGS_AS_ERRORS=ON
+          -DANOSECUREKIT_WARNINGS_AS_ERRORS=ON
+          -DANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL=4
+          -DOPENSSL_ROOT_DIR="$(brew --prefix openssl@3)"
+
+      - name: Configure Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: >
+          cmake -S . -B build
+          -DBUILD_SHARED_LIBS=${{ matrix.shared }}
+          -DANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND=openssl
+          -DANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY=ON
+          -DANOSECUREKIT_ENTERPRISE_WARNINGS_AS_ERRORS=ON
+          -DANOSECUREKIT_WARNINGS_AS_ERRORS=ON
+          -DANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL=4
+          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
+          -DVCPKG_TARGET_TRIPLET=x64-windows
+          -DANOSECUREKIT_OPENSSL_RUNTIME_DIR="$env:VCPKG_INSTALLATION_ROOT/installed/x64-windows/bin"
+
+      - name: Run Enterprise release preflight (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: cmake --build build --config ${{ matrix.build_type }} --target enterprise-release-preflight --parallel 4
+
+      - name: Run Enterprise release preflight (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:PATH = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin;$env:PATH"
+          cmake --build build --config ${{ matrix.build_type }} --target enterprise-release-preflight --parallel 4
+
+      - name: Upload verified internal delivery artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: anosecurekit-enterprise-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}-shared-${{ matrix.shared }}
+          path: build/enterprise-delivery-check/delivery/*
+          if-no-files-found: error
+          retention-days: 14
+
+  sanitizers:
+    name: ubuntu-latest clang Debug sanitizers
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y clang libssl-dev ninja-build
+
+      - name: Configure
+        env:
+          CC: clang
+          CXX: clang++
+        run: >
+          cmake -S . -B build-sanitizers -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND=openssl
+          -DANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY=ON
+          -DANOSECUREKIT_ENTERPRISE_WARNINGS_AS_ERRORS=ON
+          -DANOSECUREKIT_WARNINGS_AS_ERRORS=ON
+          -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+          -DCMAKE_SHARED_LINKER_FLAGS="-fsanitize=address,undefined"
+
+      - name: Build and test
+        env:
+          ASAN_OPTIONS: detect_leaks=1
+          UBSAN_OPTIONS: print_stacktrace=1
+        run: >
+          cmake --build build-sanitizers
+          --target enterprise-sanitizer-check enterprise-profile-config-check enterprise-runtime-contract-check
+          --parallel 4
+
+  non-bundled-consumer:
+    name: non-bundled-consumer
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev ninja-build
+
+      - name: Build and install Community package
+        env:
+          CC: gcc
+          CXX: g++
+        run: |
+          cmake -S third_party/anosecurekit-community -B build-community -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DANOSECUREKIT_BUILD_TESTS=OFF \
+            -DANOSECUREKIT_BUILD_CLI=OFF \
+            -DANOSECUREKIT_INSTALL_CLI=OFF \
+            -DANOSECUREKIT_WARNINGS_AS_ERRORS=ON
+          cmake --build build-community --parallel 4
+          cmake --install build-community --prefix "$RUNNER_TEMP/anosecurekit-prefix"
+
+      - name: Build, test, and install Enterprise against installed Community
+        env:
+          CC: gcc
+          CXX: g++
+        run: |
+          cmake -S . -B build-enterprise -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY=OFF \
+            -DANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND=openssl \
+            -DANOSECUREKIT_ENTERPRISE_WARNINGS_AS_ERRORS=ON \
+            -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/anosecurekit-prefix"
+          cmake --build build-enterprise --target enterprise-check --parallel 4
+          cmake --install build-enterprise --prefix "$RUNNER_TEMP/anosecurekit-prefix"
+
+      - name: Build installed consumer
+        env:
+          CC: gcc
+          CXX: g++
+        run: |
+          cmake -S tests/package/consumer -B build-consumer -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/anosecurekit-prefix"
+          cmake --build build-consumer --parallel 4
+          ./build-consumer/anosecurekit_enterprise_installed_consumer
