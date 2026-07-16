@@ -37,6 +37,27 @@ The local AnoCrypto-C repository root file `AnoCrypto-C.zip` is untracked and
 is not an approved package. Only a verified installed package or separately
 approved archive may be used.
 
+## Opt-in native lifecycle harness
+
+Enterprise has a test-only native lifecycle adapter. It is enabled only with:
+
+```cmake
+-DANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS=ON
+-DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID=0.1.0-p1-33-release-rehearsal
+-DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT=cf0f3c425dd265c7509fb64a6123db97f71055dd
+-DAnoCryptoC_DIR=<installed-prefix>/lib/cmake/AnoCryptoC
+```
+
+The option defaults to `OFF`. Enabling it requires both expected identity
+values and performs exact config-package discovery. It does not use
+`FetchContent`, a source checkout, or `AnoCrypto-C.zip`.
+
+The installed package must expose a non-empty commit matching the configured
+pin. A package reporting `unknown` fails unless the explicitly development-only
+`ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS=ON`
+override is set. That override permits lifecycle development only and is not
+delivery provenance or approval.
+
 ## Required public headers
 
 Lifecycle and identity:
@@ -95,6 +116,11 @@ operational and repeated shutdown succeed. Normal shutdown may be followed by
 reinitialization. Enterprise owns lifecycle ordering and prohibits concurrent
 initialize, shutdown, and explicit self-test operations.
 
+The native harness verifies the clean starting state, startup self-test,
+operational gate, repeated initialization, shutdown, reinitialization, repeated
+shutdown, runtime identity, build identity ABI, fingerprint pointers, and
+commit result against the installed package.
+
 Native module states map without loss:
 
 | AnoCrypto-C | Enterprise |
@@ -129,6 +155,10 @@ runtime result:
 `ANO_CRYPTO_ERR_SELF_TEST_FAILED` remains a lifecycle `self_test_failed` result
 and places the module in non-operational error state.
 
+The test adapter implements lifecycle conversion separately from the future
+cryptographic service-operation conversion. Unknown native states map to
+Enterprise `error`; unknown lifecycle statuses map to `internal_error`.
+
 ## Capability status
 
 Ready for native adapter integration:
@@ -154,10 +184,21 @@ exist for Linux, Windows, and Apple platform entropy and synchronization.
 Static package consumption remains unverified. Windows and macOS hosted
 verification is deferred, as are hosted artifact and provenance checks.
 
+Linux native verification inspects both the lifecycle executable and imported
+AnoCrypto-C library with `ldd`, rejecting `libcrypto` or `libssl`. Windows and
+macOS dependency inspection remains deferred until a suitable local or hosted
+package is available.
+
 AnoCrypto-C remains MPL-2.0. Enterprise does not relicense it. Applicable MPL
 source and notice obligations must be preserved; private-repository or
 commercial status does not remove them. Legal review is required before
 customer delivery. This document is an engineering record, not legal advice.
 
-No native adapter is connected by this contract. The AnoCrypto-C production
-profile remains non-installable and blocked from customer delivery.
+No public forced-KAT-failure hook is approved, so native self-test-failure
+injection remains deferred. Existing mock self-test-failure tests remain the
+only failure-path evidence.
+
+The native adapter is test-owned and is not linked into the Enterprise
+production library, installed, exported, packaged, or listed as a delivered
+SBOM component. It reports no cryptographic capability bits. The AnoCrypto-C
+production profile remains non-installable and blocked from customer delivery.

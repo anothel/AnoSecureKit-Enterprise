@@ -29,6 +29,40 @@ The aggregate target requires:
 `ANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL` controls CTest concurrency and must
 be a positive integer.
 
+## Opt-in AnoCrypto-C lifecycle gate
+
+The installed-package lifecycle harness is disabled by default. Enable it only
+with an external exact-version package and explicit development test pins:
+
+```sh
+cmake -S . -B build-native -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS=ON \
+  -DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID=0.1.0-p1-33-release-rehearsal \
+  -DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT=cf0f3c425dd265c7509fb64a6123db97f71055dd \
+  -DAnoCryptoC_DIR=<installed-prefix>/lib/cmake/AnoCryptoC
+cmake --build build-native \
+  --target enterprise-native-anocrypto-c-lifecycle-check --parallel 4
+```
+
+A package reporting commit `unknown` fails by default. For development-only
+lifecycle testing, add:
+
+```sh
+-DANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS=ON
+```
+
+The override does not approve package provenance. With the opt-in enabled,
+`enterprise-check` and therefore the OpenSSL `enterprise-release-preflight`
+also run the native lifecycle and dependency-purity CTest entries. With the
+option `OFF`, configuration and normal gates do not discover or require
+AnoCrypto-C.
+
+Linux uses `ldd` to reject `libcrypto` or `libssl` dependencies in both the test
+executable and imported AnoCrypto-C library. Windows/macOS inspection remains
+deferred. Native self-test-failure injection remains deferred pending an
+approved upstream public hook.
+
 ## GitHub Actions matrix
 
 The private workflow covers:
@@ -50,7 +84,9 @@ they are not automatically published as GitHub Releases or approved customer pac
 The workflow has read-only repository permissions and contains no release-upload step.
 Publisher authentication, signing, provenance attestations, support approval, and legal
 approval remain separate future gates. The incomplete AnoCrypto-C profile cannot install
-or produce delivery artifacts.
+or produce delivery artifacts. Native lifecycle success does not change its
+required capability mask, approved-digest block, install/export state, or
+customer-delivery status.
 
 When hosted execution is unavailable, [DEFERRED_CI_STATUS.md](DEFERRED_CI_STATUS.md)
 records local evidence, deferred remote checks, and the customer-release block.

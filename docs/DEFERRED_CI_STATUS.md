@@ -2,7 +2,7 @@
 
 # Deferred CI Status
 
-Status date: 2026-07-14
+Status date: 2026-07-16
 
 GitHub-hosted Actions execution is temporarily unavailable. Local verification
 supports continued internal development but does not replace hosted
@@ -86,10 +86,50 @@ matched its generated v0.4.0 source-offer archive to that subtree.
 ## AnoCrypto-C contract status
 
 The verified AnoCrypto-C API/package contract is pinned in
-`ANOCRYPTO_C_PINNED_CONTRACT.md`; the native adapter is not connected. Static
-package consumption and Windows/macOS hosted verification remain deferred. No
-approved package digest is recorded, so the AnoCrypto-C profile remains blocked
-and non-installable regardless of local OpenSSL-profile results.
+`ANOCRYPTO_C_PINNED_CONTRACT.md`. The native lifecycle adapter is opt-in and
+test-only; the production adapter is not connected.
+
+Local WSL2 verification used this installed shared package:
+
+```text
+Install prefix:
+/mnt/d/project/AnoCrypto-C/out/p1-33-final-clean/build/install-package-smoke/install-prefix
+
+Package config:
+<prefix>/lib/cmake/AnoCryptoC/AnoCryptoCConfig.cmake
+
+Imported target:
+AnoCryptoC::AnoCryptoC
+
+Resolved library:
+<prefix>/lib/libanocrypto_c.so.0.1.0
+```
+
+With warnings treated as errors, `enterprise-release-preflight` passed for GCC
+15.2.0 Release static, GCC 15.2.0 Release shared, and Clang 21.1.8 Release
+static Enterprise builds. Full CTest passed all six tests, including the
+installed OpenSSL consumer, delivery package, native lifecycle, and dependency
+purity entries. A separate default-`OFF` GCC build passed with
+`AnoCryptoC` package discovery disabled.
+
+The runtime identity was `0.1.0-p1-33-release-rehearsal`; build identity ABI was
+`1`; fingerprint was `AnoCrypto-C-p1-33-release-rehearsal`. This local package
+reported commit `unknown`, so verification required the explicit
+development-only unknown-commit override while still configuring expected
+commit `cf0f3c425dd265c7509fb64a6123db97f71055dd`. This is lifecycle evidence, not
+approved provenance.
+
+The lifecycle sequence passed: clean pre-init state, rejected pre-init service
+gate, initialization and startup self-test, operational state/gate, repeated
+initialization, shutdown, rejected post-shutdown gate, reinitialization,
+repeated shutdown, and final clean shutdown. Linux `ldd` inspection found no
+`libcrypto` or `libssl` dependency in either the native test executable or the
+resolved AnoCrypto-C library.
+
+Static package consumption, native forced-self-test-failure injection, and
+Windows/macOS package verification remain deferred. No approved package digest
+is recorded, so the AnoCrypto-C production profile remains blocked,
+non-installable, and excluded from customer delivery.
 
 ## Remote checks not run
 

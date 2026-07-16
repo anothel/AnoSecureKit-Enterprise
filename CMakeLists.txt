@@ -19,6 +19,38 @@ if(NOT ANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL MATCHES "^[1-9][0-9]*$")
 endif()
 option(ANOSECUREKIT_ENTERPRISE_WARNINGS_AS_ERRORS
   "Treat warnings in Enterprise-owned targets as errors" OFF)
+option(
+  ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS
+  "Build tests against an externally installed AnoCrypto-C package"
+  OFF
+)
+set(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID "" CACHE STRING
+  "Expected AnoCrypto-C runtime identity for native lifecycle tests")
+set(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT "" CACHE STRING
+  "Expected AnoCrypto-C commit for native lifecycle tests")
+option(ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS
+  "Development-only: allow native lifecycle tests against a package reporting an unknown commit"
+  OFF)
+
+if(ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
+  if(NOT BUILD_TESTING)
+    message(FATAL_ERROR
+      "ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS requires BUILD_TESTING=ON")
+  endif()
+  if(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID STREQUAL "")
+    message(FATAL_ERROR
+      "ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID is required when native AnoCrypto-C tests are enabled")
+  endif()
+  if(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT STREQUAL "")
+    message(FATAL_ERROR
+      "ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT is required when native AnoCrypto-C tests are enabled")
+  endif()
+  find_package(AnoCryptoC 0.1.0 EXACT CONFIG REQUIRED)
+  if(NOT TARGET AnoCryptoC::AnoCryptoC)
+    message(FATAL_ERROR
+      "Native AnoCrypto-C tests require imported target AnoCryptoC::AnoCryptoC")
+  endif()
+endif()
 
 function(_anosecurekit_enterprise_apply_warnings target_name)
   if(MSVC)
@@ -67,7 +99,9 @@ if(NOT ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl"
 endif()
 
 if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
-  find_package(AnoCryptoC 0.1.0 EXACT CONFIG REQUIRED)
+  if(NOT TARGET AnoCryptoC::AnoCryptoC)
+    find_package(AnoCryptoC 0.1.0 EXACT CONFIG REQUIRED)
+  endif()
   if(NOT TARGET AnoCryptoC::AnoCryptoC)
     message(FATAL_ERROR
       "AnoCrypto-C profile requires imported target AnoCryptoC::AnoCryptoC")
@@ -299,6 +333,53 @@ if(BUILD_TESTING)
   _anosecurekit_enterprise_apply_warnings(anosecurekit_enterprise_profile_test)
   add_test(NAME enterprise.profile COMMAND anosecurekit_enterprise_profile_test)
   set_tests_properties(enterprise.profile PROPERTIES LABELS "profile;runtime")
+
+  if(ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
+    add_executable(anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
+      tests/native_anocrypto_c/native_lifecycle_test.cpp
+      tests/native_anocrypto_c/native_runtime_adapter.cpp
+      src/provider_runtime.cpp)
+    target_include_directories(anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/native_anocrypto_c")
+    target_compile_features(anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
+      PRIVATE cxx_std_20)
+    target_compile_definitions(anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
+      PRIVATE
+        ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID_VALUE="${ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID}"
+        ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT_VALUE="${ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT}")
+    if(ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS)
+      target_compile_definitions(anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
+        PRIVATE ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_VALUE=1)
+    endif()
+    target_link_libraries(anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
+      PRIVATE AnoCryptoC::AnoCryptoC)
+    _anosecurekit_enterprise_apply_warnings(
+      anosecurekit_enterprise_native_anocrypto_c_lifecycle_test)
+
+    add_test(NAME enterprise.native-anocrypto-c-lifecycle
+      COMMAND anosecurekit_enterprise_native_anocrypto_c_lifecycle_test)
+    set_tests_properties(enterprise.native-anocrypto-c-lifecycle PROPERTIES
+      LABELS "native-anocrypto-c;lifecycle")
+
+    add_test(NAME enterprise.native-anocrypto-c-dependencies
+      COMMAND ${CMAKE_COMMAND}
+        -DNATIVE_TEST_EXECUTABLE=$<TARGET_FILE:anosecurekit_enterprise_native_anocrypto_c_lifecycle_test>
+        -DANOCRYPTO_C_LIBRARY=$<TARGET_FILE:AnoCryptoC::AnoCryptoC>
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/native_anocrypto_c/check_dependencies.cmake)
+    set_tests_properties(enterprise.native-anocrypto-c-dependencies PROPERTIES
+      LABELS "native-anocrypto-c;dependency")
+
+    add_custom_target(enterprise-native-anocrypto-c-lifecycle-check
+      COMMAND $<TARGET_FILE:anosecurekit_enterprise_native_anocrypto_c_lifecycle_test>
+      COMMAND ${CMAKE_COMMAND}
+        -DNATIVE_TEST_EXECUTABLE=$<TARGET_FILE:anosecurekit_enterprise_native_anocrypto_c_lifecycle_test>
+        -DANOCRYPTO_C_LIBRARY=$<TARGET_FILE:AnoCryptoC::AnoCryptoC>
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/native_anocrypto_c/check_dependencies.cmake
+      DEPENDS anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
+      USES_TERMINAL)
+  endif()
 endif()
 
 if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
@@ -442,6 +523,13 @@ if(BUILD_TESTING)
   endif()
 endif()
 if(BUILD_TESTING)
+  set(_anosecurekit_enterprise_check_dependencies
+    anosecurekit_enterprise_profile_test
+    anosecurekit_enterprise_info)
+  if(ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
+    list(APPEND _anosecurekit_enterprise_check_dependencies
+      anosecurekit_enterprise_native_anocrypto_c_lifecycle_test)
+  endif()
   add_custom_target(enterprise-check
     COMMAND ${CMAKE_CTEST_COMMAND}
       --test-dir ${CMAKE_CURRENT_BINARY_DIR}
@@ -449,7 +537,7 @@ if(BUILD_TESTING)
       --output-on-failure
       --parallel ${ANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL}
       --label-exclude package
-    DEPENDS anosecurekit_enterprise_profile_test anosecurekit_enterprise_info
+    DEPENDS ${_anosecurekit_enterprise_check_dependencies}
     USES_TERMINAL)
 
   add_custom_target(enterprise-sanitizer-check

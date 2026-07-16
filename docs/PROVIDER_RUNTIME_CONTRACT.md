@@ -90,9 +90,18 @@ The test suite builds mock AnoCrypto-C runtime adapters for:
 - self-test failure;
 - invalid runtime contract version.
 
-The exact AnoCrypto-C lifecycle symbols and headers are recorded in
-[ANOCRYPTO_C_PINNED_CONTRACT.md](ANOCRYPTO_C_PINNED_CONTRACT.md). The production
-adapter still does not call them; current tests remain mock contract tests.
+An additional opt-in, test-owned adapter calls the installed
+`AnoCryptoC::AnoCryptoC` package through the public lifecycle and identity
+headers recorded in
+[ANOCRYPTO_C_PINNED_CONTRACT.md](ANOCRYPTO_C_PINNED_CONTRACT.md). It verifies
+native initialization, self-test status, operational gating, identity,
+idempotent lifecycle behavior, and shutdown/reinitialization.
+
+The native adapter compiles into a standalone test executable with capability
+mask `0`. Its lifecycle-ready predicate is not `backend_profile_ready()` and
+does not claim the complete product capability surface. It is not part of the
+production library, installation, exports, customer archives, or delivered
+SBOM.
 
 ## Operation status contract
 
@@ -102,8 +111,12 @@ too small, unsupported, not approved, not operational, entropy failure, reseed
 required, authentication failure, integrity failure, resource exhaustion, and
 internal error. Unknown values render as `unknown`.
 
-Native conversion is deferred until the adapter includes the pinned AnoCrypto-C
-headers. Operation failures must not be collapsed into `backend_runtime_status`.
+The test adapter converts native lifecycle results to
+`backend_runtime_status`, preserving self-test failure, integrity/startup
+failure, not-operational/fatal state, internal error, and unknown fail-closed
+behavior. This conversion is lifecycle-only. Future cryptographic service
+failures must use a separate `backend_operation_status` conversion and must not
+be collapsed into `backend_runtime_status`.
 
 ## Required adapter behavior
 
@@ -117,6 +130,9 @@ The eventual AnoCrypto-C adapter must:
 6. report only capabilities confirmed by the active module build;
 7. make shutdown safe and idempotent;
 8. never route failures or missing services to OpenSSL.
+
+AnoCrypto-C currently exposes no approved public forced-KAT-failure hook.
+Native failure injection is deferred; mock self-test-failure coverage remains.
 
 This contract and its tests are engineering controls, not KCMVP or FIPS
 validation evidence.

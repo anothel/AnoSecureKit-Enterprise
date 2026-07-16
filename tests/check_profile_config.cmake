@@ -32,6 +32,16 @@ file(WRITE "${_fake_prefix}/lib/cmake/AnoCryptoC/AnoCryptoCConfig.cmake"
   "if(NOT TARGET AnoCryptoC::AnoCryptoC)\n  add_library(AnoCryptoC::AnoCryptoC INTERFACE IMPORTED)\nendif()\n")
 file(WRITE "${_fake_prefix}/lib/cmake/AnoCryptoC/AnoCryptoCConfigVersion.cmake"
   "set(PACKAGE_VERSION \"0.1.0\")\nset(PACKAGE_VERSION_COMPATIBLE TRUE)\nset(PACKAGE_VERSION_EXACT TRUE)\n")
+expect_configure_failure(native-missing-runtime-id
+  "ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID is required"
+  -DANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS=ON
+  -DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT=test-commit
+  -DCMAKE_PREFIX_PATH=${_fake_prefix})
+expect_configure_failure(native-missing-commit
+  "ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT is required"
+  -DANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS=ON
+  -DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID=test-runtime
+  -DCMAKE_PREFIX_PATH=${_fake_prefix})
 expect_configure_failure(missing-adapter "AnoCrypto-C profile is fail-closed"
   -DANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND=anocrypto-c
   -DCMAKE_PREFIX_PATH=${_fake_prefix})
