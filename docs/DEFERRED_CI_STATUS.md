@@ -2,7 +2,7 @@
 
 # Deferred CI Status
 
-Status date: 2026-07-16
+Status date: 2026-07-17
 
 GitHub-hosted Actions execution is temporarily unavailable. Local verification
 supports continued internal development but does not replace hosted
@@ -86,8 +86,9 @@ matched its generated v0.4.0 source-offer archive to that subtree.
 ## AnoCrypto-C contract status
 
 The verified AnoCrypto-C API/package contract is pinned in
-`ANOCRYPTO_C_PINNED_CONTRACT.md`. The native lifecycle adapter is opt-in and
-test-only; the production adapter is not connected.
+`ANOCRYPTO_C_PINNED_CONTRACT.md`. The proprietary production lifecycle adapter
+is connected; the native installed-package harness remains opt-in. No
+cryptographic service adapter is connected.
 
 Local WSL2 verification used this installed shared package:
 
@@ -107,24 +108,35 @@ Resolved library:
 
 With warnings treated as errors, `enterprise-release-preflight` passed for GCC
 15.2.0 Release static, GCC 15.2.0 Release shared, and Clang 21.1.8 Release
-static Enterprise builds. Full CTest passed all six tests, including the
-installed OpenSSL consumer, delivery package, native lifecycle, and dependency
-purity entries. A separate default-`OFF` GCC build passed with
-`AnoCryptoC` package discovery disabled.
+static Enterprise builds. The harness compiled the production lifecycle
+adapter source. Full CTest passed all six tests, including the installed OpenSSL
+consumer, delivery package, production lifecycle adapter, and dependency-purity
+entries. A separate default-`OFF` GCC build passed without discovering or
+requiring `AnoCryptoC`, and the native lifecycle target was absent.
 
 The runtime identity was `0.1.0-p1-33-release-rehearsal`; build identity ABI was
 `1`; fingerprint was `AnoCrypto-C-p1-33-release-rehearsal`. This local package
 reported commit `unknown`, so verification required the explicit
 development-only unknown-commit override while still configuring expected
 commit `cf0f3c425dd265c7509fb64a6123db97f71055dd`. This is lifecycle evidence, not
-approved provenance.
+approved provenance. A separate build without the override rejected
+initialization as required.
 
 The lifecycle sequence passed: clean pre-init state, rejected pre-init service
 gate, initialization and startup self-test, operational state/gate, repeated
 initialization, shutdown, rejected post-shutdown gate, reinitialization,
 repeated shutdown, and final clean shutdown. Linux `ldd` inspection found no
 `libcrypto` or `libssl` dependency in either the native test executable or the
-resolved AnoCrypto-C library.
+resolved AnoCrypto-C library. The production snapshot matched the native
+runtime identity/fingerprint and reported lifecycle ready, capability mask `0`,
+and complete profile not ready.
+
+A build-tree AnoCrypto-C profile smoke build linked the built-in production
+lifecycle object and the installed module. Initialization reported `ready`,
+module state `operational`, and self-test `passed`, while `Profile ready`
+remained `no` and runtime capabilities remained empty. Its diagnostic
+executable had no `libcrypto`/`libssl` dependency, installation produced no
+files, and no Enterprise delivery target was available.
 
 Static package consumption, native forced-self-test-failure injection, and
 Windows/macOS package verification remain deferred. No approved package digest

@@ -58,7 +58,12 @@ The static CMake capability declaration is only the first gate. Enterprise now a
 - error/status translation;
 - absence of OpenSSL production linkage in the AnoCrypto-C profile.
 
-The runtime adapter is selected at link time and independently reports a capability mask. The production AnoCrypto-C implementation remains pending exact external header/API integration; current tests use mock adapters. See `PROVIDER_RUNTIME_CONTRACT.md`.
+The runtime adapter is selected at link time and independently reports a
+capability mask. The production AnoCrypto-C lifecycle implementation uses the
+pinned external public API and reports mask `0`; cryptographic service adapters
+remain pending. Tests retain mock runtime adapters for failure paths and use the
+installed package for the production lifecycle path. See
+`PROVIDER_RUNTIME_CONTRACT.md`.
 
 HKDF-SHA-256, scrypt, AES-256-GCM, streaming AEAD, and key wrapping are absent
 from the pinned baseline and block full parity. They must not be declared in an

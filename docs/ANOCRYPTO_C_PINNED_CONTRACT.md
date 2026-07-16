@@ -28,18 +28,20 @@ find_package(AnoCryptoC 0.1.0 EXACT CONFIG REQUIRED)
 
 The CMake version check is not sufficient. Package intake must compare the
 installed package or approved archive with the recorded SHA-256 and source
-commit. The future native runtime adapter must reject a runtime version other
-than `0.1.0-p1-33-release-rehearsal`, validate build identity ABI `1`, and
-retain module version/build identity for diagnostics. Until an approved digest
-replaces `TBD-NOT-APPROVED`, no package satisfies this contract.
+commit. The production lifecycle adapter rejects a runtime version other than
+`0.1.0-p1-33-release-rehearsal`, validates build identity ABI `1`, and retains
+module version/build fingerprint for diagnostics. Until an approved digest
+replaces `TBD-NOT-APPROVED`, no package satisfies the delivery contract.
 
 The local AnoCrypto-C repository root file `AnoCrypto-C.zip` is untracked and
 is not an approved package. Only a verified installed package or separately
 approved archive may be used.
 
-## Opt-in native lifecycle harness
+## Production lifecycle adapter and opt-in harness
 
-Enterprise has a test-only native lifecycle adapter. It is enabled only with:
+Enterprise owns the production lifecycle adapter under
+`src/providers/anocrypto_c`. The opt-in harness compiles that same adapter
+source against the installed package. Enable the harness only with:
 
 ```cmake
 -DANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS=ON
@@ -55,8 +57,8 @@ values and performs exact config-package discovery. It does not use
 The installed package must expose a non-empty commit matching the configured
 pin. A package reporting `unknown` fails unless the explicitly development-only
 `ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS=ON`
-override is set. That override permits lifecycle development only and is not
-delivery provenance or approval.
+override is set. That override permits lifecycle development only, is not
+delivery provenance or approval, and cannot enable AnoCrypto-C packaging.
 
 ## Required public headers
 
@@ -106,6 +108,7 @@ optional version/build query
 -> self-test status == ANO_CRYPTO_OK
 -> module state == ANO_CRYPTO_MODULE_STATE_OPERATIONAL
 -> ano_crypto_module_require_operational() == ANO_CRYPTO_OK
+-> pinned runtime/build identity verification
 -> cryptographic services
 -> ano_crypto_module_shutdown()
 ```
@@ -116,10 +119,11 @@ operational and repeated shutdown succeed. Normal shutdown may be followed by
 reinitialization. Enterprise owns lifecycle ordering and prohibits concurrent
 initialize, shutdown, and explicit self-test operations.
 
-The native harness verifies the clean starting state, startup self-test,
-operational gate, repeated initialization, shutdown, reinitialization, repeated
-shutdown, runtime identity, build identity ABI, fingerprint pointers, and
-commit result against the installed package.
+The native harness verifies the production adapter's clean starting snapshot,
+startup self-test, operational gate, repeated initialization, shutdown,
+reinitialization, repeated shutdown, runtime identity, build identity ABI,
+fingerprint, commit policy, identity-mismatch rejection, and zero capability
+mask against the installed package.
 
 Native module states map without loss:
 
@@ -155,9 +159,9 @@ runtime result:
 `ANO_CRYPTO_ERR_SELF_TEST_FAILED` remains a lifecycle `self_test_failed` result
 and places the module in non-operational error state.
 
-The test adapter implements lifecycle conversion separately from the future
-cryptographic service-operation conversion. Unknown native states map to
-Enterprise `error`; unknown lifecycle statuses map to `internal_error`.
+The production adapter implements lifecycle conversion separately from the
+future cryptographic service-operation conversion. Unknown native states map
+to Enterprise `error`; unknown lifecycle statuses map to `internal_error`.
 
 ## Capability status
 
@@ -198,7 +202,9 @@ No public forced-KAT-failure hook is approved, so native self-test-failure
 injection remains deferred. Existing mock self-test-failure tests remain the
 only failure-path evidence.
 
-The native adapter is test-owned and is not linked into the Enterprise
-production library, installed, exported, packaged, or listed as a delivered
-SBOM component. It reports no cryptographic capability bits. The AnoCrypto-C
-production profile remains non-installable and blocked from customer delivery.
+The proprietary lifecycle adapter is linked into the build-tree AnoCrypto-C
+profile and reports no cryptographic capability bits. Its source/header are not
+installed or exported, and the profile remains excluded from CPack, customer
+archives, and the delivery SBOM. Lifecycle readiness therefore does not make
+the complete profile ready. The AnoCrypto-C production profile remains blocked
+from customer delivery.

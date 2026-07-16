@@ -25,9 +25,9 @@ option(
   OFF
 )
 set(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID "" CACHE STRING
-  "Expected AnoCrypto-C runtime identity for native lifecycle tests")
+  "Expected AnoCrypto-C runtime identity for native lifecycle integration")
 set(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT "" CACHE STRING
-  "Expected AnoCrypto-C commit for native lifecycle tests")
+  "Expected AnoCrypto-C commit for native lifecycle integration")
 option(ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS
   "Development-only: allow native lifecycle tests against a package reporting an unknown commit"
   OFF)
@@ -81,7 +81,7 @@ endif()
 set(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET "" CACHE STRING
   "Existing non-imported OBJECT_LIBRARY implementing the AnoSecureKit crypto provider contract for AnoCrypto-C")
 set(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET "" CACHE STRING
-  "Existing non-imported OBJECT_LIBRARY implementing the Enterprise AnoCrypto-C lifecycle/diagnostic contract")
+  "Optional test runtime OBJECT_LIBRARY override; empty uses the Enterprise AnoCrypto-C lifecycle adapter")
 set(_anosecurekit_enterprise_required_capabilities
   sha256
   hmac-sha256
@@ -170,25 +170,59 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
   endif()
 
   if(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET STREQUAL "")
-    message(FATAL_ERROR
-      "AnoCrypto-C profile requires a lifecycle/diagnostic adapter target. "
-      "Set ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET to an existing non-imported "
-      "OBJECT_LIBRARY implementing the Enterprise provider runtime contract.")
+    if(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID STREQUAL "")
+      message(FATAL_ERROR
+        "ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID is required for the production AnoCrypto-C lifecycle adapter")
+    endif()
+    if(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT STREQUAL "")
+      message(FATAL_ERROR
+        "ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT is required for the production AnoCrypto-C lifecycle adapter")
+    endif()
+
+    add_library(anosecurekit_enterprise_anocrypto_c_runtime OBJECT
+      src/providers/anocrypto_c/runtime_adapter.cpp)
+    set_property(TARGET anosecurekit_enterprise_anocrypto_c_runtime PROPERTY
+      ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID "anocrypto-c")
+    set_property(TARGET anosecurekit_enterprise_anocrypto_c_runtime PROPERTY
+      ANOSECUREKIT_ENTERPRISE_RUNTIME_CONTRACT_VERSION "1")
+    target_include_directories(anosecurekit_enterprise_anocrypto_c_runtime PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/include"
+      "${CMAKE_CURRENT_SOURCE_DIR}/src/providers/anocrypto_c")
+    target_compile_features(anosecurekit_enterprise_anocrypto_c_runtime PRIVATE cxx_std_20)
+    target_compile_definitions(anosecurekit_enterprise_anocrypto_c_runtime PRIVATE
+      ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID_VALUE="${ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID}"
+      ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT_VALUE="${ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT}")
+    if(ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS)
+      target_compile_definitions(anosecurekit_enterprise_anocrypto_c_runtime PRIVATE
+        ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_VALUE=1)
+    endif()
+    target_link_libraries(anosecurekit_enterprise_anocrypto_c_runtime PRIVATE
+      AnoCryptoC::AnoCryptoC)
+    if(BUILD_SHARED_LIBS)
+      set_property(TARGET anosecurekit_enterprise_anocrypto_c_runtime PROPERTY
+        POSITION_INDEPENDENT_CODE ON)
+    endif()
+    _anosecurekit_enterprise_apply_warnings(anosecurekit_enterprise_anocrypto_c_runtime)
+    set(_anosecurekit_enterprise_anocrypto_c_runtime_target
+      anosecurekit_enterprise_anocrypto_c_runtime)
+  else()
+    set(_anosecurekit_enterprise_anocrypto_c_runtime_target
+      "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}")
   endif()
-  if(NOT TARGET "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}")
+  if(NOT TARGET "${_anosecurekit_enterprise_anocrypto_c_runtime_target}")
     message(FATAL_ERROR
       "ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET does not name an existing target")
   endif()
   get_target_property(_enterprise_runtime_imported
-    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}" IMPORTED)
+    "${_anosecurekit_enterprise_anocrypto_c_runtime_target}" IMPORTED)
   get_target_property(_enterprise_runtime_type
-    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}" TYPE)
+    "${_anosecurekit_enterprise_anocrypto_c_runtime_target}" TYPE)
   if(_enterprise_runtime_imported OR NOT _enterprise_runtime_type STREQUAL "OBJECT_LIBRARY")
     message(FATAL_ERROR
       "AnoCrypto-C runtime target must be a non-imported OBJECT_LIBRARY adapter")
   endif()
   get_target_property(_enterprise_runtime_backend_id
-    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}"
+    "${_anosecurekit_enterprise_anocrypto_c_runtime_target}"
     ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID)
   if(NOT _enterprise_runtime_backend_id STREQUAL "anocrypto-c")
     message(FATAL_ERROR
@@ -196,7 +230,7 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
       "ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID to 'anocrypto-c'")
   endif()
   get_target_property(_enterprise_runtime_contract_version
-    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}"
+    "${_anosecurekit_enterprise_anocrypto_c_runtime_target}"
     ANOSECUREKIT_ENTERPRISE_RUNTIME_CONTRACT_VERSION)
   if(NOT _enterprise_runtime_contract_version STREQUAL "1")
     message(FATAL_ERROR
@@ -204,7 +238,7 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
       "ANOSECUREKIT_ENTERPRISE_RUNTIME_CONTRACT_VERSION=1")
   endif()
   get_target_property(_enterprise_runtime_link_libraries
-    "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}" LINK_LIBRARIES)
+    "${_anosecurekit_enterprise_anocrypto_c_runtime_target}" LINK_LIBRARIES)
   if(NOT _enterprise_runtime_link_libraries
      OR _enterprise_runtime_link_libraries STREQUAL "_enterprise_runtime_link_libraries-NOTFOUND")
     set(_enterprise_runtime_link_libraries "")
@@ -263,11 +297,11 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
   target_compile_definitions(anosecurekit_enterprise PUBLIC
     ANOSECUREKIT_ENTERPRISE_BACKEND_OPENSSL=1)
 else()
-  target_include_directories("${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}"
+  target_include_directories("${_anosecurekit_enterprise_anocrypto_c_runtime_target}"
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
-  target_compile_features("${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}" PRIVATE cxx_std_20)
+  target_compile_features("${_anosecurekit_enterprise_anocrypto_c_runtime_target}" PRIVATE cxx_std_20)
   target_sources(anosecurekit_enterprise PRIVATE
-    $<TARGET_OBJECTS:${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET}>)
+    $<TARGET_OBJECTS:${_anosecurekit_enterprise_anocrypto_c_runtime_target}>)
   target_compile_definitions(anosecurekit_enterprise PUBLIC
     ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C=1)
   target_link_libraries(anosecurekit_enterprise PRIVATE AnoCryptoC::AnoCryptoC)
@@ -337,16 +371,19 @@ if(BUILD_TESTING)
   if(ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
     add_executable(anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
       tests/native_anocrypto_c/native_lifecycle_test.cpp
-      tests/native_anocrypto_c/native_runtime_adapter.cpp
+      src/providers/anocrypto_c/runtime_adapter.cpp
+      src/enterprise.cpp
       src/provider_runtime.cpp)
     target_include_directories(anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
       PRIVATE
         "${CMAKE_CURRENT_SOURCE_DIR}/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/tests/native_anocrypto_c")
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/providers/anocrypto_c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/third_party/anosecurekit-community/include")
     target_compile_features(anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
       PRIVATE cxx_std_20)
     target_compile_definitions(anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
       PRIVATE
+        ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C=1
         ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID_VALUE="${ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID}"
         ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT_VALUE="${ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT}")
     if(ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS)

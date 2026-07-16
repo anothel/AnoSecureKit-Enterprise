@@ -47,7 +47,11 @@ provider loading, and automatic backend fallback are not supported.
 
 ## CMake target contract
 
-The AnoCrypto-C profile requires a non-imported `OBJECT_LIBRARY` named by:
+The AnoCrypto-C profile builds the proprietary adapter as a non-imported
+`OBJECT_LIBRARY` with backend identity `anocrypto-c`, runtime contract version
+`1`, and a direct `AnoCryptoC::AnoCryptoC` link. Production builds use this
+built-in target. `ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET` remains
+only as a test fixture override for mock runtime-contract coverage:
 
 ```text
 ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET
@@ -63,8 +67,9 @@ set_property(TARGET <runtime> PROPERTY
 target_link_libraries(<runtime> PRIVATE AnoCryptoC::AnoCryptoC)
 ```
 
-Configuration fails for a missing target, imported target, wrong target type,
-wrong backend identity, wrong contract version, or missing direct module link.
+Configuration fails for an invalid override target, imported target, wrong
+target type, wrong backend identity, wrong contract version, or missing direct
+module link.
 
 ## Readiness rules
 
@@ -90,18 +95,19 @@ The test suite builds mock AnoCrypto-C runtime adapters for:
 - self-test failure;
 - invalid runtime contract version.
 
-An additional opt-in, test-owned adapter calls the installed
-`AnoCryptoC::AnoCryptoC` package through the public lifecycle and identity
-headers recorded in
+The proprietary production adapter calls the installed `AnoCryptoC::AnoCryptoC`
+package through the public lifecycle and identity headers recorded in
 [ANOCRYPTO_C_PINNED_CONTRACT.md](ANOCRYPTO_C_PINNED_CONTRACT.md). It verifies
-native initialization, self-test status, operational gating, identity,
-idempotent lifecycle behavior, and shutdown/reinitialization.
+native initialization, startup self-test, operational gating, pinned identity,
+idempotent lifecycle behavior, and shutdown/reinitialization. Error state and
+fatal status consult the native last-error query.
 
-The native adapter compiles into a standalone test executable with capability
-mask `0`. Its lifecycle-ready predicate is not `backend_profile_ready()` and
-does not claim the complete product capability surface. It is not part of the
-production library, installation, exports, customer archives, or delivered
-SBOM.
+The opt-in harness compiles that production source into a standalone test
+executable and compares its native identity query with the Enterprise snapshot.
+The adapter reports capability mask `0`; `backend_profile_ready()` therefore
+remains false despite lifecycle readiness. The build-tree AnoCrypto-C profile,
+adapter headers, and adapter objects remain excluded from installation, exports,
+customer archives, and the delivered SBOM.
 
 ## Operation status contract
 
@@ -111,7 +117,7 @@ too small, unsupported, not approved, not operational, entropy failure, reseed
 required, authentication failure, integrity failure, resource exhaustion, and
 internal error. Unknown values render as `unknown`.
 
-The test adapter converts native lifecycle results to
+The production adapter converts native lifecycle results to
 `backend_runtime_status`, preserving self-test failure, integrity/startup
 failure, not-operational/fatal state, internal error, and unknown fail-closed
 behavior. This conversion is lifecycle-only. Future cryptographic service
@@ -120,13 +126,13 @@ be collapsed into `backend_runtime_status`.
 
 ## Required adapter behavior
 
-The eventual AnoCrypto-C adapter must:
+The AnoCrypto-C lifecycle adapter:
 
 1. initialize the module idempotently;
 2. run or verify startup self-tests;
 3. expose the module's sticky error/non-operational state;
 4. provide stable module version and build identity strings;
-5. map native lifecycle and operation statuses without hiding failures;
+5. map native lifecycle statuses without hiding failures;
 6. report only capabilities confirmed by the active module build;
 7. make shutdown safe and idempotent;
 8. never route failures or missing services to OpenSSL.

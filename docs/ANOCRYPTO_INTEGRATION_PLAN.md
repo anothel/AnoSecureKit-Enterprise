@@ -24,12 +24,12 @@ verification are mandatory. See
 - exact `AnoCryptoC::AnoCryptoC` target requirement;
 - non-imported cryptographic provider `OBJECT_LIBRARY` requirement;
 - complete static production capability declaration;
-- separate non-imported lifecycle/diagnostic `OBJECT_LIBRARY` requirement;
+- built-in proprietary production lifecycle adapter;
 - runtime contract version and backend identity validation;
 - direct `AnoCryptoC::AnoCryptoC` linkage for both adapters;
 - fail-closed runtime status, module state, self-test, and capability checks;
 - opt-in installed-package lifecycle tests with explicit runtime/commit pins;
-- test-only native state/lifecycle mapping and Linux dependency-purity checks;
+- production native state/lifecycle mapping and Linux dependency-purity checks;
 - no silent OpenSSL fallback.
 
 ## Current runtime boundary
@@ -41,26 +41,24 @@ implementation. Mock AnoCrypto-C adapters verify ready, self-test-failed, and
 invalid-contract behavior.
 
 The exact native public headers and lifecycle symbols are verified and pinned.
-When explicitly enabled, a test-owned adapter calls the installed package and
-verifies the real lifecycle sequence. Its capability mask is zero and its
-`lifecycle ready` assertion covers only runtime status, operational state, and
-self-test success. It is not the production profile and does not advertise
-cryptographic service parity.
+The production adapter calls them directly, verifies runtime/build identity at
+initialization, and reports module/self-test state through runtime contract
+version `1`. The opt-in harness compiles the same adapter and verifies the real
+lifecycle sequence. Its capability mask is zero, so lifecycle readiness does
+not advertise cryptographic service parity or make the complete profile ready.
 
 ## Remaining implementation
 
 1. Approve and record the package/archive digest.
 2. Verify static package consumption.
-3. Implement the production lifecycle/runtime adapter after delivery provenance
-   is approved.
-4. Implement a separate service-operation status conversion.
-5. Map SHA-256, HMAC-SHA-256, and platform-backed random using confirmed APIs.
-6. Fail closed for missing HKDF, AEAD, streaming, key-wrap, and password-KDF
+3. Implement a separate service-operation status conversion.
+4. Map SHA-256, HMAC-SHA-256, and platform-backed random using confirmed APIs.
+5. Fail closed for missing HKDF, AEAD, streaming, key-wrap, and password-KDF
    capabilities until AnoCrypto-C supplies them.
-7. Run the Community API/fixture suite through the profile.
-8. Add native self-test-failure evidence only after an upstream public test hook
+6. Run the Community API/fixture suite through the profile.
+7. Add native self-test-failure evidence only after an upstream public test hook
    is approved.
-9. Verify Windows/macOS package dependency purity and hosted execution.
+8. Verify Windows/macOS package dependency purity and hosted execution.
 
 ## Adapter readiness sequence
 

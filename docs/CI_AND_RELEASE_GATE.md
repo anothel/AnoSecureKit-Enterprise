@@ -29,10 +29,11 @@ The aggregate target requires:
 `ANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL` controls CTest concurrency and must
 be a positive integer.
 
-## Opt-in AnoCrypto-C lifecycle gate
+## Opt-in AnoCrypto-C production lifecycle gate
 
-The installed-package lifecycle harness is disabled by default. Enable it only
-with an external exact-version package and explicit development test pins:
+The installed-package harness compiles the production lifecycle adapter and is
+disabled by default. Enable it only with an external exact-version package and
+explicit development test pins:
 
 ```sh
 cmake -S . -B build-native -G Ninja \

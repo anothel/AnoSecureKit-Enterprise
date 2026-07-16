@@ -69,6 +69,9 @@ function(write_provider_fixture name backend_id capabilities link_anocrypto incl
       "set_property(TARGET test_runtime PROPERTY ANOSECUREKIT_ENTERPRISE_RUNTIME_CONTRACT_VERSION \"${runtime_contract_version}\")\n"
       "${_runtime_link_line}"
       "set(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET test_runtime CACHE STRING \"\" FORCE)\n")
+  else()
+    set(_runtime_block
+      "set(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID test-runtime CACHE STRING \"\" FORCE)\nset(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT test-commit CACHE STRING \"\" FORCE)\n")
   endif()
   file(WRITE "${_fixture}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.20)\n"
@@ -127,8 +130,8 @@ expect_fixture_failure(missing-capabilities "Missing required capabilities: hkdf
 write_provider_fixture(missing-module-link "anocrypto-c" "${_complete_capabilities}" FALSE TRUE "anocrypto-c" "1" TRUE)
 expect_fixture_failure(missing-module-link "provider target must link AnoCryptoC::AnoCryptoC directly")
 
-write_provider_fixture(missing-runtime-target "anocrypto-c" "${_complete_capabilities}" TRUE FALSE "" "" FALSE)
-expect_fixture_failure(missing-runtime-target "requires a lifecycle/diagnostic adapter target")
+write_provider_fixture(built-in-runtime-target "anocrypto-c" "${_complete_capabilities}" TRUE FALSE "" "" FALSE)
+expect_fixture_success(built-in-runtime-target)
 
 write_provider_fixture(wrong-runtime-backend "anocrypto-c" "${_complete_capabilities}" TRUE TRUE "openssl" "1" TRUE)
 expect_fixture_failure(wrong-runtime-backend "runtime target must set target property")

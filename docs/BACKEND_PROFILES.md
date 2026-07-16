@@ -27,14 +27,14 @@ This profile requires:
   runtime identity `0.1.0-p1-33-release-rehearsal`;
 - imported target `AnoCryptoC::AnoCryptoC`;
 - a non-imported Enterprise cryptographic provider `OBJECT_LIBRARY`;
-- a separate non-imported Enterprise lifecycle/diagnostic `OBJECT_LIBRARY`;
+- the built-in proprietary Enterprise lifecycle/diagnostic adapter;
 - complete static and runtime capabilities required by the selected product
   surface.
 
 The profile fails configuration or runtime readiness when any requirement is
-missing. It never falls back to OpenSSL. The native API is verified and pinned,
-but the current repository contains only contracts and mock verification, not
-the real lifecycle or cryptographic adapter, so this profile is not
+missing. It never falls back to OpenSSL. The real native lifecycle adapter is
+connected and identity-pinned, but no cryptographic service adapter is
+connected and its runtime capability mask remains zero, so this profile is not
 production-ready.
 It intentionally produces no install/export or customer-delivery package.
 
