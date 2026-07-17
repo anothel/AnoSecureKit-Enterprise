@@ -32,12 +32,14 @@ This profile requires:
   surface.
 
 Normal production configuration fails when any static requirement is missing.
-Explicit native test mode may build the Enterprise-owned SHA-256 development
-provider while keeping production gates closed. It never falls back to OpenSSL.
-The native lifecycle adapter is identity-pinned and the first service adapter
-connects public `anosecurekit::sha256` to `ano_crypto_hash_digest`. Its runtime
-capability mask contains only `sha256`, so this profile is not production-ready.
-It intentionally produces no install/export or customer-delivery package.
+Explicit native test mode may build the Enterprise-owned SHA-256/HMAC-SHA-256
+development provider while keeping production gates closed. It never falls
+back to OpenSSL. The native lifecycle adapter is identity-pinned; service
+adapters connect public `anosecurekit::sha256` to `ano_crypto_hash_digest` and
+raw-key `anosecurekit::hmac_sha256` to `ano_crypto_hmac_compute`. Its runtime
+capability mask contains exactly `sha256` and `hmac-sha256`, so this profile is
+not production-ready. It intentionally produces no install/export or
+customer-delivery package.
 
 ## Production capability gate
 

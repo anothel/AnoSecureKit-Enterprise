@@ -63,11 +63,13 @@ int main()
     using namespace anosecurekit_enterprise;
 
 #ifdef ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C
-    constexpr auto sha256_mask = backend_capability_bit(crypto_backend_capability::sha256);
+    constexpr auto capability_mask =
+        backend_capability_bit(crypto_backend_capability::sha256)
+        | backend_capability_bit(crypto_backend_capability::hmac_sha256);
     const auto initial = current_backend_runtime();
     if ((initial.module_state != backend_module_state::uninitialized
          && initial.module_state != backend_module_state::shutdown)
-        || initial.capability_mask != sha256_mask || backend_profile_ready()
+        || initial.capability_mask != capability_mask || backend_profile_ready()
         || !fails_as_backend_error(
             [] { (void)anosecurekit::sha256(std::span<const std::byte>{}); }))
     {
@@ -84,10 +86,10 @@ int main()
     const auto runtime = current_backend_runtime();
     if (runtime.status != backend_runtime_status::ready
         || runtime.module_state != backend_module_state::operational
-        || runtime.capability_mask != sha256_mask || backend_profile_ready()
+        || runtime.capability_mask != capability_mask || backend_profile_ready()
         || anocrypto_backend_available())
     {
-        return fail(3, "SHA-256-only runtime capability");
+        return fail(3, "partial runtime capability");
     }
 #endif
 
@@ -166,9 +168,7 @@ int main()
     }
 
     const std::array<std::byte, 1> one_byte{std::byte{1}};
-    if (!fails_as_backend_error(
-            [&] { (void)anosecurekit::hmac_sha256(one_byte, one_byte); })
-        || !fails_as_backend_error([&] {
+    if (!fails_as_backend_error([&] {
                (void)anosecurekit::hkdf_sha256(one_byte, one_byte, one_byte, 32);
            }))
     {
@@ -178,7 +178,7 @@ int main()
     shutdown_backend();
     const auto stopped = current_backend_runtime();
     if (stopped.module_state != backend_module_state::shutdown
-        || stopped.capability_mask != sha256_mask || backend_profile_ready()
+        || stopped.capability_mask != capability_mask || backend_profile_ready()
         || !fails_as_backend_error(
             [] { (void)anosecurekit::sha256(std::span<const std::byte>{}); }))
     {

@@ -42,8 +42,9 @@ target_link_libraries(<provider> PRIVATE AnoCryptoC::AnoCryptoC)
 
 Configuration fails when the identity, capability list, direct module link,
 target type, or module package contract is missing. The opt-in native test mode
-may build the Enterprise-owned partial provider declaring only `sha256`; this is
-a development path and cannot enable installation or delivery.
+may build the Enterprise-owned partial provider declaring exactly `sha256` and
+`hmac-sha256`; this is a development path and cannot enable installation or
+delivery.
 
 ## Fail-closed rule
 
@@ -67,21 +68,22 @@ The static CMake capability declaration is only the first gate. Enterprise now a
 
 The runtime adapter is selected at link time and independently reports a
 capability mask. The AnoCrypto-C lifecycle implementation uses the pinned
-external public API and now reports only `sha256`. The first service adapter
-implements Community `sha256` with public `ano_crypto_hash_digest`; all other
-backend functions remain fail-closed and advertise no capability. Tests retain
-mock runtime adapters for failure paths and use the installed package for the
-native lifecycle and SHA-256 path. See `PROVIDER_RUNTIME_CONTRACT.md`.
+external public API and now reports exactly `sha256` and `hmac-sha256`. Service
+adapters implement Community `sha256` with `ano_crypto_hash_digest` and raw-key
+`hmac_sha256` with `ano_crypto_hmac_compute`; all other backend functions remain
+fail-closed and advertise no capability. Tests retain mock runtime adapters for
+failure paths and use the installed package for native lifecycle, SHA-256, and
+HMAC-SHA-256 paths. See `PROVIDER_RUNTIME_CONTRACT.md`.
 
 The production source also includes a separate exhaustive native
-service-operation status mapper. SHA-256 consumes its direct native result
-through this mapper. Unknown native operation values map to `internal_error`;
-no error maps to `success`. Public SHA-256 failures preserve the existing
-Community `backend_failure` exception contract.
+service-operation status mapper. SHA-256 and HMAC-SHA-256 consume direct native
+results through this mapper and require exact 32-byte output lengths. Unknown
+native operation values map to `internal_error`; no error maps to `success`.
+Public failures preserve the existing Community `backend_failure` exception
+contract.
 
-HMAC-SHA-256, HKDF-SHA-256, random, scrypt, AES-256-GCM, streaming AEAD, and key
-wrapping remain absent from the Enterprise provider and block full parity. They
-must not be declared in an actual adapter capability mask until implemented and
-verified.
+HKDF-SHA-256, random, scrypt, AES-256-GCM, streaming AEAD, and key wrapping
+remain absent from the Enterprise provider and block full parity. They must not
+be declared in an actual adapter capability mask until implemented and verified.
 
 Static or mock metadata must not be treated as KCMVP or FIPS validation evidence.

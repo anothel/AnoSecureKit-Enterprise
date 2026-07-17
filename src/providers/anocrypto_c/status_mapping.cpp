@@ -57,4 +57,12 @@ backend_operation_status map_native_operation_status(ano_crypto_status_t status)
     }
 }
 
+bool native_operation_output_valid(ano_crypto_status_t status,
+                                   std::size_t written,
+                                   std::size_t expected) noexcept
+{
+    return map_native_operation_status(status) == backend_operation_status::success
+        && written == expected;
+}
+
 } // namespace anosecurekit_enterprise::providers::anocrypto_c

@@ -88,7 +88,8 @@ matched its generated v0.4.0 source-offer archive to that subtree.
 The verified AnoCrypto-C API/package contract is pinned in
 `ANOCRYPTO_C_PINNED_CONTRACT.md`. The proprietary production lifecycle adapter
 and operation-status mapper are connected; the native installed-package harness
-remains opt-in. SHA-256 is the first connected cryptographic service.
+remains opt-in. SHA-256 and raw-key HMAC-SHA-256 are connected cryptographic
+services.
 
 Local WSL2 verification used this installed shared package:
 
@@ -106,13 +107,20 @@ Resolved library:
 <prefix>/lib/libanocrypto_c.so.0.1.0
 ```
 
-With warnings treated as errors, the AnoCrypto-C development profile passed six
+With warnings treated as errors, the AnoCrypto-C development profile passed seven
 CTest entries on GCC 15.2.0 Release static, GCC 15.2.0 Release shared, and Clang
-21.1.8 Release static. The entries cover profile/runtime state, public SHA-256,
-production lifecycle, operation-status mapping, Linux dependency purity, and CI
-policy. A separate default-`OFF` GCC OpenSSL build passed the complete five-test
+21.1.8 Release static. The entries cover profile/runtime state, public SHA-256
+and HMAC-SHA-256, production lifecycle, operation-status mapping, Linux
+dependency purity, and CI policy. A separate default-`OFF` GCC OpenSSL build
+passed the complete six-test
 CTest inventory, installed consumer, and delivery package gate without
 discovering or requiring `AnoCryptoC`; native targets were absent.
+
+The OpenSSL profile also passed its four non-package Enterprise tests with
+warnings treated as errors on GCC Release static, GCC Release shared, and Clang
+Release static. The GCC static installed-consumer and customer-delivery gates
+passed, including ZIP/TGZ extraction, manifest, checksum, source-offer, and SPDX
+SBOM verification.
 
 The runtime identity was `0.1.0-p1-33-release-rehearsal`; build identity ABI was
 `1`; fingerprint was `AnoCrypto-C-p1-33-release-rehearsal`. This local package
@@ -127,19 +135,28 @@ gate, initialization and startup self-test, operational state/gate, repeated
 initialization, shutdown, rejected post-shutdown gate, reinitialization,
 repeated shutdown, and final clean shutdown. Linux `ldd` inspection found no
 `libcrypto` or `libssl` dependency in the lifecycle executable, SHA-256
-executable, or resolved AnoCrypto-C library. The production snapshot matched the
-native runtime identity/fingerprint and reported lifecycle ready, capability
-mask `sha256`, and complete profile not ready.
+executable, HMAC-SHA-256 executable, or resolved AnoCrypto-C library. The
+production snapshot matched the native runtime identity/fingerprint and
+reported lifecycle ready, capability mask `sha256 hmac-sha256`, and complete
+profile not ready.
 
 The build-tree AnoCrypto-C development profile linked the Enterprise SHA-256
-provider, lifecycle object, status mapper, and installed module. Public
-`anosecurekit::sha256` output matched OpenSSL exactly for empty input, `abc`, a
-binary zero-byte vector, 257-byte multi-block input, and deterministic 1 MiB
-input. Pre-initialization, post-shutdown, invalid-argument, short-buffer, unknown
-status, and output-safety checks failed closed. HMAC and HKDF entry points also
-failed closed without fallback. Runtime state was `ready`/`operational`/`passed`
-with only `sha256`; complete profile readiness remained `no`. Installation
-produced no files, and no Enterprise delivery target was available.
+and raw-key HMAC-SHA-256 provider, lifecycle object, status mapper, and installed
+module. Public `anosecurekit::sha256` output matched OpenSSL exactly for empty
+input, `abc`, a binary zero-byte vector, 257-byte multi-block input, and
+deterministic 1 MiB input. Public `anosecurekit::hmac_sha256` output matched
+OpenSSL byte-for-byte for RFC 4231 cases 1, 2, 3, 4, 6, and 7; empty key/input;
+separate empty-key and empty-message cases; embedded-zero input; short,
+block-sized, and long keys; multi-block input; and deterministic 1 MiB input.
+Repeated calls were deterministic and left inputs unchanged.
+
+Pre-initialization, post-shutdown, invalid-argument, short-buffer, mapped-error,
+unknown-status, wrong-output-length, and output-safety checks failed closed.
+HKDF and all other unconnected entry points still fail closed without fallback.
+Runtime state was `ready`/`operational`/`passed` with exactly `sha256` and
+`hmac-sha256`; complete profile readiness remained `no`. Installation produced
+no files, and no Enterprise delivery target was available. Direct comparison of
+the OpenSSL and AnoCrypto-C HMAC test output had no differences.
 
 Static package consumption, native forced-self-test-failure injection, and
 Windows/macOS package verification remain deferred. No approved package digest

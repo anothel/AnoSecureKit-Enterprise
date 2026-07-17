@@ -11,7 +11,8 @@ int main()
     constexpr auto expected_backend_name = "anocrypto-c";
     constexpr auto expected_self_test = backend_self_test_status::passed;
     constexpr auto expected_capability_mask =
-        backend_capability_bit(crypto_backend_capability::sha256);
+        backend_capability_bit(crypto_backend_capability::sha256)
+        | backend_capability_bit(crypto_backend_capability::hmac_sha256);
 #else
     constexpr auto expected_profile = crypto_backend_profile::openssl;
     constexpr auto expected_profile_name = "openssl";

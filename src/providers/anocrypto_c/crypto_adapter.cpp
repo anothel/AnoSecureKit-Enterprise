@@ -7,6 +7,7 @@
 #include "anosecurekit/error.hpp"
 
 #include <anocrypto/ac_hash.h>
+#include <anocrypto/ac_hmac.h>
 
 #include <cstdint>
 
@@ -20,6 +21,11 @@ namespace
 [[noreturn]] void throw_sha256_failure()
 {
     throw error(error_code::backend_failure, "AnoCrypto-C SHA-256 operation failed");
+}
+
+[[noreturn]] void throw_hmac_sha256_failure()
+{
+    throw error(error_code::backend_failure, "AnoCrypto-C HMAC-SHA-256 operation failed");
 }
 
 [[noreturn]] void throw_unconnected_service()
@@ -50,17 +56,45 @@ digest256 sha256(std::span<const std::byte> input)
         reinterpret_cast<std::uint8_t*>(output.data()),
         output.size(),
         &written);
-    if (map_native_operation_status(native_status) != backend_operation_status::success
-        || written != output.size())
+    if (!native_operation_output_valid(native_status, written, output.size()))
     {
         throw_sha256_failure();
     }
     return output;
 }
 
-digest256 hmac_sha256(std::span<const std::byte>, std::span<const std::byte>)
+digest256 hmac_sha256(std::span<const std::byte> key, std::span<const std::byte> input)
 {
-    throw_unconnected_service();
+    using namespace anosecurekit_enterprise;
+    using namespace anosecurekit_enterprise::providers::anocrypto_c;
+
+    if (require_native_operational() != backend_runtime_status::ready)
+    {
+        throw_hmac_sha256_failure();
+    }
+
+    digest256 output{};
+    std::size_t written = 0;
+    const auto* key_data = key.empty()
+        ? nullptr
+        : reinterpret_cast<const std::uint8_t*>(key.data());
+    const auto* input_data = input.empty()
+        ? nullptr
+        : reinterpret_cast<const std::uint8_t*>(input.data());
+    const auto native_status = ano_crypto_hmac_compute(
+        ANO_CRYPTO_HASH_ALG_SHA256,
+        key_data,
+        key.size(),
+        input_data,
+        input.size(),
+        reinterpret_cast<std::uint8_t*>(output.data()),
+        output.size(),
+        &written);
+    if (!native_operation_output_valid(native_status, written, output.size()))
+    {
+        throw_hmac_sha256_failure();
+    }
+    return output;
 }
 
 bytes hkdf_sha256(std::span<const std::byte>,
