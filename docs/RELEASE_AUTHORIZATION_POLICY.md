@@ -25,6 +25,7 @@ Every field is required; extra fields are rejected.
 | `codeql_required`, `codeql_status` | Must match policy; required CodeQL must be `passed`. |
 | `artifact_manifest_digest` | SHA-256 of staged install `MANIFEST.sha256`. |
 | `artifact_set_digest` | SHA-256 of top-level `SHA256SUMS.txt`, which binds each delivery asset digest. |
+| `trusted_evidence_digest` | Canonical SHA-256 emitted by the strict trusted release evidence verifier. |
 | `signing_evidence_status`, `signing_evidence_reference` | `verified` and `signing-evidence:sha256:<digest>` are required for allow. |
 | `provenance_evidence_status`, `provenance_evidence_reference` | `verified` and `provenance-evidence:sha256:<digest>` are required for allow. |
 | `authorization_status` | `active` is required; `revoked` is always rejected. |
@@ -47,21 +48,23 @@ cmake --build build --target enterprise-release-authorization-contract-check
 
 Create and verify internal artifacts first, obtain separately approved hosted,
 CodeQL, signing, provenance, and role authorization evidence, then point a fresh
-configure at the externally supplied record:
+configure at the externally supplied evidence and authorization records:
 
 ```sh
 cmake --build build --target enterprise-delivery-check
 cmake -S . -B build \
+  -DANOSECUREKIT_ENTERPRISE_TRUSTED_RELEASE_EVIDENCE_RECORD=<evidence.json> \
   -DANOSECUREKIT_ENTERPRISE_RELEASE_AUTHORIZATION_RECORD=<record.json>
 cmake --build build --target enterprise-release-authorization-check
 cmake --build build --target enterprise-customer-delivery-check
 ```
 
-The authorization check never creates or edits a record. The customer target
-is currently locked against every production allow because trusted hosted,
-signature, and provenance evidence verification is not implemented. Reference
-strings never self-attest. Only the `test_only: true` positive fixture can pass,
-and only inside the contract test harness.
+The authorization check never creates or edits a record. It compares
+`trusted_evidence_digest` with the verifier's canonical digest. The customer
+target is currently locked against every production allow because cryptographic
+signature and provenance verification is unavailable. Reference strings never
+self-attest. Only the authorization contract's `test_only: true` fixture can
+pass, and only inside that test harness.
 
 After independent evidence verification is implemented, a distributed allow
 record must also be covered by the final detached release manifest and publisher

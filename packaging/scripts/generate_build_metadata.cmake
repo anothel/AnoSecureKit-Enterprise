@@ -27,6 +27,12 @@ set(_content
 "compiler_id=${COMPILER_ID}\n"
 "compiler_version=${COMPILER_VERSION}\n"
 "source_revision=${SOURCE_REVISION}\n"
+"evidence_bundle=present\n"
+"structural_evidence=unavailable\n"
+"cryptographic_evidence=unavailable\n"
+"trusted_evidence=unavailable\n"
+"release_authorization=denied-or-unavailable\n"
+"customer_release_ready=false\n"
 "authenticity_note=Checksums and this metadata do not authenticate the publisher.\n")
 file(WRITE "${OUTPUT}.tmp" "${_content}")
 file(RENAME "${OUTPUT}.tmp" "${OUTPUT}")

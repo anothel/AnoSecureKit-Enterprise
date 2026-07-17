@@ -196,6 +196,8 @@ file(COPY
   "${ENTERPRISE_SOURCE_DIR}/docs/OPENSSL_PROFILE_SUPPORT_POLICY.md"
   "${ENTERPRISE_SOURCE_DIR}/docs/RELEASE_AUTHORIZATION_POLICY.md"
   "${ENTERPRISE_SOURCE_DIR}/docs/SUPPORTED_CONFIGURATION_MATRIX.md"
+  "${ENTERPRISE_SOURCE_DIR}/docs/TRUSTED_RELEASE_EVIDENCE_POLICY.md"
+  "${ENTERPRISE_SOURCE_DIR}/release/customer-release-evidence.json"
   "${ENTERPRISE_BUILD_DIR}/DELIVERY_README.md"
   "${_enterprise_share}/BUILD_METADATA.txt"
   DESTINATION "${_delivery}")
@@ -289,6 +291,10 @@ foreach(_archive IN LISTS _binary_archives)
     "${_extract_dir}/*/share/anosecurekit-enterprise/OPENSSL_PROFILE_SUPPORT_POLICY.md")
   file(GLOB_RECURSE _required_authorization_policy
     "${_extract_dir}/*/share/anosecurekit-enterprise/RELEASE_AUTHORIZATION_POLICY.md")
+  file(GLOB_RECURSE _required_evidence_policy
+    "${_extract_dir}/*/share/anosecurekit-enterprise/TRUSTED_RELEASE_EVIDENCE_POLICY.md")
+  file(GLOB_RECURSE _required_evidence_record
+    "${_extract_dir}/*/share/anosecurekit-enterprise/customer-release-evidence.json")
   file(GLOB_RECURSE _required_community_dependency
     "${_extract_dir}/*/share/anosecurekit-enterprise/COMMUNITY_DEPENDENCY.md")
   file(GLOB_RECURSE _required_support_matrix
@@ -311,6 +317,8 @@ foreach(_archive IN LISTS _binary_archives)
       _required_delivery_readme
       _required_support_policy
       _required_authorization_policy
+      _required_evidence_policy
+      _required_evidence_record
       _required_community_dependency
       _required_support_matrix
       _required_deferred_status
@@ -328,6 +336,8 @@ foreach(_archive IN LISTS _binary_archives)
   foreach(_manifest_term IN ITEMS
       "share/anosecurekit-enterprise/OPENSSL_PROFILE_SUPPORT_POLICY.md"
       "share/anosecurekit-enterprise/RELEASE_AUTHORIZATION_POLICY.md"
+      "share/anosecurekit-enterprise/TRUSTED_RELEASE_EVIDENCE_POLICY.md"
+      "share/anosecurekit-enterprise/customer-release-evidence.json"
       "share/anosecurekit-enterprise/SUPPORTED_CONFIGURATION_MATRIX.md"
       "share/anosecurekit-enterprise/DEFERRED_CI_STATUS.md")
     string(FIND "${_manifest_content}" "${_manifest_term}" _manifest_position)

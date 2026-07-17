@@ -24,6 +24,12 @@ if(NOT ANOSECUREKIT_ENTERPRISE_QUALIFICATION_STATUS STREQUAL
    "local-pass-remote-deferred")
   message(FATAL_ERROR "Installed Enterprise package qualification status is incorrect")
 endif()
+if(NOT ANOSECUREKIT_ENTERPRISE_EVIDENCE_BUNDLE_STATUS STREQUAL "present"
+   OR NOT ANOSECUREKIT_ENTERPRISE_STRUCTURAL_EVIDENCE_STATUS STREQUAL "unavailable"
+   OR NOT ANOSECUREKIT_ENTERPRISE_CRYPTOGRAPHIC_EVIDENCE_STATUS STREQUAL "unavailable"
+   OR NOT ANOSECUREKIT_ENTERPRISE_TRUSTED_EVIDENCE_STATUS STREQUAL "unavailable")
+  message(FATAL_ERROR "Installed Enterprise trusted evidence metadata is incorrect")
+endif()
 if(ANOSECUREKIT_ENTERPRISE_CUSTOMER_RELEASE_READY)
   message(FATAL_ERROR "Installed Enterprise package must keep customer release blocked")
 endif()

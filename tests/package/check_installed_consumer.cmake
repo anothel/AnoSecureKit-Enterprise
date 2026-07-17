@@ -41,7 +41,9 @@ set(_required_paths
   "${_install_prefix}/share/anosecurekit-enterprise/DEFERRED_CI_STATUS.md"
   "${_install_prefix}/share/anosecurekit-enterprise/OPENSSL_PROFILE_SUPPORT_POLICY.md"
   "${_install_prefix}/share/anosecurekit-enterprise/RELEASE_AUTHORIZATION_POLICY.md"
-  "${_install_prefix}/share/anosecurekit-enterprise/SUPPORTED_CONFIGURATION_MATRIX.md")
+  "${_install_prefix}/share/anosecurekit-enterprise/SUPPORTED_CONFIGURATION_MATRIX.md"
+  "${_install_prefix}/share/anosecurekit-enterprise/TRUSTED_RELEASE_EVIDENCE_POLICY.md"
+  "${_install_prefix}/share/anosecurekit-enterprise/customer-release-evidence.json")
 foreach(_path IN LISTS _required_paths)
   if(NOT EXISTS "${_path}")
     message(FATAL_ERROR "Installed package is missing required path: ${_path}")

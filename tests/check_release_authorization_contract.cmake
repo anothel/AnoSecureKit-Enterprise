@@ -14,6 +14,7 @@ set(_sha_a "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 set(_sha_b "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
 set(_digest_a "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 set(_digest_b "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+set(_digest_c "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc")
 
 string(CONCAT _allow
 "{\n"
@@ -33,6 +34,7 @@ string(CONCAT _allow
 "  \"codeql_status\": \"passed\",\n"
 "  \"artifact_manifest_digest\": \"${_digest_a}\",\n"
 "  \"artifact_set_digest\": \"${_digest_b}\",\n"
+"  \"trusted_evidence_digest\": \"${_digest_c}\",\n"
 "  \"signing_evidence_status\": \"verified\",\n"
 "  \"signing_evidence_reference\": \"signing-evidence:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\n"
 "  \"provenance_evidence_status\": \"verified\",\n"
@@ -54,6 +56,7 @@ set(_common_args
   "-DEXPECTED_SOURCE_REVISION=${_sha_b}"
   "-DEXPECTED_ARTIFACT_MANIFEST_DIGEST=${_digest_a}"
   "-DEXPECTED_ARTIFACT_SET_DIGEST=${_digest_b}"
+  "-DEXPECTED_TRUSTED_EVIDENCE_DIGEST=${_digest_c}"
   "-DEXPECTED_CODEQL_REQUIRED=ON"
   "-DREQUIRE_ALLOW=ON")
 
@@ -132,6 +135,8 @@ _reject_replacement(manifest-digest-mismatch "artifact_manifest_digest mismatch"
   "\"artifact_manifest_digest\": \"${_digest_a}\"" "\"artifact_manifest_digest\": \"${_digest_b}\"")
 _reject_replacement(artifact-set-digest-mismatch "artifact_set_digest mismatch"
   "\"artifact_set_digest\": \"${_digest_b}\"" "\"artifact_set_digest\": \"${_digest_a}\"")
+_reject_replacement(trusted-evidence-digest-mismatch "trusted_evidence_digest mismatch"
+  "\"trusted_evidence_digest\": \"${_digest_c}\"" "\"trusted_evidence_digest\": \"${_digest_a}\"")
 _reject_replacement(qualification-deferred "Qualification status does not permit release"
   "\"qualification_status\": \"qualified\"" "\"qualification_status\": \"deferred\"")
 _reject_replacement(hosted-not-run "Hosted evidence does not permit release"
@@ -163,4 +168,4 @@ _reject_replacement(production-allow-unavailable
 _run_record(test-fixture-production-rejection "${_allow}" OFF FALSE
   "Test-only release authorization cannot authorize production delivery")
 
-message(STATUS "Release authorization contract checks passed: default deny, positive test fixture, 29 fail-closed cases")
+message(STATUS "Release authorization contract checks passed: default deny, positive test fixture, 30 fail-closed cases")

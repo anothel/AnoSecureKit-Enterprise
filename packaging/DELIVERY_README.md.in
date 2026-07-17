@@ -16,6 +16,18 @@ This is an internal qualification artifact, not a customer release. Customer
 release readiness remains blocked while hosted verification and provenance are
 deferred.
 
+Trusted release evidence status:
+
+- evidence bundle: present (repository default fail-closed record);
+- structural evidence: unavailable for this package until exact binding succeeds;
+- cryptographic evidence: unavailable;
+- trusted evidence: unavailable;
+- release authorization: denied or unavailable;
+- customer release ready: false.
+
+The structural verifier does not authenticate signatures. No public signature
+verification API is available in the current Enterprise or Community surface.
+
 Release authorization: `denied or unavailable`.
 Customer release ready: `false`.
 

@@ -54,6 +54,11 @@ or unavailable; `customer_release_ready` remains `false`. Production allow is
 also hard-disabled until trusted hosted, signing, and provenance evidence
 verification exists.
 
+The canonical evidence bundle and its structural, cryptographic, and trusted
+state model are defined in `TRUSTED_RELEASE_EVIDENCE_POLICY.md`. The current
+cryptographic verifier is unavailable, so the bundle cannot authorize a
+production delivery.
+
 
 ## Continuous verification
 

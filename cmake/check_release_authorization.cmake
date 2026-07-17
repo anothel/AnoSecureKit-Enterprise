@@ -27,6 +27,7 @@ set(_fields
   community_tree backend_profile provider_family source_revision
   qualification_status hosted_evidence_status hosted_evidence_reference
   codeql_required codeql_status artifact_manifest_digest artifact_set_digest
+  trusted_evidence_digest
   signing_evidence_status signing_evidence_reference
   provenance_evidence_status provenance_evidence_reference
   authorization_status authorized_by authorized_at expires_at reason test_only)
@@ -73,6 +74,7 @@ foreach(_field IN ITEMS
     community_tree backend_profile provider_family source_revision
     qualification_status hosted_evidence_status hosted_evidence_reference
     codeql_status artifact_manifest_digest artifact_set_digest
+    trusted_evidence_digest
     signing_evidence_status signing_evidence_reference
     provenance_evidence_status provenance_evidence_reference
     authorization_status authorized_by authorized_at reason)
@@ -150,6 +152,7 @@ _require_git_sha(community_tree "${_community_tree}")
 _require_git_sha(source_revision "${_source_revision}")
 _require_sha256(artifact_manifest_digest "${_artifact_manifest_digest}")
 _require_sha256(artifact_set_digest "${_artifact_set_digest}")
+_require_sha256(trusted_evidence_digest "${_trusted_evidence_digest}")
 if(NOT _authorized_by MATCHES "^role:[a-z0-9][a-z0-9.-]+$")
   message(FATAL_ERROR "authorized_by must be a stable role:<identifier>")
 endif()
@@ -165,6 +168,11 @@ endif()
 if(_test_only AND NOT ALLOW_TEST_FIXTURE)
   message(FATAL_ERROR "Test-only release authorization cannot authorize production delivery")
 endif()
+if(DEFINED EXPECTED_TRUSTED_EVIDENCE_DIGEST
+   AND NOT EXPECTED_TRUSTED_EVIDENCE_DIGEST STREQUAL ""
+   AND NOT _trusted_evidence_digest STREQUAL EXPECTED_TRUSTED_EVIDENCE_DIGEST)
+  message(FATAL_ERROR "Release authorization trusted_evidence_digest mismatch")
+endif()
 
 if(_decision STREQUAL "deny")
   message(STATUS "authorization: denied or unavailable")
@@ -179,7 +187,7 @@ foreach(_required IN ITEMS
     EXPECTED_ENTERPRISE_VERSION EXPECTED_COMMUNITY_VERSION EXPECTED_COMMUNITY_TREE
     EXPECTED_BACKEND_PROFILE EXPECTED_PROVIDER_FAMILY EXPECTED_SOURCE_REVISION
     EXPECTED_ARTIFACT_MANIFEST_DIGEST EXPECTED_ARTIFACT_SET_DIGEST
-    EXPECTED_CODEQL_REQUIRED)
+    EXPECTED_TRUSTED_EVIDENCE_DIGEST EXPECTED_CODEQL_REQUIRED)
   if(NOT DEFINED ${_required} OR "${${_required}}" STREQUAL "")
     message(FATAL_ERROR "${_required} is required for an allow decision")
   endif()
@@ -187,7 +195,8 @@ endforeach()
 
 foreach(_binding IN ITEMS
     enterprise_version community_version community_tree backend_profile
-    provider_family source_revision artifact_manifest_digest artifact_set_digest)
+    provider_family source_revision artifact_manifest_digest artifact_set_digest
+    trusted_evidence_digest)
   string(TOUPPER "${_binding}" _binding_upper)
   set(_expected_name "EXPECTED_${_binding_upper}")
   set(_actual "${_${_binding}}")

@@ -73,6 +73,9 @@ option(ANOSECUREKIT_ENTERPRISE_INSTALL_INFO "Install the Enterprise diagnostic e
 set(ANOSECUREKIT_ENTERPRISE_RELEASE_AUTHORIZATION_RECORD
   "${CMAKE_CURRENT_SOURCE_DIR}/release/customer-release-authorization.json"
   CACHE FILEPATH "External customer release authorization record; defaults to deny")
+set(ANOSECUREKIT_ENTERPRISE_TRUSTED_RELEASE_EVIDENCE_RECORD
+  "${CMAKE_CURRENT_SOURCE_DIR}/release/customer-release-evidence.json"
+  CACHE FILEPATH "External trusted release evidence record; defaults to unavailable")
 set(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND "openssl" CACHE STRING
   "Enterprise crypto profile: openssl or anocrypto-c")
 set_property(CACHE ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND PROPERTY STRINGS openssl anocrypto-c)
@@ -387,6 +390,23 @@ configure_file(
   @ONLY)
 
 if(BUILD_TESTING)
+  add_custom_target(enterprise-trusted-release-evidence-check
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/trusted-release-evidence-contract-check
+      -DDEFAULT_EVIDENCE_RECORD=${CMAKE_CURRENT_SOURCE_DIR}/release/customer-release-evidence.json
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_trusted_release_evidence_contract.cmake
+    USES_TERMINAL)
+
+  add_test(NAME enterprise.trusted-release-evidence
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/trusted-release-evidence-contract-test
+      -DDEFAULT_EVIDENCE_RECORD=${CMAKE_CURRENT_SOURCE_DIR}/release/customer-release-evidence.json
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_trusted_release_evidence_contract.cmake)
+  set_tests_properties(enterprise.trusted-release-evidence
+    PROPERTIES LABELS "policy;release-evidence")
+
   add_custom_target(enterprise-release-authorization-contract-check
     COMMAND ${CMAKE_COMMAND}
       -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -721,6 +741,10 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     docs/DELIVERY_VERIFICATION.md
     docs/RELEASE_AUTHORIZATION_POLICY.md
     docs/SUPPORTED_CONFIGURATION_MATRIX.md
+    docs/TRUSTED_RELEASE_EVIDENCE_POLICY.md
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/anosecurekit-enterprise)
+  install(FILES
+    release/customer-release-evidence.json
     DESTINATION ${CMAKE_INSTALL_DATADIR}/anosecurekit-enterprise)
 
   if(ANOSECUREKIT_ENTERPRISE_INSTALL_INFO)
@@ -860,6 +884,7 @@ if(BUILD_TESTING)
         -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
         -DENTERPRISE_DELIVERY_ROOT=${CMAKE_CURRENT_BINARY_DIR}/enterprise-delivery-check
         -DAUTHORIZATION_RECORD=${ANOSECUREKIT_ENTERPRISE_RELEASE_AUTHORIZATION_RECORD}
+        -DEVIDENCE_RECORD=${ANOSECUREKIT_ENTERPRISE_TRUSTED_RELEASE_EVIDENCE_RECORD}
         -DEXPECTED_ENTERPRISE_VERSION=${PROJECT_VERSION}
         -DEXPECTED_COMMUNITY_VERSION=${ANOSECUREKIT_ENTERPRISE_COMMUNITY_VERSION}
         -DEXPECTED_COMMUNITY_TREE=${_anosecurekit_enterprise_community_tree}
@@ -934,6 +959,7 @@ if(BUILD_TESTING)
         enterprise-profile-config-check
         enterprise-runtime-contract-check
         enterprise-ci-policy-check
+        enterprise-trusted-release-evidence-check
         enterprise-release-authorization-contract-check
         enterprise-openssl-profile-policy-check
         enterprise-package-check

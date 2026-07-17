@@ -37,6 +37,18 @@ string(REGEX MATCH
 if(NOT _revision_line)
   message(FATAL_ERROR "Artifact source revision does not match ${EXPECTED_SOURCE_REVISION}")
 endif()
+foreach(_metadata_term IN ITEMS
+    "evidence_bundle=present"
+    "structural_evidence=unavailable"
+    "cryptographic_evidence=unavailable"
+    "trusted_evidence=unavailable"
+    "release_authorization=denied-or-unavailable"
+    "customer_release_ready=false")
+  string(FIND "${_metadata}" "${_metadata_term}" _metadata_position)
+  if(_metadata_position EQUAL -1)
+    message(FATAL_ERROR "Artifact metadata is missing ${_metadata_term}")
+  endif()
+endforeach()
 
 file(STRINGS "${_artifact}/SHA256SUMS.txt" _checksum_lines)
 file(GLOB _assets LIST_DIRECTORIES false RELATIVE "${_artifact}" "${_artifact}/*")

@@ -39,6 +39,10 @@ the repository default record denies customer release.
 The incomplete AnoCrypto-C profile has no install/export/CPack path and cannot
 produce this delivery.
 
+The exact evidence schema, canonical digest, complete artifact inventory rules,
+and fail-closed signing/provenance boundary are defined in
+`TRUSTED_RELEASE_EVIDENCE_POLICY.md`.
+
 
 ## CI gate
 

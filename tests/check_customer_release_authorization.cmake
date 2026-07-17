@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 foreach(_required IN ITEMS
-    ENTERPRISE_SOURCE_DIR ENTERPRISE_DELIVERY_ROOT AUTHORIZATION_RECORD
+    ENTERPRISE_SOURCE_DIR ENTERPRISE_DELIVERY_ROOT AUTHORIZATION_RECORD EVIDENCE_RECORD
     EXPECTED_ENTERPRISE_VERSION EXPECTED_COMMUNITY_VERSION EXPECTED_COMMUNITY_TREE
     EXPECTED_BACKEND_PROFILE EXPECTED_PROVIDER_FAMILY EXPECTED_SOURCE_REVISION
     EXPECTED_CODEQL_REQUIRED GIT_EXECUTABLE)
@@ -69,8 +69,22 @@ endif()
 
 file(SHA256 "${_stage_manifest}" _manifest_digest)
 file(SHA256 "${_artifact_manifest}" _artifact_set_digest)
+file(GLOB _sbom_files LIST_DIRECTORIES false "${_delivery}/*.spdx.json")
+list(LENGTH _sbom_files _sbom_count)
+if(NOT _sbom_count EQUAL 1)
+  message(FATAL_ERROR "Verified internal delivery must contain exactly one SPDX SBOM")
+endif()
+list(GET _sbom_files 0 _sbom_file)
+file(SHA256 "${_sbom_file}" _sbom_digest)
 set(EXPECTED_ARTIFACT_MANIFEST_DIGEST "sha256:${_manifest_digest}")
 set(EXPECTED_ARTIFACT_SET_DIGEST "sha256:${_artifact_set_digest}")
+set(EXPECTED_SBOM_DIGEST "sha256:${_sbom_digest}")
+set(ARTIFACT_ROOT "${_delivery}")
+set(REQUIRE_TRUSTED ON)
+set(ALLOW_TEST_FIXTURE OFF)
+include("${ENTERPRISE_SOURCE_DIR}/cmake/check_trusted_release_evidence.cmake")
+set(EXPECTED_TRUSTED_EVIDENCE_DIGEST
+  "${ANOSECUREKIT_TRUSTED_EVIDENCE_CANONICAL_DIGEST}")
 set(REQUIRE_ALLOW ON)
 set(ALLOW_TEST_FIXTURE OFF)
 include("${ENTERPRISE_SOURCE_DIR}/cmake/check_release_authorization.cmake")

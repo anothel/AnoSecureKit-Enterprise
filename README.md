@@ -18,7 +18,9 @@ internal qualification artifacts, not customer releases.
 
 Customer release additionally requires the strict
 `enterprise-release-authorization-check`; the checked-in record defaults to
-deny. See [release authorization policy](docs/RELEASE_AUTHORIZATION_POLICY.md).
+deny. Structural evidence contracts run through
+`enterprise-trusted-release-evidence-check`; cryptographic verification remains
+unavailable. See [release authorization policy](docs/RELEASE_AUTHORIZATION_POLICY.md).
 
 ## Authoritative contracts
 
@@ -47,6 +49,7 @@ Qualification and delivery:
 - [CI and release gate](docs/CI_AND_RELEASE_GATE.md)
 - [Deferred CI status](docs/DEFERRED_CI_STATUS.md)
 - [Delivery verification](docs/DELIVERY_VERIFICATION.md)
+- [Trusted release evidence policy](docs/TRUSTED_RELEASE_EVIDENCE_POLICY.md)
 - [Customer delivery pack](docs/CUSTOMER_DELIVERY_PACK.md)
 - [Internal delivery README template](packaging/DELIVERY_README.md.in)
 

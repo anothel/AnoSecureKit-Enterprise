@@ -23,6 +23,10 @@ set(_required_text
   "Implementation: complete"
   "Local verification: passed"
   "Remote verification: deferred"
+  "Evidence bundle: present"
+  "Structural evidence: unavailable"
+  "Cryptographic evidence: unavailable"
+  "Trusted evidence: unavailable"
   "Release authorization: denied or unavailable"
   "Customer release: blocked"
   "Install/export: enabled"
@@ -61,6 +65,10 @@ _expect_json(implementation_complete "ON")
 _expect_json(local_verification "passed")
 _expect_json(remote_verification "deferred")
 _expect_json(qualification_status "local-pass-remote-deferred")
+_expect_json(evidence_bundle "present")
+_expect_json(structural_evidence "unavailable")
+_expect_json(cryptographic_evidence "unavailable")
+_expect_json(trusted_evidence "unavailable")
 _expect_json(release_authorization "denied-or-unavailable")
 _expect_json(customer_release_ready "OFF")
 _expect_json(install_enabled "ON")
