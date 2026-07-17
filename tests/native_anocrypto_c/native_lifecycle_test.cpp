@@ -216,6 +216,6 @@ int main()
               << "build_fingerprint=" << identity.fingerprint << '\n'
               << "lifecycle_ready=yes\n"
               << "complete_profile_ready=no\n"
-              << "capability_mask=sha256,hmac-sha256\n";
+              << "capability_mask=sha256,hmac-sha256,random\n";
     return 0;
 }
