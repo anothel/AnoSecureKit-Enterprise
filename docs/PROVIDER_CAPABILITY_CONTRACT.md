@@ -65,6 +65,11 @@ remain pending. Tests retain mock runtime adapters for failure paths and use the
 installed package for the production lifecycle path. See
 `PROVIDER_RUNTIME_CONTRACT.md`.
 
+The production source also includes a separate exhaustive native
+service-operation status mapper. It calls no cryptographic service, advertises
+no capability, and does not alter lifecycle readiness. Unknown native operation
+values map to `internal_error`; no error maps to `success`.
+
 HKDF-SHA-256, scrypt, AES-256-GCM, streaming AEAD, and key wrapping are absent
 from the pinned baseline and block full parity. They must not be declared in an
 actual adapter capability mask until implemented and verified.

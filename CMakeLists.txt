@@ -180,7 +180,8 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
     endif()
 
     add_library(anosecurekit_enterprise_anocrypto_c_runtime OBJECT
-      src/providers/anocrypto_c/runtime_adapter.cpp)
+      src/providers/anocrypto_c/runtime_adapter.cpp
+      src/providers/anocrypto_c/status_mapping.cpp)
     set_property(TARGET anosecurekit_enterprise_anocrypto_c_runtime PROPERTY
       ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID "anocrypto-c")
     set_property(TARGET anosecurekit_enterprise_anocrypto_c_runtime PROPERTY
@@ -395,10 +396,30 @@ if(BUILD_TESTING)
     _anosecurekit_enterprise_apply_warnings(
       anosecurekit_enterprise_native_anocrypto_c_lifecycle_test)
 
+    add_executable(anosecurekit_enterprise_native_anocrypto_c_status_mapping_test
+      tests/native_anocrypto_c/status_mapping_test.cpp
+      src/providers/anocrypto_c/status_mapping.cpp)
+    target_include_directories(anosecurekit_enterprise_native_anocrypto_c_status_mapping_test
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/providers/anocrypto_c"
+        "$<TARGET_PROPERTY:AnoCryptoC::AnoCryptoC,INTERFACE_INCLUDE_DIRECTORIES>")
+    target_compile_features(anosecurekit_enterprise_native_anocrypto_c_status_mapping_test
+      PRIVATE cxx_std_20)
+    target_link_libraries(anosecurekit_enterprise_native_anocrypto_c_status_mapping_test
+      PRIVATE anosecurekit::enterprise)
+    _anosecurekit_enterprise_apply_warnings(
+      anosecurekit_enterprise_native_anocrypto_c_status_mapping_test)
+
     add_test(NAME enterprise.native-anocrypto-c-lifecycle
       COMMAND anosecurekit_enterprise_native_anocrypto_c_lifecycle_test)
     set_tests_properties(enterprise.native-anocrypto-c-lifecycle PROPERTIES
       LABELS "native-anocrypto-c;lifecycle")
+
+    add_test(NAME enterprise.native-anocrypto-c-status-mapping
+      COMMAND anosecurekit_enterprise_native_anocrypto_c_status_mapping_test)
+    set_tests_properties(enterprise.native-anocrypto-c-status-mapping PROPERTIES
+      LABELS "native-anocrypto-c;status")
 
     add_test(NAME enterprise.native-anocrypto-c-dependencies
       COMMAND ${CMAKE_COMMAND}
@@ -415,6 +436,11 @@ if(BUILD_TESTING)
         -DANOCRYPTO_C_LIBRARY=$<TARGET_FILE:AnoCryptoC::AnoCryptoC>
         -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/native_anocrypto_c/check_dependencies.cmake
       DEPENDS anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
+      USES_TERMINAL)
+
+    add_custom_target(enterprise-native-anocrypto-c-status-mapping-check
+      COMMAND $<TARGET_FILE:anosecurekit_enterprise_native_anocrypto_c_status_mapping_test>
+      DEPENDS anosecurekit_enterprise_native_anocrypto_c_status_mapping_test
       USES_TERMINAL)
   endif()
 endif()
@@ -565,7 +591,8 @@ if(BUILD_TESTING)
     anosecurekit_enterprise_info)
   if(ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
     list(APPEND _anosecurekit_enterprise_check_dependencies
-      anosecurekit_enterprise_native_anocrypto_c_lifecycle_test)
+      anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
+      anosecurekit_enterprise_native_anocrypto_c_status_mapping_test)
   endif()
   add_custom_target(enterprise-check
     COMMAND ${CMAKE_CTEST_COMMAND}

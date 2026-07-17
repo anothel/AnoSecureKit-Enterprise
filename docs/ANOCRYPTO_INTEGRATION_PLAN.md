@@ -30,6 +30,8 @@ verification are mandatory. See
 - fail-closed runtime status, module state, self-test, and capability checks;
 - opt-in installed-package lifecycle tests with explicit runtime/commit pins;
 - production native state/lifecycle mapping and Linux dependency-purity checks;
+- exhaustive service-operation status mapping with unknown-value fail-closed
+  coverage;
 - no silent OpenSSL fallback.
 
 ## Current runtime boundary
@@ -47,29 +49,33 @@ version `1`. The opt-in harness compiles the same adapter and verifies the real
 lifecycle sequence. Its capability mask is zero, so lifecycle readiness does
 not advertise cryptographic service parity or make the complete profile ready.
 
+A separate production helper maps every defined AnoCrypto-C service status to
+the stable Enterprise operation-status contract. It invokes no service and does
+not change the zero capability mask. Unknown values map to `internal_error`.
+
 ## Remaining implementation
 
 1. Approve and record the package/archive digest.
 2. Verify static package consumption.
-3. Implement a separate service-operation status conversion.
-4. Map SHA-256, HMAC-SHA-256, and platform-backed random using confirmed APIs.
-5. Fail closed for missing HKDF, AEAD, streaming, key-wrap, and password-KDF
+3. Map SHA-256, HMAC-SHA-256, and platform-backed random using confirmed APIs.
+4. Fail closed for missing HKDF, AEAD, streaming, key-wrap, and password-KDF
    capabilities until AnoCrypto-C supplies them.
-6. Run the Community API/fixture suite through the profile.
-7. Add native self-test-failure evidence only after an upstream public test hook
+5. Run the Community API/fixture suite through the profile.
+6. Add native self-test-failure evidence only after an upstream public test hook
    is approved.
-8. Verify Windows/macOS package dependency purity and hosted execution.
+7. Verify Windows/macOS package dependency purity and hosted execution.
 
 ## Adapter readiness sequence
 
 1. Discover `AnoCryptoC` and require `AnoCryptoC::AnoCryptoC`.
 2. Build the proprietary cryptographic provider adapter.
 3. Build the proprietary runtime/lifecycle adapter.
-4. Validate CMake identity, contract version, direct module linkage, and static
+4. Build and verify the separate native operation-status mapper.
+5. Validate CMake identity, contract version, direct module linkage, and static
    capabilities.
-5. Initialize the actual module and verify self-test/operational state.
-6. Compare runtime capabilities against the complete product requirement.
-7. Only then enable public API parity tests and production packaging.
+6. Initialize the actual module and verify self-test/operational state.
+7. Compare runtime capabilities against the complete product requirement.
+8. Only then enable public API parity tests and production packaging.
 
 The verified AnoCrypto-C feature set is not sufficient for the full production
 gate because HKDF-SHA-256, scrypt, AES-256-GCM, streaming AEAD, and key wrapping

@@ -137,9 +137,9 @@ Native module states map without loss:
 
 ## Operation status contract
 
-Lifecycle status remains separate from per-operation status. A future adapter
-must preserve these mappings rather than collapse failures into a generic
-runtime result:
+Lifecycle status remains separate from per-operation status. The production
+operation-status mapper under `src/providers/anocrypto_c` preserves these
+mappings without calling a cryptographic service or mutating lifecycle state:
 
 | AnoCrypto-C | Enterprise operation status |
 |---|---|
@@ -148,7 +148,7 @@ runtime result:
 | `ANO_CRYPTO_ERR_BUFFER_TOO_SMALL` | `buffer_too_small` |
 | `ANO_CRYPTO_ERR_UNSUPPORTED_ALGORITHM`, `ANO_CRYPTO_ERR_UNSUPPORTED_PARAMETER`, `ANO_CRYPTO_ERR_NOT_IMPLEMENTED` | `unsupported` |
 | `ANO_CRYPTO_ERR_NOT_APPROVED_IN_MODE` | `not_approved` |
-| `ANO_CRYPTO_ERR_NOT_INITIALIZED`, `ANO_CRYPTO_ERR_FATAL_STATE` | `not_operational` |
+| `ANO_CRYPTO_ERR_SELF_TEST_FAILED`, `ANO_CRYPTO_ERR_NOT_INITIALIZED`, `ANO_CRYPTO_ERR_FATAL_STATE` | `not_operational` |
 | `ANO_CRYPTO_ERR_ENTROPY_SOURCE_FAILED` | `entropy_failure` |
 | `ANO_CRYPTO_ERR_DRBG_RESEED_REQUIRED` | `reseed_required` |
 | `ANO_CRYPTO_ERR_AUTHENTICATION_FAILED` | `authentication_failed` |
@@ -156,12 +156,16 @@ runtime result:
 | `ANO_CRYPTO_ERR_RESOURCE_EXHAUSTED` | `resource_exhausted` |
 | `ANO_CRYPTO_ERR_INTERNAL_ERROR` or unknown | `internal_error` |
 
-`ANO_CRYPTO_ERR_SELF_TEST_FAILED` remains a lifecycle `self_test_failed` result
-and places the module in non-operational error state.
+When returned by lifecycle initialization, `ANO_CRYPTO_ERR_SELF_TEST_FAILED`
+remains a lifecycle `self_test_failed` result and places the module in a
+non-operational error state. When observed as a direct service-operation
+result, the operation mapper reports `not_operational`.
 
-The production adapter implements lifecycle conversion separately from the
-future cryptographic service-operation conversion. Unknown native states map
-to Enterprise `error`; unknown lifecycle statuses map to `internal_error`.
+The production lifecycle conversion and service-operation conversion are
+separate functions. Unknown native states map to Enterprise `error`; unknown
+lifecycle statuses and unknown operation statuses map to `internal_error`.
+Compile-time assertions pin every known numeric native status, and the opt-in
+native test covers every known value plus unknown positive and negative values.
 
 ## Capability status
 
@@ -176,6 +180,9 @@ Additional implemented AnoCrypto-C services are SHA-384/SHA-512, matching HMAC
 variants, AES-128/192/256-CBC, AES-CMAC, and in-memory key handles. They are not
 added to the current Enterprise provider capability mask because they do not
 replace missing product requirements.
+
+The shared operation-status mapper does not connect any of these services. The
+production adapter continues to report capability mask `0`.
 
 Full Enterprise parity remains blocked by missing HKDF-SHA-256, scrypt,
 AES-256-GCM, streaming AEAD, and key wrapping. Missing services never fall back
@@ -202,9 +209,10 @@ No public forced-KAT-failure hook is approved, so native self-test-failure
 injection remains deferred. Existing mock self-test-failure tests remain the
 only failure-path evidence.
 
-The proprietary lifecycle adapter is linked into the build-tree AnoCrypto-C
-profile and reports no cryptographic capability bits. Its source/header are not
-installed or exported, and the profile remains excluded from CPack, customer
-archives, and the delivery SBOM. Lifecycle readiness therefore does not make
-the complete profile ready. The AnoCrypto-C production profile remains blocked
-from customer delivery.
+The proprietary lifecycle adapter and operation-status mapper are linked into
+the build-tree AnoCrypto-C profile, which reports no cryptographic capability
+bits. Their source/header files are not installed or exported, and the profile
+remains excluded from CPack, customer archives, and the delivery SBOM.
+Lifecycle readiness and status translation therefore do not make the complete
+profile ready. The AnoCrypto-C production profile remains blocked from customer
+delivery.

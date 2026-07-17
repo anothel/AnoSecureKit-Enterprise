@@ -120,9 +120,17 @@ internal error. Unknown values render as `unknown`.
 The production adapter converts native lifecycle results to
 `backend_runtime_status`, preserving self-test failure, integrity/startup
 failure, not-operational/fatal state, internal error, and unknown fail-closed
-behavior. This conversion is lifecycle-only. Future cryptographic service
-failures must use a separate `backend_operation_status` conversion and must not
-be collapsed into `backend_runtime_status`.
+behavior. This conversion is lifecycle-only. A separate production mapper now
+converts every defined native service result to `backend_operation_status`.
+Unsupported algorithm, unsupported parameter, and not implemented share the
+public `unsupported` result; self-test failure, fatal state, and not initialized
+share `not_operational`. Every other native failure retains its corresponding
+public category. Unknown operation values fail closed as `internal_error`.
+
+The operation mapper performs no lifecycle transition and invokes no
+cryptographic service. Service adapters remain unimplemented, so adding status
+translation does not change the runtime capability mask or profile readiness.
+The exhaustive opt-in native test also verifies every stable public status name.
 
 ## Required adapter behavior
 
