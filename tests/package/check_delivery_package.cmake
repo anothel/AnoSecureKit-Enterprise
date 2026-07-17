@@ -179,6 +179,9 @@ file(COPY
   "${ENTERPRISE_SOURCE_DIR}/LICENSE"
   "${ENTERPRISE_SOURCE_DIR}/THIRD_PARTY_NOTICES.md"
   "${ENTERPRISE_SOURCE_DIR}/docs/COMMUNITY_DEPENDENCY.md"
+  "${ENTERPRISE_SOURCE_DIR}/docs/DEFERRED_CI_STATUS.md"
+  "${ENTERPRISE_SOURCE_DIR}/docs/OPENSSL_PROFILE_SUPPORT_POLICY.md"
+  "${ENTERPRISE_SOURCE_DIR}/docs/SUPPORTED_CONFIGURATION_MATRIX.md"
   "${ENTERPRISE_BUILD_DIR}/DELIVERY_README.md"
   "${_enterprise_share}/BUILD_METADATA.txt"
   DESTINATION "${_delivery}")
@@ -268,6 +271,20 @@ foreach(_archive IN LISTS _binary_archives)
     "${_extract_dir}/*/share/anosecurekit-enterprise/BUILD_METADATA.txt")
   file(GLOB_RECURSE _required_delivery_readme
     "${_extract_dir}/*/share/anosecurekit-enterprise/DELIVERY_README.md")
+  file(GLOB_RECURSE _required_support_policy
+    "${_extract_dir}/*/share/anosecurekit-enterprise/OPENSSL_PROFILE_SUPPORT_POLICY.md")
+  file(GLOB_RECURSE _required_community_dependency
+    "${_extract_dir}/*/share/anosecurekit-enterprise/COMMUNITY_DEPENDENCY.md")
+  file(GLOB_RECURSE _required_support_matrix
+    "${_extract_dir}/*/share/anosecurekit-enterprise/SUPPORTED_CONFIGURATION_MATRIX.md")
+  file(GLOB_RECURSE _required_deferred_status
+    "${_extract_dir}/*/share/anosecurekit-enterprise/DEFERRED_CI_STATUS.md")
+  file(GLOB_RECURSE _required_license
+    "${_extract_dir}/*/share/anosecurekit-enterprise/LICENSE")
+  file(GLOB_RECURSE _required_notices
+    "${_extract_dir}/*/share/anosecurekit-enterprise/THIRD_PARTY_NOTICES.md")
+  file(GLOB_RECURSE _required_info_executable
+    "${_extract_dir}/*/bin/anosecurekit_enterprise_info*")
   foreach(_found IN ITEMS
       _required_enterprise_header
       _required_community_header
@@ -275,7 +292,14 @@ foreach(_archive IN LISTS _binary_archives)
       _required_community_config
       _required_manifest
       _required_metadata
-      _required_delivery_readme)
+      _required_delivery_readme
+      _required_support_policy
+      _required_community_dependency
+      _required_support_matrix
+      _required_deferred_status
+      _required_license
+      _required_notices
+      _required_info_executable)
     if(NOT ${_found})
       message(FATAL_ERROR "Extracted Enterprise archive ${_archive_name} is missing ${_found}")
     endif()
@@ -283,6 +307,17 @@ foreach(_archive IN LISTS _binary_archives)
 
   list(GET _required_manifest 0 _manifest_path)
   get_filename_component(_manifest_root "${_manifest_path}" DIRECTORY)
+  file(READ "${_manifest_path}" _manifest_content)
+  foreach(_manifest_term IN ITEMS
+      "share/anosecurekit-enterprise/OPENSSL_PROFILE_SUPPORT_POLICY.md"
+      "share/anosecurekit-enterprise/SUPPORTED_CONFIGURATION_MATRIX.md"
+      "share/anosecurekit-enterprise/DEFERRED_CI_STATUS.md")
+    string(FIND "${_manifest_content}" "${_manifest_term}" _manifest_position)
+    if(_manifest_position EQUAL -1)
+      message(FATAL_ERROR
+        "Extracted Enterprise archive manifest omits ${_manifest_term}: ${_archive_name}")
+    endif()
+  endforeach()
   execute_process(
     COMMAND "${CMAKE_COMMAND}" -DROOT=${_manifest_root}
       -P "${ENTERPRISE_SOURCE_DIR}/packaging/scripts/verify_manifest.cmake"
@@ -294,14 +329,14 @@ foreach(_archive IN LISTS _binary_archives)
   file(GLOB_RECURSE _private_runtime_header
     "${_extract_dir}/*/include/anosecurekit_enterprise/detail/provider_runtime_contract.hpp")
   if(_private_runtime_header)
-    message(FATAL_ERROR "Customer archive exposes private provider runtime contract header")
+    message(FATAL_ERROR "Internal delivery archive exposes private provider runtime contract header")
   endif()
   file(GLOB_RECURSE _enterprise_sources
     "${_extract_dir}/*/src/*.cpp"
     "${_extract_dir}/*/src/*.c"
     "${_extract_dir}/*/tests/*.cpp")
   if(_enterprise_sources)
-    message(FATAL_ERROR "Customer binary archive contains implementation/test sources: ${_enterprise_sources}")
+    message(FATAL_ERROR "Internal delivery archive contains implementation/test sources: ${_enterprise_sources}")
   endif()
   file(GLOB_RECURSE _anocrypto_payload
     "${_extract_dir}/*/include/anocrypto/*"
@@ -391,5 +426,5 @@ if(_tamper_verify_result EQUAL 0)
   message(FATAL_ERROR "Checksum verification unexpectedly accepted a modified delivery asset")
 endif()
 
-message(STATUS "Enterprise OpenSSL customer-delivery package check passed")
+message(STATUS "Enterprise OpenSSL internal-delivery package check passed")
 message(STATUS "Delivery assets are staged under ${_delivery}")

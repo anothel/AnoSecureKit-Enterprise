@@ -3,7 +3,7 @@
 # Enterprise CI and Release Gate
 
 AnoSecureKit Enterprise uses a private CI gate for the OpenSSL profile. The gate
-verifies source builds, installed package consumption, customer-delivery archives,
+verifies source builds, installed package consumption, internal-delivery archives,
 license/source-offer obligations, checksums, and SPDX metadata. It does not publish
 or sign a customer release.
 
@@ -18,6 +18,7 @@ cmake --build build --config Release --target enterprise-release-preflight --par
 The aggregate target requires:
 
 - Enterprise profile and runtime-contract checks;
+- OpenSSL support-policy diagnostics and Enterprise/OpenSSL source-boundary checks;
 - the non-package CTest inventory, with install and delivery package gates executed separately;
 - installed CMake package and consumer verification;
 - CPack ZIP/TGZ delivery generation;

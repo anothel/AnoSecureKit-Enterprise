@@ -390,6 +390,37 @@ if(BUILD_TESTING)
       -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_ci_policy.cmake)
   set_tests_properties(enterprise.ci-policy PROPERTIES LABELS "policy;ci")
 
+  if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
+    add_custom_target(enterprise-openssl-boundary-check
+      COMMAND ${CMAKE_COMMAND}
+        -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_openssl_boundary.cmake
+      USES_TERMINAL)
+    add_custom_target(enterprise-openssl-profile-policy-check
+      COMMAND ${CMAKE_COMMAND}
+        -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DINFO_EXECUTABLE=$<TARGET_FILE:anosecurekit_enterprise_info>
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_openssl_diagnostics.cmake
+      DEPENDS
+        anosecurekit_enterprise_info
+        enterprise-openssl-boundary-check
+      USES_TERMINAL)
+
+    add_test(NAME enterprise.openssl-boundary
+      COMMAND ${CMAKE_COMMAND}
+        -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_openssl_boundary.cmake)
+    add_test(NAME enterprise.openssl-diagnostics
+      COMMAND ${CMAKE_COMMAND}
+        -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DINFO_EXECUTABLE=$<TARGET_FILE:anosecurekit_enterprise_info>
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_openssl_diagnostics.cmake)
+    set_tests_properties(
+      enterprise.openssl-boundary
+      enterprise.openssl-diagnostics
+      PROPERTIES LABELS "openssl;openssl-policy;policy")
+  endif()
+
   add_executable(anosecurekit_enterprise_profile_test tests/profile_test.cpp)
   target_link_libraries(anosecurekit_enterprise_profile_test PRIVATE anosecurekit::enterprise)
   target_compile_features(anosecurekit_enterprise_profile_test PRIVATE cxx_std_20)
@@ -643,12 +674,15 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     README.md
     docs/BACKEND_PROFILES.md
     docs/CI_AND_RELEASE_GATE.md
+    docs/COMMUNITY_DEPENDENCY.md
     docs/DEFERRED_CI_STATUS.md
     docs/INSTALLATION.md
+    docs/OPENSSL_PROFILE_SUPPORT_POLICY.md
     docs/PRODUCT_BOUNDARY.md
     docs/PROVIDER_CAPABILITY_CONTRACT.md
     docs/PROVIDER_RUNTIME_CONTRACT.md
     docs/DELIVERY_VERIFICATION.md
+    docs/SUPPORTED_CONFIGURATION_MATRIX.md
     DESTINATION ${CMAKE_INSTALL_DATADIR}/anosecurekit-enterprise)
 
   if(ANOSECUREKIT_ENTERPRISE_INSTALL_INFO)
@@ -810,6 +844,7 @@ if(BUILD_TESTING)
         enterprise-profile-config-check
         enterprise-runtime-contract-check
         enterprise-ci-policy-check
+        enterprise-openssl-profile-policy-check
         enterprise-package-check
         enterprise-delivery-check
       USES_TERMINAL)

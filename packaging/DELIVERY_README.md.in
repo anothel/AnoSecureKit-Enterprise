@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: LicenseRef-AnoSecureKit-Enterprise-Proprietary -->
 
-# AnoSecureKit Enterprise @PROJECT_VERSION@ Delivery
+# AnoSecureKit Enterprise @PROJECT_VERSION@ Internal Delivery
 
 Profile: `@ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND@`
 
@@ -11,6 +11,10 @@ its bundled AnoSecureKit Community runtime/development package, licensing and
 third-party notices, build metadata, checksums, and an SPDX 2.3 delivery SBOM.
 A separate Community source-offer archive is provided for the MPL-2.0-covered
 Community component.
+
+This is an internal qualification artifact, not a customer release. Customer
+release readiness remains blocked while hosted verification and provenance are
+deferred.
 
 The delivery does **not** contain AnoCrypto-C source, headers, binaries, or a
 production AnoCrypto-C provider adapter. It does not make a KCMVP or FIPS

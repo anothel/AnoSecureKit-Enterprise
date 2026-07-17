@@ -16,13 +16,13 @@ for the future AnoCrypto-C profile.
 
 The Enterprise delivery gate creates a separate
 `anosecurekit-community-0.4.0-source-offer.zip` and recursively verifies every
-file and SHA-256 digest against the bundled source tree. The customer-delivery
+file and SHA-256 digest against the bundled source tree. The internal-delivery
 `SHA256SUMS.txt` covers that source-offer archive.
 
 A production release audit should additionally retain the upstream
 project-owned Community release-asset checksum and GitHub attestation evidence.
 Those external release records are not replaced by the locally generated
-customer-delivery checksum.
+internal-delivery checksum.
 
 ## Update procedure
 

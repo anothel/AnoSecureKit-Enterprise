@@ -32,7 +32,11 @@ set(_required_paths
   "${_install_prefix}/include/anosecurekit_enterprise/provider_runtime.hpp"
   "${_install_prefix}/share/anosecurekit-enterprise/LICENSE"
   "${_install_prefix}/share/anosecurekit-enterprise/THIRD_PARTY_NOTICES.md"
-  "${_install_prefix}/share/anosecurekit-enterprise/BACKEND_PROFILES.md")
+  "${_install_prefix}/share/anosecurekit-enterprise/BACKEND_PROFILES.md"
+  "${_install_prefix}/share/anosecurekit-enterprise/COMMUNITY_DEPENDENCY.md"
+  "${_install_prefix}/share/anosecurekit-enterprise/DEFERRED_CI_STATUS.md"
+  "${_install_prefix}/share/anosecurekit-enterprise/OPENSSL_PROFILE_SUPPORT_POLICY.md"
+  "${_install_prefix}/share/anosecurekit-enterprise/SUPPORTED_CONFIGURATION_MATRIX.md")
 foreach(_path IN LISTS _required_paths)
   if(NOT EXISTS "${_path}")
     message(FATAL_ERROR "Installed package is missing required path: ${_path}")
