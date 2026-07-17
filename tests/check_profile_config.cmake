@@ -5,11 +5,19 @@ endif()
 file(REMOVE_RECURSE "${ENTERPRISE_BINARY_ROOT}")
 file(MAKE_DIRECTORY "${ENTERPRISE_BINARY_ROOT}")
 
+set(_generator_args -G "${ENTERPRISE_GENERATOR}")
+if(DEFINED ENTERPRISE_GENERATOR_PLATFORM AND NOT ENTERPRISE_GENERATOR_PLATFORM STREQUAL "")
+  list(APPEND _generator_args -A "${ENTERPRISE_GENERATOR_PLATFORM}")
+endif()
+if(DEFINED ENTERPRISE_GENERATOR_TOOLSET AND NOT ENTERPRISE_GENERATOR_TOOLSET STREQUAL "")
+  list(APPEND _generator_args -T "${ENTERPRISE_GENERATOR_TOOLSET}")
+endif()
+
 function(expect_configure_failure name expected)
   set(_build "${ENTERPRISE_BINARY_ROOT}/${name}")
   execute_process(
     COMMAND "${CMAKE_COMMAND}" -S "${ENTERPRISE_SOURCE_DIR}" -B "${_build}"
-      -G "${ENTERPRISE_GENERATOR}" ${ARGN}
+      ${_generator_args} ${ARGN}
     RESULT_VARIABLE _result OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
   string(CONCAT _log "${_out}" "${_err}")
   if(_result EQUAL 0)
@@ -94,7 +102,7 @@ function(expect_fixture_success name)
   set(_source "${${_source_var}}")
   set(_build "${ENTERPRISE_BINARY_ROOT}/${name}-build")
   execute_process(
-    COMMAND "${CMAKE_COMMAND}" -S "${_source}" -B "${_build}" -G "${ENTERPRISE_GENERATOR}"
+    COMMAND "${CMAKE_COMMAND}" -S "${_source}" -B "${_build}" ${_generator_args}
     RESULT_VARIABLE _result OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
   if(NOT _result EQUAL 0)
     string(CONCAT _log "${_out}" "${_err}")
@@ -107,7 +115,7 @@ function(expect_fixture_failure name expected)
   set(_source "${${_source_var}}")
   set(_build "${ENTERPRISE_BINARY_ROOT}/${name}-build")
   execute_process(
-    COMMAND "${CMAKE_COMMAND}" -S "${_source}" -B "${_build}" -G "${ENTERPRISE_GENERATOR}"
+    COMMAND "${CMAKE_COMMAND}" -S "${_source}" -B "${_build}" ${_generator_args}
     RESULT_VARIABLE _result OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
   string(CONCAT _log "${_out}" "${_err}")
   if(_result EQUAL 0)

@@ -36,3 +36,6 @@ endif()
 add_executable(anosecurekit_enterprise_installed_consumer main.cpp)
 target_link_libraries(anosecurekit_enterprise_installed_consumer PRIVATE anosecurekit::enterprise)
 target_compile_features(anosecurekit_enterprise_installed_consumer PRIVATE cxx_std_20)
+file(GENERATE
+  OUTPUT "anosecurekit-enterprise-consumer-$<CONFIG>.path"
+  CONTENT "$<TARGET_FILE:anosecurekit_enterprise_installed_consumer>")

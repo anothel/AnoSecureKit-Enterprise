@@ -10,10 +10,14 @@ file(MAKE_DIRECTORY "${ENTERPRISE_PACKAGE_CHECK_ROOT}")
 set(_install_prefix "${ENTERPRISE_PACKAGE_CHECK_ROOT}/install")
 set(_consumer_build "${ENTERPRISE_PACKAGE_CHECK_ROOT}/consumer-build")
 
-set(_config_args "")
-if(DEFINED ENTERPRISE_BUILD_CONFIG AND NOT ENTERPRISE_BUILD_CONFIG STREQUAL "")
-  list(APPEND _config_args --config "${ENTERPRISE_BUILD_CONFIG}")
+set(_build_config "${ENTERPRISE_BUILD_CONFIG}")
+if(_build_config STREQUAL "" AND DEFINED ENTERPRISE_DEFAULT_BUILD_TYPE)
+  set(_build_config "${ENTERPRISE_DEFAULT_BUILD_TYPE}")
 endif()
+if(_build_config STREQUAL "")
+  message(FATAL_ERROR "ENTERPRISE_BUILD_CONFIG is required")
+endif()
+set(_config_args --config "${_build_config}")
 
 execute_process(
   COMMAND "${CMAKE_COMMAND}" --install "${ENTERPRISE_BUILD_DIR}"
@@ -66,6 +70,12 @@ set(_configure_command
   -B "${_consumer_build}"
   -G "${ENTERPRISE_GENERATOR}"
   "-DCMAKE_PREFIX_PATH=${_install_prefix}")
+if(DEFINED ENTERPRISE_GENERATOR_PLATFORM AND NOT ENTERPRISE_GENERATOR_PLATFORM STREQUAL "")
+  list(APPEND _configure_command -A "${ENTERPRISE_GENERATOR_PLATFORM}")
+endif()
+if(DEFINED ENTERPRISE_GENERATOR_TOOLSET AND NOT ENTERPRISE_GENERATOR_TOOLSET STREQUAL "")
+  list(APPEND _configure_command -T "${ENTERPRISE_GENERATOR_TOOLSET}")
+endif()
 if(DEFINED ENTERPRISE_CMAKE_MAKE_PROGRAM AND NOT ENTERPRISE_CMAKE_MAKE_PROGRAM STREQUAL "")
   list(APPEND _configure_command
     "-DCMAKE_MAKE_PROGRAM=${ENTERPRISE_CMAKE_MAKE_PROGRAM}")
@@ -74,10 +84,16 @@ if(DEFINED ENTERPRISE_CXX_COMPILER AND NOT ENTERPRISE_CXX_COMPILER STREQUAL "")
   list(APPEND _configure_command
     "-DCMAKE_CXX_COMPILER=${ENTERPRISE_CXX_COMPILER}")
 endif()
-if(DEFINED ENTERPRISE_DEFAULT_BUILD_TYPE AND NOT ENTERPRISE_DEFAULT_BUILD_TYPE STREQUAL "")
-  list(APPEND _configure_command
-    "-DCMAKE_BUILD_TYPE=${ENTERPRISE_DEFAULT_BUILD_TYPE}")
+if(DEFINED CMAKE_TOOLCHAIN_FILE AND NOT CMAKE_TOOLCHAIN_FILE STREQUAL "")
+  list(APPEND _configure_command "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
 endif()
+if(DEFINED VCPKG_TARGET_TRIPLET AND NOT VCPKG_TARGET_TRIPLET STREQUAL "")
+  list(APPEND _configure_command "-DVCPKG_TARGET_TRIPLET=${VCPKG_TARGET_TRIPLET}")
+endif()
+if(DEFINED OPENSSL_ROOT_DIR AND NOT OPENSSL_ROOT_DIR STREQUAL "")
+  list(APPEND _configure_command "-DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR}")
+endif()
+list(APPEND _configure_command "-DCMAKE_BUILD_TYPE=${_build_config}")
 
 execute_process(
   COMMAND ${_configure_command}
@@ -100,22 +116,34 @@ if(NOT _build_result EQUAL 0)
   message(FATAL_ERROR "Installed consumer build failed\n${_log}")
 endif()
 
-set(_consumer_candidates
-  "${_consumer_build}/anosecurekit_enterprise_installed_consumer${CMAKE_EXECUTABLE_SUFFIX}"
-  "${_consumer_build}/${ENTERPRISE_BUILD_CONFIG}/anosecurekit_enterprise_installed_consumer${CMAKE_EXECUTABLE_SUFFIX}")
-set(_consumer_executable "")
-foreach(_candidate IN LISTS _consumer_candidates)
-  if(EXISTS "${_candidate}")
-    set(_consumer_executable "${_candidate}")
-    break()
-  endif()
-endforeach()
-if(_consumer_executable STREQUAL "")
-  message(FATAL_ERROR "Installed consumer executable was not found")
+set(_target_path_file
+  "${_consumer_build}/anosecurekit-enterprise-consumer-${_build_config}.path")
+if(NOT EXISTS "${_target_path_file}")
+  message(FATAL_ERROR "Installed consumer ${_build_config} target path record was not found")
+endif()
+file(READ "${_target_path_file}" _consumer_executable)
+string(STRIP "${_consumer_executable}" _consumer_executable)
+if(_consumer_executable STREQUAL "" OR NOT EXISTS "${_consumer_executable}")
+  message(FATAL_ERROR
+    "Recorded installed consumer ${_build_config} executable was not found: ${_consumer_executable}")
 endif()
 
+set(_consumer_path "$ENV{PATH}")
+if(WIN32)
+  set(_runtime_paths "${_install_prefix}/bin")
+  if(DEFINED ENTERPRISE_OPENSSL_RUNTIME_DIR
+     AND NOT ENTERPRISE_OPENSSL_RUNTIME_DIR STREQUAL "")
+    if(NOT IS_DIRECTORY "${ENTERPRISE_OPENSSL_RUNTIME_DIR}")
+      message(FATAL_ERROR
+        "ENTERPRISE_OPENSSL_RUNTIME_DIR does not exist: ${ENTERPRISE_OPENSSL_RUNTIME_DIR}")
+    endif()
+    list(APPEND _runtime_paths "${ENTERPRISE_OPENSSL_RUNTIME_DIR}")
+  endif()
+  list(JOIN _runtime_paths ";" _runtime_path)
+  set(_consumer_path "${_runtime_path};$ENV{PATH}")
+endif()
 execute_process(
-  COMMAND "${_consumer_executable}"
+  COMMAND "${CMAKE_COMMAND}" -E env "PATH=${_consumer_path}" "${_consumer_executable}"
   RESULT_VARIABLE _run_result
   OUTPUT_VARIABLE _run_out
   ERROR_VARIABLE _run_err)

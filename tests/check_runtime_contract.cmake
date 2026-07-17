@@ -6,6 +6,14 @@ endif()
 file(REMOVE_RECURSE "${ENTERPRISE_BINARY_ROOT}")
 file(MAKE_DIRECTORY "${ENTERPRISE_BINARY_ROOT}")
 
+set(_generator_args -G "${ENTERPRISE_GENERATOR}")
+if(DEFINED ENTERPRISE_GENERATOR_PLATFORM AND NOT ENTERPRISE_GENERATOR_PLATFORM STREQUAL "")
+  list(APPEND _generator_args -A "${ENTERPRISE_GENERATOR_PLATFORM}")
+endif()
+if(DEFINED ENTERPRISE_GENERATOR_TOOLSET AND NOT ENTERPRISE_GENERATOR_TOOLSET STREQUAL "")
+  list(APPEND _generator_args -T "${ENTERPRISE_GENERATOR_TOOLSET}")
+endif()
+
 set(_fake_prefix "${ENTERPRISE_BINARY_ROOT}/fake-prefix")
 file(MAKE_DIRECTORY "${_fake_prefix}/lib/cmake/AnoCryptoC")
 file(WRITE "${_fake_prefix}/lib/cmake/AnoCryptoC/AnoCryptoCConfig.cmake"
@@ -51,7 +59,8 @@ function(write_runtime_fixture name contract_version initialize_status runtime_s
 "set(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET test_provider CACHE STRING \"\" FORCE)\n"
 "set(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET test_runtime CACHE STRING \"\" FORCE)\n"
 "set(AnoCryptoC_DIR \"${_fake_prefix}/lib/cmake/AnoCryptoC\" CACHE PATH \"\" FORCE)\n"
-"add_subdirectory(\"${ENTERPRISE_SOURCE_DIR}\" enterprise)\n")
+"add_subdirectory(\"${ENTERPRISE_SOURCE_DIR}\" enterprise)\n"
+"file(GENERATE OUTPUT \"enterprise-info-$<CONFIG>.path\" CONTENT \"$<TARGET_FILE:anosecurekit_enterprise_info>\")\n")
   set(${name}_SOURCE "${_source}" PARENT_SCOPE)
 endfunction()
 
@@ -60,7 +69,8 @@ function(build_and_run_fixture name)
   set(_source "${${_source_var}}")
   set(_build "${ENTERPRISE_BINARY_ROOT}/${name}-build")
   execute_process(
-    COMMAND "${CMAKE_COMMAND}" -S "${_source}" -B "${_build}" -G "${ENTERPRISE_GENERATOR}"
+    COMMAND "${CMAKE_COMMAND}" -S "${_source}" -B "${_build}" ${_generator_args}
+      -DCMAKE_BUILD_TYPE=Release
     RESULT_VARIABLE _configure_result OUTPUT_VARIABLE _configure_out ERROR_VARIABLE _configure_err)
   if(NOT _configure_result EQUAL 0)
     string(CONCAT _log "${_configure_out}" "${_configure_err}")
@@ -74,18 +84,14 @@ function(build_and_run_fixture name)
     message(FATAL_ERROR "${name}: build failed\n${_log}")
   endif()
 
-  set(_candidates
-    "${_build}/enterprise/anosecurekit_enterprise_info${CMAKE_EXECUTABLE_SUFFIX}"
-    "${_build}/enterprise/Release/anosecurekit_enterprise_info${CMAKE_EXECUTABLE_SUFFIX}")
-  set(_executable "")
-  foreach(_candidate IN LISTS _candidates)
-    if(EXISTS "${_candidate}")
-      set(_executable "${_candidate}")
-      break()
-    endif()
-  endforeach()
-  if(_executable STREQUAL "")
-    message(FATAL_ERROR "${name}: info executable not found")
+  set(_target_path_file "${_build}/enterprise-info-Release.path")
+  if(NOT EXISTS "${_target_path_file}")
+    message(FATAL_ERROR "${name}: Release target path record not found")
+  endif()
+  file(READ "${_target_path_file}" _executable)
+  string(STRIP "${_executable}" _executable)
+  if(_executable STREQUAL "" OR NOT EXISTS "${_executable}")
+    message(FATAL_ERROR "${name}: recorded Release info executable not found: ${_executable}")
   endif()
   execute_process(
     COMMAND "${_executable}"
@@ -95,6 +101,7 @@ function(build_and_run_fixture name)
     message(FATAL_ERROR "${name}: info executable failed\n${_log}")
   endif()
   set(${name}_OUTPUT "${_run_out}" PARENT_SCOPE)
+  set(${name}_EXECUTABLE "${_executable}" PARENT_SCOPE)
 endfunction()
 
 function(require_output name text)
@@ -156,19 +163,8 @@ endif()
 
 find_program(_enterprise_ldd_executable NAMES ldd)
 if(_enterprise_ldd_executable)
-  set(_ready_build "${ENTERPRISE_BINARY_ROOT}/ready-build")
-  set(_ready_candidates
-    "${_ready_build}/enterprise/anosecurekit_enterprise_info${CMAKE_EXECUTABLE_SUFFIX}"
-    "${_ready_build}/enterprise/Release/anosecurekit_enterprise_info${CMAKE_EXECUTABLE_SUFFIX}")
-  set(_ready_executable "")
-  foreach(_candidate IN LISTS _ready_candidates)
-    if(EXISTS "${_candidate}")
-      set(_ready_executable "${_candidate}")
-      break()
-    endif()
-  endforeach()
   execute_process(
-    COMMAND "${_enterprise_ldd_executable}" "${_ready_executable}"
+    COMMAND "${_enterprise_ldd_executable}" "${ready_EXECUTABLE}"
     RESULT_VARIABLE _ldd_result OUTPUT_VARIABLE _ldd_out ERROR_VARIABLE _ldd_err)
   if(NOT _ldd_result EQUAL 0)
     string(CONCAT _ldd_log "${_ldd_out}" "${_ldd_err}")

@@ -5,6 +5,7 @@ foreach(_required IN ITEMS
     ENTERPRISE_SOURCE_DIR
     ENTERPRISE_BUILD_DIR
     ENTERPRISE_DELIVERY_ROOT
+    ENTERPRISE_BUILD_CONFIG
     ENTERPRISE_PROJECT_VERSION
     ENTERPRISE_COMMUNITY_VERSION
     ENTERPRISE_CPACK_COMMAND)
@@ -20,9 +21,10 @@ if(NOT EXISTS "${ENTERPRISE_CPACK_COMMAND}")
 endif()
 
 foreach(_optional IN ITEMS
-    ENTERPRISE_BUILD_CONFIG
     ENTERPRISE_DEFAULT_BUILD_TYPE
     ENTERPRISE_GENERATOR
+    ENTERPRISE_GENERATOR_PLATFORM
+    ENTERPRISE_GENERATOR_TOOLSET
     ENTERPRISE_CMAKE_MAKE_PROGRAM
     ENTERPRISE_CXX_COMPILER
     ENTERPRISE_COMPILER_ID
@@ -34,6 +36,10 @@ foreach(_optional IN ITEMS
     set(${_optional} "not-recorded")
   endif()
 endforeach()
+if(NOT ENTERPRISE_BUILD_CONFIG STREQUAL "Release")
+  message(FATAL_ERROR
+    "Enterprise delivery qualification requires ENTERPRISE_BUILD_CONFIG=Release")
+endif()
 if(ENTERPRISE_SYSTEM_NAME STREQUAL "not-recorded")
   set(ENTERPRISE_SYSTEM_NAME "UnknownSystem")
 endif()
@@ -114,6 +120,12 @@ set(_cpack_configure
 if(NOT ENTERPRISE_GENERATOR STREQUAL "not-recorded")
   list(APPEND _cpack_configure -G "${ENTERPRISE_GENERATOR}")
 endif()
+if(NOT ENTERPRISE_GENERATOR_PLATFORM STREQUAL "not-recorded")
+  list(APPEND _cpack_configure -A "${ENTERPRISE_GENERATOR_PLATFORM}")
+endif()
+if(NOT ENTERPRISE_GENERATOR_TOOLSET STREQUAL "not-recorded")
+  list(APPEND _cpack_configure -T "${ENTERPRISE_GENERATOR_TOOLSET}")
+endif()
 if(NOT ENTERPRISE_CMAKE_MAKE_PROGRAM STREQUAL "not-recorded")
   list(APPEND _cpack_configure
     "-DCMAKE_MAKE_PROGRAM=${ENTERPRISE_CMAKE_MAKE_PROGRAM}")
@@ -132,6 +144,7 @@ foreach(_generator IN ITEMS ZIP TGZ)
   execute_process(
     COMMAND "${ENTERPRISE_CPACK_COMMAND}" -G "${_generator}"
       --config "${_cpack_build}/CPackConfig.cmake"
+      -C "${ENTERPRISE_BUILD_CONFIG}"
       -B "${_package_output}"
     RESULT_VARIABLE _cpack_result
     OUTPUT_VARIABLE _cpack_out
