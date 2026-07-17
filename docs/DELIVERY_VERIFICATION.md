@@ -36,7 +36,7 @@ produce this delivery.
 
 ## CI gate
 
-The private GitHub Actions workflow runs the aggregate
+The private GitHub Actions workflow is configured to run the aggregate
 `enterprise-release-preflight` target on Linux, Windows, and macOS. Verified delivery
 directories are retained as short-lived internal workflow artifacts only. The workflow
 has read-only repository permissions and does not publish a GitHub Release.

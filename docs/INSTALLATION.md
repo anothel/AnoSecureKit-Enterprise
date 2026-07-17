@@ -61,12 +61,13 @@ checks Enterprise runtime/profile information.
 The AnoCrypto-C profile is not installable until all of the following are true:
 
 - a pinned `AnoCryptoC::AnoCryptoC` package is supplied;
-- the real proprietary provider and runtime adapters are implemented;
+- the proprietary provider supplies every required capability and the pinned
+  runtime adapter passes all gates;
 - the complete capability contract is satisfied;
 - Community API/format parity and no-OpenSSL linkage gates pass;
 - customer delivery, license, security, and validation claims are reviewed.
 
-A build-tree mock or metadata-only adapter is never a customer-delivery package.
+A build-tree partial or metadata-only adapter is never a customer-delivery package.
 
 ## Customer delivery archive gate
 

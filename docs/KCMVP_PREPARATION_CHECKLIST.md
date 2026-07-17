@@ -1,7 +1,7 @@
 # KCMVP Preparation Checklist
 
-This scaffold is not KCMVP validated. Use this checklist to keep development
-aligned with a future validation effort.
+This future-preparation checklist is engineering guidance only. It is not
+KCMVP or FIPS validation evidence.
 
 ## Module and build boundary
 
@@ -32,8 +32,8 @@ aligned with a future validation effort.
 
 ## Enterprise runtime gate status
 
-Enterprise now has an engineering contract for module initialization, self-test
+Enterprise has an engineering contract for module initialization, self-test
 status, operational state, module/build identity, and capability reporting.
-The OpenSSL profile and mock AnoCrypto-C adapters test the gate. This does not
-constitute module validation evidence; the real adapter must map the exact
-AnoCrypto-C validated package/API and environment.
+The OpenSSL profile and proprietary partial AnoCrypto-C adapters test that gate;
+mocks retain failure-path coverage. This does not constitute module validation
+evidence, and the incomplete profile remains blocked from customer delivery.

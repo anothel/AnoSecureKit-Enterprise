@@ -2,8 +2,8 @@
 
 A real Enterprise delivery should include more than binaries. At present, only
 the OpenSSL profile has a verified install/export package path. The AnoCrypto-C
-profile is explicitly excluded from customer delivery until the real external
-module integration and full parity gates pass.
+profile is explicitly excluded from customer delivery until approved package
+provenance, full capability parity, and all release gates pass.
 
 Recommended contents:
 
@@ -49,6 +49,7 @@ the publisher.
 ## Continuous verification
 
 `enterprise-release-preflight` combines profile, runtime, test, installed-consumer,
-delivery, and CI-policy checks. The private CI matrix runs this gate across supported
-build environments. Uploaded workflow artifacts are internal evidence and remain
-unsigned and unapproved for customer delivery.
+delivery, and CI-policy checks. The private CI matrix is configured to run this
+gate across its build environments; hosted execution remains deferred. Uploaded
+workflow artifacts are internal evidence and remain unsigned and unapproved for
+customer delivery.

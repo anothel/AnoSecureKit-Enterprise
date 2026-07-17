@@ -1,8 +1,9 @@
 # Packaging
 
 The OpenSSL profile now has a verified install/export/CMake-package path. The
-AnoCrypto-C profile remains non-installable until its real adapters and full
-capability gates are complete. See `docs/INSTALLATION.md`.
+AnoCrypto-C profile remains non-installable until approved package provenance,
+remaining provider capabilities, and release gates are complete. See
+`docs/INSTALLATION.md`.
 
 This directory is reserved for private Enterprise packaging work:
 

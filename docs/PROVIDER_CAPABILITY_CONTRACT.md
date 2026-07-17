@@ -20,7 +20,7 @@ aes256-gcm-stream
 
 The list covers the primitives required by the current Community public API and the `SKT1`, `SKF1`, and `SKP1` formats. It does not assert that the external AnoCrypto-C package currently implements every item.
 
-The pinned `0.1.0-p1-33-release-rehearsal` baseline is ready to integrate for
+The pinned `0.1.0-p1-33-release-rehearsal` baseline is integrated for
 module lifecycle, self-test reporting, version/build identity, SHA-256,
 HMAC-SHA-256, HMAC_DRBG-SHA-256, and platform-backed random. It also implements
 SHA-384/SHA-512, matching HMAC variants, AES-CBC, AES-CMAC, and in-memory key
