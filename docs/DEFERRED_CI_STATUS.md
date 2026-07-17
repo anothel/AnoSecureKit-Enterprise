@@ -187,9 +187,9 @@ No GitHub-hosted result is claimed for:
 - workflow artifact upload, retention, or download verification;
 - hosted signing, attestation, or provenance generation.
 
-The Phase 6 workflow is read-only and does not publish releases or generate
-customer-approved provenance. Local delivery archives remain internal test
-outputs and are not release artifacts.
+The workflow does not publish releases. Its least-privilege attestation job is
+configured but has not run, and no customer-approved provenance exists. Local
+delivery archives remain internal test outputs and are not release artifacts.
 
 ## Recovery procedure
 

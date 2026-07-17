@@ -17,17 +17,18 @@ signature verifier. Enterprise-owned code must not link OpenSSL directly,
 implement custom signature cryptography, or treat a reference string as proof.
 
 GitHub CLI 2.95.0 on the audited Windows host exposes
-`gh attestation verify`, but the audited WSL GitHub CLI 2.46.0 does not, and the
-Enterprise workflow does not generate GitHub attestations. No pinned,
-cross-platform CLI contract, approved trusted-root policy, or real Enterprise
-attestation bundle therefore exists. A locally installed external command alone
-is not treated as a product cryptographic verification path.
+`gh attestation verify`, while the audited WSL GitHub CLI 2.46.0 does not. The
+Enterprise workflow and pinned external-verifier adapter are now configured,
+but no hosted Enterprise attestation or bundle exists. A locally installed
+external command alone is not evidence; the exact subject, repository, source
+revision, workflow, trust domain, and attestation must all verify under
+[the verifier policy](RELEASE_EVIDENCE_VERIFIER_POLICY.md).
 
 The current boundary is therefore:
 
 ```text
 structural_verifier: implemented
-cryptographic_verifier: unavailable
+cryptographic_verifier: adapter configured; evidence unavailable
 trusted_evidence_status: unavailable or rejected
 production authorization: denied
 customer_release_ready: false
@@ -75,10 +76,10 @@ the complete delivery directory. `sbom.digest` binds its sole SPDX JSON file.
 
 Signing schema version 1 recognizes only the Sigstore identity
 `github-oidc:anothel/AnoSecureKit-Enterprise`. Recognition is structural, not
-cryptographic trust. Verified signing and provenance fields still produce
-`cryptographic_verifier: unavailable` until an approved public verification
-API or tool, trust policy, and revocation process exist. No production trust
-root or private material is stored in this repository.
+cryptographic trust. Verified signing and provenance fields produce
+`cryptographic=verified` only after the approved GitHub CLI adapter verifies
+every artifact under the exact policy bindings. No production private material
+is stored in this repository.
 
 ## State model and authorization binding
 
@@ -91,8 +92,8 @@ The verifier exposes independent states:
 `trusted=verified` requires every exact binding, every hosted lane, required
 CodeQL, complete artifact/manifest/SBOM evidence, cryptographically verified
 signing and provenance, an unexpired interval, and clear revocation. The current
-implementation cannot produce `cryptographic=verified`, so it cannot produce
-`trusted=verified`.
+checked-in record has no attestation, so it cannot produce
+`cryptographic=verified` or `trusted=verified`.
 
 The authorization record contains `trusted_evidence_digest`, the canonical
 evidence digest. The customer gate verifies delivery files first, verifies the

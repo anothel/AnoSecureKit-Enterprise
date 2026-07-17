@@ -76,6 +76,12 @@ set(ANOSECUREKIT_ENTERPRISE_RELEASE_AUTHORIZATION_RECORD
 set(ANOSECUREKIT_ENTERPRISE_TRUSTED_RELEASE_EVIDENCE_RECORD
   "${CMAKE_CURRENT_SOURCE_DIR}/release/customer-release-evidence.json"
   CACHE FILEPATH "External trusted release evidence record; defaults to unavailable")
+set(ANOSECUREKIT_ENTERPRISE_RELEASE_EVIDENCE_VERIFIER "" CACHE FILEPATH
+  "Explicit GitHub CLI executable for release attestation verification")
+set(ANOSECUREKIT_ENTERPRISE_INSTALLED_RELEASE_EVIDENCE_VERIFIER "" CACHE FILEPATH
+  "GitHub CLI executable supplied by deployment metadata")
+set(ANOSECUREKIT_ENTERPRISE_ATTESTATION_BUNDLE "" CACHE FILEPATH
+  "Optional local GitHub attestation bundle for offline verification")
 set(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND "openssl" CACHE STRING
   "Enterprise crypto profile: openssl or anocrypto-c")
 set_property(CACHE ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND PROPERTY STRINGS openssl anocrypto-c)
@@ -390,6 +396,27 @@ configure_file(
   @ONLY)
 
 if(BUILD_TESTING)
+  add_custom_target(enterprise-release-evidence-verifier-check
+    COMMAND ${CMAKE_COMMAND}
+      "-DVERIFIER_EXECUTABLE=${ANOSECUREKIT_ENTERPRISE_RELEASE_EVIDENCE_VERIFIER}"
+      "-DINSTALLED_VERIFIER_EXECUTABLE=${ANOSECUREKIT_ENTERPRISE_INSTALLED_RELEASE_EVIDENCE_VERIFIER}"
+      -DPROBE_ONLY=ON
+      -DATTESTATION_GENERATION_STATUS=configured
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_release_evidence_verifier.cmake
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/release-evidence-verifier-contract-check
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_release_evidence_verifier_contract.cmake
+    USES_TERMINAL)
+
+  add_test(NAME enterprise.release-evidence-verifier
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/release-evidence-verifier-contract-test
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_release_evidence_verifier_contract.cmake)
+  set_tests_properties(enterprise.release-evidence-verifier
+    PROPERTIES LABELS "policy;release-evidence;cryptographic-adapter")
+
   add_custom_target(enterprise-trusted-release-evidence-check
     COMMAND ${CMAKE_COMMAND}
       -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -740,6 +767,7 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     docs/PROVIDER_RUNTIME_CONTRACT.md
     docs/DELIVERY_VERIFICATION.md
     docs/RELEASE_AUTHORIZATION_POLICY.md
+    docs/RELEASE_EVIDENCE_VERIFIER_POLICY.md
     docs/SUPPORTED_CONFIGURATION_MATRIX.md
     docs/TRUSTED_RELEASE_EVIDENCE_POLICY.md
     DESTINATION ${CMAKE_INSTALL_DATADIR}/anosecurekit-enterprise)
@@ -768,6 +796,7 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
   install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/anosecurekitEnterpriseConfig.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/anosecurekitEnterpriseConfigVersion.cmake
+    cmake/check_release_evidence_verifier.cmake
     DESTINATION ${_anosecurekit_enterprise_cmake_install_dir})
 else()
   message(STATUS
@@ -892,6 +921,9 @@ if(BUILD_TESTING)
         -DEXPECTED_PROVIDER_FAMILY=openssl
         -DEXPECTED_SOURCE_REVISION=${_anosecurekit_enterprise_source_revision}
         -DEXPECTED_CODEQL_REQUIRED=ON
+        "-DVERIFIER_EXECUTABLE=${ANOSECUREKIT_ENTERPRISE_RELEASE_EVIDENCE_VERIFIER}"
+        "-DINSTALLED_VERIFIER_EXECUTABLE=${ANOSECUREKIT_ENTERPRISE_INSTALLED_RELEASE_EVIDENCE_VERIFIER}"
+        "-DATTESTATION_BUNDLE=${ANOSECUREKIT_ENTERPRISE_ATTESTATION_BUNDLE}"
         -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_customer_release_authorization.cmake
       USES_TERMINAL)
@@ -959,6 +991,7 @@ if(BUILD_TESTING)
         enterprise-profile-config-check
         enterprise-runtime-contract-check
         enterprise-ci-policy-check
+        enterprise-release-evidence-verifier-check
         enterprise-trusted-release-evidence-check
         enterprise-release-authorization-contract-check
         enterprise-openssl-profile-policy-check

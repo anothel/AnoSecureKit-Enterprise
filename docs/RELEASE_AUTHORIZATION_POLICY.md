@@ -60,16 +60,16 @@ cmake --build build --target enterprise-customer-delivery-check
 ```
 
 The authorization check never creates or edits a record. It compares
-`trusted_evidence_digest` with the verifier's canonical digest. The customer
-target is currently locked against every production allow because cryptographic
-signature and provenance verification is unavailable. Reference strings never
-self-attest. Only the authorization contract's `test_only: true` fixture can
-pass, and only inside that test harness.
+`trusted_evidence_digest` with the verifier's canonical digest. Production allow
+also requires `cryptographic_evidence=verified` and `trusted_evidence=verified`
+from the external adapter. No hosted attestation exists, so the current record
+still denies release. Reference strings never self-attest. Only the
+authorization contract's `test_only: true` fixture can pass without production
+cryptographic evidence, and only inside that test harness.
 
-After independent evidence verification is implemented, a distributed allow
-record must also be covered by the final detached release manifest and publisher
-signature. Embedding it inside the artifact set it binds would create a checksum
-cycle.
+A distributed allow record must also be covered by the final detached release
+manifest and publisher signature. Embedding it inside the artifact set it binds
+would create a checksum cycle.
 
 Current status:
 

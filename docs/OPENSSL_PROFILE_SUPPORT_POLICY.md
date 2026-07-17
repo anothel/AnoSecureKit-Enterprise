@@ -46,8 +46,9 @@ and internal ZIP/TGZ delivery set passed locally. Exact configurations and
 evidence are in [SUPPORTED_CONFIGURATION_MATRIX.md](SUPPORTED_CONFIGURATION_MATRIX.md).
 
 GitHub-hosted Ubuntu, Windows MSVC, macOS AppleClang, CodeQL, hosted artifact
-download verification, signing, attestation, and provenance remain
-`REMOTE_DEFERRED`. No pass or customer-support claim is made for them. Static
+download verification, signing, attestation, and provenance execution remain
+`REMOTE_DEFERRED`; attestation generation is only configured. No pass or
+customer-support claim is made for them. Static
 and shared support is therefore limited to the recorded local rows; no other
 OS, architecture, compiler, linkage, or OpenSSL source is qualified by
 inference.

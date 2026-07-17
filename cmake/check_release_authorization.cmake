@@ -250,9 +250,13 @@ if(_now STRLESS _authorized_at OR NOT _authorized_at STRLESS _expires_at
    OR NOT _now STRLESS _expires_at)
   message(FATAL_ERROR "Release authorization is expired or has an invalid validity interval")
 endif()
-if(NOT _test_only)
+if(NOT _test_only
+   AND (NOT DEFINED CRYPTOGRAPHIC_EVIDENCE_STATUS
+        OR NOT CRYPTOGRAPHIC_EVIDENCE_STATUS STREQUAL "verified"
+        OR NOT DEFINED TRUSTED_EVIDENCE_STATUS
+        OR NOT TRUSTED_EVIDENCE_STATUS STREQUAL "verified"))
   message(FATAL_ERROR
-    "Production signing/provenance evidence verification is not implemented; allow remains unavailable")
+    "Production allow requires verified cryptographic and trusted evidence")
 endif()
 
 message(STATUS "authorization: allowed")

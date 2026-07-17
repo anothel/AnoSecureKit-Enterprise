@@ -23,6 +23,10 @@ void print_json(const anosecurekit_enterprise::backend_runtime_info& runtime)
               << "  \"remote_verification\": \"deferred\",\n"
               << "  \"qualification_status\": \"local-pass-remote-deferred\",\n"
               << "  \"evidence_bundle\": \"present\",\n"
+              << "  \"attestation_generation\": \"configured\",\n"
+              << "  \"verifier_backend\": \"unavailable\",\n"
+              << "  \"verifier_backend_id\": \"none\",\n"
+              << "  \"verifier_version\": \"unavailable\",\n"
               << "  \"structural_evidence\": \"unavailable\",\n"
               << "  \"cryptographic_evidence\": \"unavailable\",\n"
               << "  \"trusted_evidence\": \"unavailable\",\n"
@@ -55,6 +59,10 @@ void print_text(anosecurekit_enterprise::backend_runtime_status initialization,
     std::cout << "Local verification: passed\n";
     std::cout << "Remote verification: deferred\n";
     std::cout << "Evidence bundle: present\n";
+    std::cout << "Attestation generation: configured\n";
+    std::cout << "Verifier backend: unavailable\n";
+    std::cout << "Verifier backend id: none\n";
+    std::cout << "Verifier version: unavailable\n";
     std::cout << "Structural evidence: unavailable\n";
     std::cout << "Cryptographic evidence: unavailable\n";
     std::cout << "Trusted evidence: unavailable\n";

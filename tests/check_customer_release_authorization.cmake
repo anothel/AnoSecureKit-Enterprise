@@ -11,8 +11,14 @@ foreach(_required IN ITEMS
   endif()
 endforeach()
 
+set(_git_platform_args)
+if(DEFINED ENV{WSL_DISTRO_NAME} AND NOT "$ENV{WSL_DISTRO_NAME}" STREQUAL "")
+  # Windows checkout on /mnt uses CRLF; normalize it exactly as Windows Git does.
+  list(APPEND _git_platform_args -c core.autocrlf=true)
+endif()
 execute_process(
-  COMMAND "${GIT_EXECUTABLE}" status --porcelain=v1 --untracked-files=all
+  COMMAND "${GIT_EXECUTABLE}" ${_git_platform_args}
+    status --porcelain=v1 --untracked-files=all
   WORKING_DIRECTORY "${ENTERPRISE_SOURCE_DIR}"
   RESULT_VARIABLE _git_status_result OUTPUT_VARIABLE _git_status
   ERROR_VARIABLE _git_status_error)
@@ -21,12 +27,13 @@ if(NOT _git_status_result EQUAL 0 OR NOT _git_status STREQUAL "")
     "Customer release authorization requires a clean source worktree: ${_git_status_error}${_git_status}")
 endif()
 execute_process(
-  COMMAND "${GIT_EXECUTABLE}" rev-parse HEAD
+  COMMAND "${GIT_EXECUTABLE}" ${_git_platform_args} rev-parse HEAD
   WORKING_DIRECTORY "${ENTERPRISE_SOURCE_DIR}"
   RESULT_VARIABLE _head_result OUTPUT_VARIABLE _head
   OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 execute_process(
-  COMMAND "${GIT_EXECUTABLE}" rev-parse HEAD:third_party/anosecurekit-community
+  COMMAND "${GIT_EXECUTABLE}" ${_git_platform_args}
+    rev-parse HEAD:third_party/anosecurekit-community
   WORKING_DIRECTORY "${ENTERPRISE_SOURCE_DIR}"
   RESULT_VARIABLE _tree_result OUTPUT_VARIABLE _community_tree
   OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
@@ -82,9 +89,15 @@ set(EXPECTED_SBOM_DIGEST "sha256:${_sbom_digest}")
 set(ARTIFACT_ROOT "${_delivery}")
 set(REQUIRE_TRUSTED ON)
 set(ALLOW_TEST_FIXTURE OFF)
+set(ENABLE_CRYPTOGRAPHIC_VERIFICATION ON)
+set(RELEASE_EVIDENCE_VERIFIER_SCRIPT
+  "${ENTERPRISE_SOURCE_DIR}/cmake/check_release_evidence_verifier.cmake")
 include("${ENTERPRISE_SOURCE_DIR}/cmake/check_trusted_release_evidence.cmake")
 set(EXPECTED_TRUSTED_EVIDENCE_DIGEST
   "${ANOSECUREKIT_TRUSTED_EVIDENCE_CANONICAL_DIGEST}")
+set(CRYPTOGRAPHIC_EVIDENCE_STATUS
+  "${ANOSECUREKIT_TRUSTED_EVIDENCE_CRYPTOGRAPHIC_STATUS}")
+set(TRUSTED_EVIDENCE_STATUS "${ANOSECUREKIT_TRUSTED_EVIDENCE_STATUS}")
 set(REQUIRE_ALLOW ON)
 set(ALLOW_TEST_FIXTURE OFF)
 include("${ENTERPRISE_SOURCE_DIR}/cmake/check_release_authorization.cmake")

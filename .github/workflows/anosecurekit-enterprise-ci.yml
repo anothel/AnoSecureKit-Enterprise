@@ -57,7 +57,8 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        # actions/checkout v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
@@ -129,7 +130,8 @@ jobs:
           cmake --build build --config ${{ matrix.build_type }} --target enterprise-release-preflight --parallel 4
 
       - name: Upload verified internal delivery artifacts
-        uses: actions/upload-artifact@v7
+        # actions/upload-artifact v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: anosecurekit-enterprise-${{ matrix.os }}-${{ matrix.compiler }}-${{ matrix.build_type }}-shared-${{ matrix.shared }}
           path: build/enterprise-delivery-check/delivery/*
@@ -143,10 +145,12 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        # actions/checkout v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
       - name: Download matrix artifacts
-        uses: actions/download-artifact@v8
+        # actions/download-artifact v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           pattern: anosecurekit-enterprise-*
           path: downloaded-artifacts
@@ -168,6 +172,117 @@ jobs:
             find downloaded-artifacts -name SHA256SUMS.txt -print -exec cat {} \;
           } >> "$GITHUB_STEP_SUMMARY"
 
+  attestation:
+    name: artifact-attestation
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    needs: artifact-validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    outputs:
+      attestation-reference: ${{ steps.attest.outputs.attestation-url }}
+      subject-list-digest: ${{ steps.subjects.outputs.digest }}
+    steps:
+      - name: Download verified matrix artifacts
+        # actions/download-artifact v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: anosecurekit-enterprise-*
+          path: downloaded-artifacts
+
+      - name: Bind artifact names and digests
+        id: subjects
+        shell: bash
+        run: |
+          while IFS= read -r -d '' file; do
+            name=${file#downloaded-artifacts/}
+            [[ "$name" =~ ^[A-Za-z0-9][A-Za-z0-9._+-]*(/[A-Za-z0-9][A-Za-z0-9._+-]*)*$ ]] || exit 1
+            printf '%s  %s\n' "$(sha256sum "$file" | cut -d' ' -f1)" "$name"
+          done < <(find downloaded-artifacts -type f -print0 | sort -z) \
+            | sort -k2 > attestation-subjects.sha256
+          test -s attestation-subjects.sha256
+          echo "digest=sha256:$(sha256sum attestation-subjects.sha256 | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Generate build provenance attestation
+        id: attest
+        # actions/attest v4; official generic provenance action
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6
+        with:
+          subject-checksums: attestation-subjects.sha256
+
+      - name: Preserve immutable verification inputs
+        shell: bash
+        env:
+          ATTESTATION_BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
+        run: cp "$ATTESTATION_BUNDLE_PATH" attestation-bundle.json
+
+      - name: Upload attestation verification inputs
+        # actions/upload-artifact v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: anosecurekit-enterprise-attestation-${{ github.sha }}
+          path: |
+            attestation-bundle.json
+            attestation-subjects.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+  attestation-verification:
+    name: artifact-attestation-verification
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    needs: attestation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      ATTESTATION_REFERENCE: ${{ needs.attestation.outputs.attestation-reference }}
+      SUBJECT_LIST_DIGEST: ${{ needs.attestation.outputs.subject-list-digest }}
+    steps:
+      - name: Checkout exact source revision
+        # actions/checkout v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Download verified matrix artifacts
+        # actions/download-artifact v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: anosecurekit-enterprise-*
+          path: downloaded-artifacts
+
+      - name: Download attestation verification inputs
+        # actions/download-artifact v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: anosecurekit-enterprise-attestation-${{ github.sha }}
+          path: attestation-inputs
+
+      - name: Verify attested artifact set
+        shell: bash
+        run: |
+          [[ "$ATTESTATION_REFERENCE" =~ ^https://github.com/${GITHUB_REPOSITORY}/attestations/[1-9][0-9]*$ ]]
+          echo "${SUBJECT_LIST_DIGEST#sha256:}  attestation-inputs/attestation-subjects.sha256" | sha256sum --check --strict
+          while read -r digest name; do
+            artifact="$GITHUB_WORKSPACE/downloaded-artifacts/$name"
+            test -f "$artifact" && test ! -L "$artifact"
+            cmake \
+              "-DVERIFIER_EXECUTABLE=$(command -v gh)" \
+              "-DARTIFACT_PATH=$artifact" \
+              "-DEXPECTED_SUBJECT_NAME=$name" \
+              "-DEXPECTED_SUBJECT_DIGEST=sha256:$digest" \
+              "-DEXPECTED_SOURCE_REPOSITORY=$GITHUB_REPOSITORY" \
+              "-DEXPECTED_SOURCE_REVISION=$GITHUB_SHA" \
+              "-DEXPECTED_WORKFLOW_IDENTITY=$GITHUB_REPOSITORY/.github/workflows/anosecurekit-enterprise-ci.yml" \
+              "-DEXPECTED_TRUST_DOMAIN=https://token.actions.githubusercontent.com" \
+              "-DATTESTATION_REFERENCE=$ATTESTATION_REFERENCE" \
+              "-DATTESTATION_BUNDLE=$GITHUB_WORKSPACE/attestation-inputs/attestation-bundle.json" \
+              -DREQUIRE_VERIFIED=ON \
+              -P cmake/check_release_evidence_verifier.cmake
+          done < attestation-inputs/attestation-subjects.sha256
+
   codeql:
     name: CodeQL C/C++
     if: ${{ vars.ANOSECUREKIT_ENABLE_CODEQL == 'true' }}
@@ -180,13 +295,15 @@ jobs:
       security-events: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        # actions/checkout v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libssl-dev ninja-build
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        # github/codeql-action init v4
+        uses: github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a
         with:
           languages: c-cpp
           build-mode: manual
@@ -207,7 +324,8 @@ jobs:
         run: cmake --build build-codeql --target enterprise-check --parallel 4
 
       - name: Analyze
-        uses: github/codeql-action/analyze@v4
+        # github/codeql-action analyze v4
+        uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a
 
   sanitizers:
     name: ubuntu-latest clang Debug sanitizers
@@ -215,7 +333,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        # actions/checkout v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y clang libssl-dev ninja-build
@@ -250,7 +369,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        # actions/checkout v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libssl-dev ninja-build

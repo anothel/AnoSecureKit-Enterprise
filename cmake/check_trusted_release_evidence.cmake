@@ -559,6 +559,63 @@ set(ANOSECUREKIT_TRUSTED_EVIDENCE_CANONICAL_DIGEST "sha256:${_canonical_digest}"
 set(ANOSECUREKIT_TRUSTED_EVIDENCE_STRUCTURAL_STATUS valid)
 set(ANOSECUREKIT_TRUSTED_EVIDENCE_CRYPTOGRAPHIC_STATUS unavailable)
 
+if(DEFINED ENABLE_CRYPTOGRAPHIC_VERIFICATION AND ENABLE_CRYPTOGRAPHIC_VERIFICATION
+   AND NOT _evidence_expired AND _all_lanes_passed
+   AND _hosted_status STREQUAL "passed" AND _codeql_status STREQUAL "passed"
+   AND _signing_status STREQUAL "verified" AND _provenance_status STREQUAL "verified"
+   AND _revocation_status STREQUAL "clear" AND _artifact_count GREATER 0)
+  if(NOT DEFINED ARTIFACT_ROOT OR NOT IS_DIRECTORY "${ARTIFACT_ROOT}")
+    set(ANOSECUREKIT_TRUSTED_EVIDENCE_CRYPTOGRAPHIC_STATUS rejected)
+  elseif(NOT _signing_signature_reference STREQUAL _provenance_statement_reference)
+    set(ANOSECUREKIT_TRUSTED_EVIDENCE_CRYPTOGRAPHIC_STATUS rejected)
+  else()
+    set(_all_artifacts_verified ON)
+    if(DEFINED RELEASE_EVIDENCE_VERIFIER_SCRIPT
+       AND NOT RELEASE_EVIDENCE_VERIFIER_SCRIPT STREQUAL "")
+      set(_verifier_script "${RELEASE_EVIDENCE_VERIFIER_SCRIPT}")
+    else()
+      set(_verifier_script "${CMAKE_CURRENT_LIST_DIR}/check_release_evidence_verifier.cmake")
+    endif()
+    foreach(_index RANGE 0 ${_artifact_last})
+      list(GET _artifact_names ${_index} _artifact_name)
+      string(JSON _artifact_digest GET "${_evidence}" artifacts files ${_index} sha256)
+      set(_verifier_args
+        "-DARTIFACT_PATH=${ARTIFACT_ROOT}/${_artifact_name}"
+        "-DEXPECTED_SUBJECT_NAME=${_artifact_name}"
+        "-DEXPECTED_SUBJECT_DIGEST=${_artifact_digest}"
+        "-DEXPECTED_SOURCE_REPOSITORY=anothel/AnoSecureKit-Enterprise"
+        "-DEXPECTED_SOURCE_REVISION=${_source_revision}"
+        "-DEXPECTED_WORKFLOW_IDENTITY=anothel/AnoSecureKit-Enterprise/.github/workflows/anosecurekit-enterprise-ci.yml"
+        "-DEXPECTED_TRUST_DOMAIN=https://token.actions.githubusercontent.com"
+        "-DATTESTATION_REFERENCE=${_signing_signature_reference}"
+        -DREQUIRE_VERIFIED=ON)
+      foreach(_optional IN ITEMS VERIFIER_EXECUTABLE INSTALLED_VERIFIER_EXECUTABLE
+          ATTESTATION_BUNDLE)
+        if(DEFINED ${_optional})
+          list(APPEND _verifier_args "-D${_optional}=${${_optional}}")
+        endif()
+      endforeach()
+      execute_process(
+        COMMAND "${CMAKE_COMMAND}" ${_verifier_args} -P "${_verifier_script}"
+        RESULT_VARIABLE _verifier_result
+        OUTPUT_VARIABLE _verifier_out ERROR_VARIABLE _verifier_err)
+      string(CONCAT _verifier_log "${_verifier_out}" "${_verifier_err}")
+      if(NOT _verifier_result EQUAL 0)
+        set(_all_artifacts_verified OFF)
+        if(_verifier_log MATCHES "cryptographic_evidence: rejected")
+          set(ANOSECUREKIT_TRUSTED_EVIDENCE_CRYPTOGRAPHIC_STATUS rejected)
+        else()
+          set(ANOSECUREKIT_TRUSTED_EVIDENCE_CRYPTOGRAPHIC_STATUS unavailable)
+        endif()
+        break()
+      endif()
+    endforeach()
+    if(_all_artifacts_verified)
+      set(ANOSECUREKIT_TRUSTED_EVIDENCE_CRYPTOGRAPHIC_STATUS verified)
+    endif()
+  endif()
+endif()
+
 set(_zero_digest "sha256:0000000000000000000000000000000000000000000000000000000000000000")
 set(_trusted_status unavailable)
 set(_untrusted_reason "cryptographic verifier unavailable")
@@ -597,6 +654,14 @@ elseif(NOT _provenance_status STREQUAL "verified")
   set(_untrusted_reason "provenance evidence unavailable")
 elseif(NOT _revocation_status STREQUAL "clear")
   set(_untrusted_reason "revocation status unavailable")
+elseif(ANOSECUREKIT_TRUSTED_EVIDENCE_CRYPTOGRAPHIC_STATUS STREQUAL "rejected")
+  set(_trusted_status rejected)
+  set(_untrusted_reason "cryptographic evidence rejected")
+elseif(NOT ANOSECUREKIT_TRUSTED_EVIDENCE_CRYPTOGRAPHIC_STATUS STREQUAL "verified")
+  set(_untrusted_reason "cryptographic verifier unavailable")
+else()
+  set(_trusted_status verified)
+  set(_untrusted_reason "")
 endif()
 set(ANOSECUREKIT_TRUSTED_EVIDENCE_STATUS "${_trusted_status}")
 

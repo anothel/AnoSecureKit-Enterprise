@@ -163,7 +163,7 @@ _reject_replacement(secret-like-field "field count mismatch"
   "  \"reason\": \"Test-only positive fixture.\",\n"
   "  \"api_token\": \"do-not-store\",\n  \"reason\": \"Test-only positive fixture.\",\n")
 _reject_replacement(production-allow-unavailable
-  "Production signing/provenance evidence verification is not implemented"
+  "Production allow requires verified cryptographic and trusted evidence"
   "\"test_only\": true" "\"test_only\": false")
 _run_record(test-fixture-production-rejection "${_allow}" OFF FALSE
   "Test-only release authorization cannot authorize production delivery")

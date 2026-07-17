@@ -19,6 +19,8 @@ deferred.
 Trusted release evidence status:
 
 - evidence bundle: present (repository default fail-closed record);
+- attestation generation: configured, not generated;
+- verifier backend: unavailable (`none`, version unavailable in installed metadata);
 - structural evidence: unavailable for this package until exact binding succeeds;
 - cryptographic evidence: unavailable;
 - trusted evidence: unavailable;

@@ -51,13 +51,12 @@ source revision, versions, Community tree, backend/provider family, staged
 manifest, complete artifact set, hosted qualification, CodeQL policy, signing,
 provenance, approver role, and validity window. Current authorization is denied
 or unavailable; `customer_release_ready` remains `false`. Production allow is
-also hard-disabled until trusted hosted, signing, and provenance evidence
-verification exists.
+also blocked until trusted hosted, signing, and provenance evidence verifies.
 
 The canonical evidence bundle and its structural, cryptographic, and trusted
-state model are defined in `TRUSTED_RELEASE_EVIDENCE_POLICY.md`. The current
-cryptographic verifier is unavailable, so the bundle cannot authorize a
-production delivery.
+state model are defined in `TRUSTED_RELEASE_EVIDENCE_POLICY.md`. The verifier
+adapter is configured, but no hosted attestation exists, so the bundle cannot
+authorize a production delivery.
 
 
 ## Continuous verification

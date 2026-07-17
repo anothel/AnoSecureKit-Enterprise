@@ -24,6 +24,10 @@ set(_required_text
   "Local verification: passed"
   "Remote verification: deferred"
   "Evidence bundle: present"
+  "Attestation generation: configured"
+  "Verifier backend: unavailable"
+  "Verifier backend id: none"
+  "Verifier version: unavailable"
   "Structural evidence: unavailable"
   "Cryptographic evidence: unavailable"
   "Trusted evidence: unavailable"
@@ -66,6 +70,10 @@ _expect_json(local_verification "passed")
 _expect_json(remote_verification "deferred")
 _expect_json(qualification_status "local-pass-remote-deferred")
 _expect_json(evidence_bundle "present")
+_expect_json(attestation_generation "configured")
+_expect_json(verifier_backend "unavailable")
+_expect_json(verifier_backend_id "none")
+_expect_json(verifier_version "unavailable")
 _expect_json(structural_evidence "unavailable")
 _expect_json(cryptographic_evidence "unavailable")
 _expect_json(trusted_evidence "unavailable")

@@ -25,7 +25,8 @@ The aggregate target requires:
 - Community v0.4.0 source-offer verification;
 - staged and archived SHA-256 manifest validation;
 - SPDX 2.3 delivery SBOM validation;
-- CI workflow policy validation.
+- CI workflow policy validation;
+- external release-evidence verifier capability and fail-closed contract tests;
 - release-authorization schema, default-deny, positive test-only fixture, and
   fail-closed negative validation.
 
@@ -43,7 +44,8 @@ cmake --build build --target enterprise-customer-delivery-check
 
 Both fail with the repository's default deny record. See
 [RELEASE_AUTHORIZATION_POLICY.md](RELEASE_AUTHORIZATION_POLICY.md). Production
-allow also remains locked until trusted evidence verification is implemented.
+allow requires hosted evidence plus successful external cryptographic and
+trusted-evidence verification.
 
 ## Opt-in AnoCrypto-C lifecycle, SHA-256, HMAC-SHA-256, and random gate
 
@@ -103,13 +105,21 @@ Each platform build executes `enterprise-release-preflight` and uploads the veri
 internal delivery directory for 14 days. Artifacts remain internal validation evidence;
 they are not automatically published as GitHub Releases or approved customer packages.
 
+After artifact validation, `main`/release-tag pushes and explicit dispatches use
+the pinned official `actions/attest` action to attest an exact checksum list.
+A following job verifies every downloaded subject with the same installed
+`check_release_evidence_verifier.cmake` adapter. Pull requests do not receive
+attestation permissions. Until a hosted run completes both jobs, cryptographic
+and trusted evidence remain unavailable and customer release remains denied.
+
 ## Current release policy
 
-The workflow has read-only repository permissions and contains no release-upload step.
-Publisher authentication, signing, provenance attestations, support approval, and legal
-approval remain separate future gates. The incomplete AnoCrypto-C profile cannot install
-or produce delivery artifacts. Native lifecycle, SHA-256, HMAC-SHA-256, and
-random success do not change its full required capability mask,
+The workflow has global read-only repository permissions and contains no
+release-upload step. Only the post-validation attestation job receives scoped
+OIDC and attestation write permissions. Publisher authentication, support
+approval, and legal approval remain separate gates. The incomplete AnoCrypto-C
+profile cannot install or produce delivery artifacts. Native lifecycle,
+SHA-256, HMAC-SHA-256, and random success do not change its full required capability mask,
 approved-digest block, install/export state, or customer-delivery status.
 
 When hosted execution is unavailable, [DEFERRED_CI_STATUS.md](DEFERRED_CI_STATUS.md)

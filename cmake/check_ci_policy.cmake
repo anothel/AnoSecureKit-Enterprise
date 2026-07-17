@@ -31,14 +31,26 @@ set(_required_terms
   "enterprise-sanitizer-check"
   "enterprise-delivery-check"
   "non-bundled-consumer"
-  "actions/upload-artifact@v7"
+  "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
   "artifact-validation:"
-  "actions/download-artifact@v8"
+  "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"
   "check_downloaded_artifact.cmake"
+  "attestation:"
+  "name: artifact-attestation"
+  "needs: artifact-validation"
+  "id-token: write"
+  "attestations: write"
+  "actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6"
+  "subject-checksums: attestation-subjects.sha256"
+  "attestation-reference:"
+  "subject-list-digest:"
+  "attestation-verification:"
+  "check_release_evidence_verifier.cmake"
+  "github.event_name == 'push' || github.event_name == 'workflow_dispatch'"
   "codeql:"
   "ANOSECUREKIT_ENABLE_CODEQL == 'true'"
-  "github/codeql-action/init@v4"
-  "github/codeql-action/analyze@v4"
+  "github/codeql-action/init@7188fc363630916deb702c7fdcf4e481b751f97a"
+  "github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a"
   "security-events: write"
   "retention-days: 14")
 
@@ -49,12 +61,30 @@ foreach(_term IN LISTS _required_terms)
   endif()
 endforeach()
 
+string(REGEX MATCHALL "uses:[^\r\n]+@[A-Za-z0-9._/-]+" _action_uses "${_content}")
+foreach(_use IN LISTS _action_uses)
+  string(REGEX REPLACE "^.*@" "" _action_revision "${_use}")
+  string(LENGTH "${_action_revision}" _action_revision_length)
+  if(NOT _action_revision_length EQUAL 40
+     OR NOT _action_revision MATCHES "^[0-9a-f]+$")
+    message(FATAL_ERROR "Enterprise CI action is not pinned to a full commit SHA: ${_use}")
+  endif()
+endforeach()
+
+foreach(_permission IN ITEMS "id-token: write" "attestations: write")
+  string(REGEX MATCHALL "${_permission}" _permission_matches "${_content}")
+  list(LENGTH _permission_matches _permission_count)
+  if(NOT _permission_count EQUAL 1)
+    message(FATAL_ERROR
+      "Enterprise CI must grant '${_permission}' to exactly one job")
+  endif()
+endforeach()
+
 set(_forbidden_terms
   "softprops/action-gh-release"
   "gh release create"
   "gh release upload"
   "contents: write"
-  "id-token: write"
   "pull_request_target"
   "secrets.")
 foreach(_term IN LISTS _forbidden_terms)

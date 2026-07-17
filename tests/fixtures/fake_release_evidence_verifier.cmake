@@ -1,0 +1,122 @@
+# SPDX-License-Identifier: LicenseRef-AnoSecureKit-Enterprise-Proprietary
+cmake_minimum_required(VERSION 3.20)
+
+set(_argument_list)
+if(CMAKE_ARGC GREATER 0)
+  math(EXPR _argument_last "${CMAKE_ARGC} - 1")
+  foreach(_index RANGE 0 ${_argument_last})
+    list(APPEND _argument_list "${CMAKE_ARGV${_index}}")
+  endforeach()
+endif()
+list(JOIN _argument_list " " _arguments)
+
+if(FAKE_MODE STREQUAL "timeout")
+  execute_process(COMMAND "${CMAKE_COMMAND}" -E sleep 3)
+endif()
+if(FAKE_MODE STREQUAL "excessive-output")
+  string(REPEAT x 4096 _large)
+  message(FATAL_ERROR "${_large}")
+endif()
+
+if(_arguments MATCHES "--version")
+  if(FAKE_MODE STREQUAL "malformed-version")
+    execute_process(COMMAND "${CMAKE_COMMAND}" -E echo "github cli unknown")
+  elseif(FAKE_MODE STREQUAL "unsupported-version")
+    execute_process(COMMAND "${CMAKE_COMMAND}" -E echo "gh version 2.46.0")
+  else()
+    execute_process(COMMAND "${CMAKE_COMMAND}" -E echo "gh version 2.95.0")
+  endif()
+  return()
+endif()
+
+if(_arguments MATCHES "attestation verify --help")
+  if(FAKE_MODE STREQUAL "subcommand-missing")
+    message(FATAL_ERROR "unknown command attestation verify")
+  endif()
+  execute_process(COMMAND "${CMAKE_COMMAND}" -E echo
+    "gh attestation verify --format json")
+  return()
+endif()
+if(_arguments MATCHES "attestation --help")
+  if(FAKE_MODE STREQUAL "capability-fail")
+    message(FATAL_ERROR "unknown command attestation")
+  endif()
+  execute_process(COMMAND "${CMAKE_COMMAND}" -E echo "gh attestation")
+  return()
+endif()
+
+if(FAKE_MODE STREQUAL "nonzero")
+  message(FATAL_ERROR "signature verification failed")
+elseif(FAKE_MODE STREQUAL "missing-attestation")
+  message(FATAL_ERROR "No attestations found for subject")
+elseif(FAKE_MODE STREQUAL "expired")
+  message(FATAL_ERROR "attestation certificate expired")
+elseif(FAKE_MODE STREQUAL "revoked")
+  message(FATAL_ERROR "attestation trust root revoked")
+elseif(FAKE_MODE STREQUAL "malformed-json")
+  execute_process(COMMAND "${CMAKE_COMMAND}" -E echo "{")
+  return()
+elseif(FAKE_MODE STREQUAL "text-output")
+  execute_process(COMMAND "${CMAKE_COMMAND}" -E echo "verification passed")
+  return()
+endif()
+
+string(REGEX REPLACE "^sha256:" "" _digest "${FAKE_SUBJECT_DIGEST}")
+set(_repository "${FAKE_REPOSITORY}")
+set(_revision "${FAKE_REVISION}")
+set(_subject_digest "${_digest}")
+set(_subject_name "${FAKE_SUBJECT_NAME}")
+set(_workflow "${FAKE_WORKFLOW}")
+set(_trust_domain "${FAKE_TRUST_DOMAIN}")
+if(FAKE_MODE STREQUAL "wrong-repository")
+  set(_repository "other/repository")
+elseif(FAKE_MODE STREQUAL "wrong-owner")
+  string(REGEX REPLACE "^[^/]+/" "other-owner/" _repository "${_repository}")
+elseif(FAKE_MODE STREQUAL "wrong-revision")
+  set(_revision "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+elseif(FAKE_MODE STREQUAL "wrong-digest")
+  set(_subject_digest "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+elseif(FAKE_MODE STREQUAL "wrong-workflow")
+  string(REGEX REPLACE "[^/]+$" "other.yml" _workflow "${_workflow}")
+elseif(FAKE_MODE STREQUAL "wrong-trust-domain")
+  set(_trust_domain "https://example.invalid")
+endif()
+if(FAKE_MODE STREQUAL "unsupported-predicate")
+  set(_predicate "https://example.invalid/predicate/v1")
+else()
+  set(_predicate "https://slsa.dev/provenance/v1")
+endif()
+
+set(_certificate
+  "\"certificateIssuer\":\"CN=fake-test-only\""
+  ",\"subjectAlternativeName\":\"https://github.com/${_workflow}@refs/heads/main\""
+  ",\"issuer\":\"${_trust_domain}\""
+  ",\"buildSignerURI\":\"https://github.com/${_workflow}@refs/heads/main\""
+  ",\"runnerEnvironment\":\"github-hosted\""
+  ",\"sourceRepositoryURI\":\"https://github.com/${_repository}\""
+  ",\"sourceRepositoryDigest\":\"${_revision}\"")
+string(REPLACE ";" "" _certificate "${_certificate}")
+if(FAKE_MODE STREQUAL "duplicate-json")
+  string(APPEND _certificate ",\"sourceRepositoryDigest\":\"${_revision}\"")
+endif()
+
+if(FAKE_MODE STREQUAL "unsigned")
+  set(_signature "")
+else()
+  set(_signature ",\"signature\":{\"certificate\":{${_certificate}}}")
+endif()
+set(_entry
+  "{\"attestation\":{},\"verificationResult\":{"
+  "\"mediaType\":\"application/vnd.dev.sigstore.verification-result+json\""
+  ",\"statement\":{\"_type\":\"https://in-toto.io/Statement/v1\""
+  ",\"subject\":[{\"name\":\"${_subject_name}\",\"digest\":{\"sha256\":\"${_subject_digest}\"}}]"
+  ",\"predicateType\":\"${_predicate}\",\"predicate\":{}}"
+  "${_signature}"
+  ",\"verifiedTimestamps\":[{\"type\":\"transparency-log\",\"uri\":\"https://example.invalid/log\",\"timestamp\":\"2026-01-01T00:00:00Z\"}]}}")
+string(REPLACE ";" "" _entry "${_entry}")
+if(FAKE_MODE STREQUAL "multiple")
+  set(_output "[${_entry},${_entry}]")
+else()
+  set(_output "[${_entry}]")
+endif()
+execute_process(COMMAND "${CMAKE_COMMAND}" -E echo "${_output}")
