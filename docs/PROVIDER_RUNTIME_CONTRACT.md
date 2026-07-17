@@ -104,10 +104,11 @@ fatal status consult the native last-error query.
 
 The opt-in harness compiles that production source into a standalone test
 executable and compares its native identity query with the Enterprise snapshot.
-The adapter reports capability mask `0`; `backend_profile_ready()` therefore
-remains false despite lifecycle readiness. The build-tree AnoCrypto-C profile,
-adapter headers, and adapter objects remain excluded from installation, exports,
-customer archives, and the delivered SBOM.
+The adapter reports only the `sha256` capability bit;
+`backend_profile_ready()` therefore remains false despite lifecycle readiness
+and working SHA-256. The build-tree AnoCrypto-C profile, adapter headers, and
+adapter objects remain excluded from installation, exports, customer archives,
+and the delivered SBOM.
 
 ## Operation status contract
 
@@ -127,10 +128,11 @@ public `unsupported` result; self-test failure, fatal state, and not initialized
 share `not_operational`. Every other native failure retains its corresponding
 public category. Unknown operation values fail closed as `internal_error`.
 
-The operation mapper performs no lifecycle transition and invokes no
-cryptographic service. Service adapters remain unimplemented, so adding status
-translation does not change the runtime capability mask or profile readiness.
-The exhaustive opt-in native test also verifies every stable public status name.
+The operation mapper performs no lifecycle transition. The SHA-256 adapter uses
+it to translate the direct result of `ano_crypto_hash_digest`; all other service
+adapters remain unimplemented and fail closed. The runtime mask therefore
+contains only `sha256`, and complete profile readiness remains false. The
+exhaustive opt-in native test also verifies every stable public status name.
 
 ## Required adapter behavior
 

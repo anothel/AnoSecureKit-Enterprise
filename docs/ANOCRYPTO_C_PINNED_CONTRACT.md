@@ -57,7 +57,7 @@ values and performs exact config-package discovery. It does not use
 The installed package must expose a non-empty commit matching the configured
 pin. A package reporting `unknown` fails unless the explicitly development-only
 `ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS=ON`
-override is set. That override permits lifecycle development only, is not
+override is set. That override permits native development only, is not
 delivery provenance or approval, and cannot enable AnoCrypto-C packaging.
 
 ## Required public headers
@@ -122,8 +122,8 @@ initialize, shutdown, and explicit self-test operations.
 The native harness verifies the production adapter's clean starting snapshot,
 startup self-test, operational gate, repeated initialization, shutdown,
 reinitialization, repeated shutdown, runtime identity, build identity ABI,
-fingerprint, commit policy, identity-mismatch rejection, and zero capability
-mask against the installed package.
+fingerprint, commit policy, identity-mismatch rejection, and the SHA-256-only
+capability mask against the installed package.
 
 Native module states map without loss:
 
@@ -165,15 +165,47 @@ The production lifecycle conversion and service-operation conversion are
 separate functions. Unknown native states map to Enterprise `error`; unknown
 lifecycle statuses and unknown operation statuses map to `internal_error`.
 Compile-time assertions pin every known numeric native status, and the opt-in
-native test covers every known value plus unknown positive and negative values.
+native test covers every known value plus reviewed unknown cast values.
+
+## SHA-256 service contract
+
+SHA-256 is the first connected native service. The Enterprise provider calls
+the public AnoCrypto-C one-shot API exactly as declared by `ac_hash.h`:
+
+```c
+ano_crypto_status_t ano_crypto_hash_digest(
+    ano_crypto_hash_algorithm_t algorithm,
+    const uint8_t *input,
+    size_t input_len,
+    uint8_t *out,
+    size_t out_len,
+    size_t *out_written);
+```
+
+The adapter passes `ANO_CRYPTO_HASH_ALG_SHA256`, a 32-byte output buffer, and
+requires exactly 32 bytes written. It calls the established operational gate
+before the hash API. Empty input passes `NULL` with length zero; non-empty input
+passes its exact byte span and length. Native results use the operation-status
+mapper. Any mapped error or wrong output length becomes the existing public
+`anosecurekit::error_code::backend_failure`; no partial digest is returned.
+
+The same public `anosecurekit::sha256` test covers empty input, `abc`, embedded
+zero bytes, 257-byte multi-block input, and deterministic 1 MiB input on both
+OpenSSL and AnoCrypto-C. It also verifies rejection before initialization and
+after shutdown, native validation failures, output-buffer safety, and unknown
+status fail-closed behavior.
 
 ## Capability status
 
-Ready for native adapter integration:
+Connected through Enterprise native adapters:
 
 - module lifecycle and self-test reporting;
 - version and build identity;
-- SHA-256 and HMAC-SHA-256;
+- SHA-256.
+
+Ready for later native adapter integration:
+
+- HMAC-SHA-256;
 - HMAC_DRBG-SHA-256 and platform-backed random.
 
 Additional implemented AnoCrypto-C services are SHA-384/SHA-512, matching HMAC
@@ -181,12 +213,14 @@ variants, AES-128/192/256-CBC, AES-CMAC, and in-memory key handles. They are not
 added to the current Enterprise provider capability mask because they do not
 replace missing product requirements.
 
-The shared operation-status mapper does not connect any of these services. The
-production adapter continues to report capability mask `0`.
+The SHA-256 adapter uses the shared operation-status mapper. The development
+runtime reports only the `sha256` capability bit. Fail-closed stubs for the
+remaining Community backend symbols contain no cryptographic implementation
+and advertise no capability.
 
-Full Enterprise parity remains blocked by missing HKDF-SHA-256, scrypt,
-AES-256-GCM, streaming AEAD, and key wrapping. Missing services never fall back
-to OpenSSL and are never advertised as available.
+Full Enterprise parity remains blocked by missing HMAC-SHA-256, HKDF-SHA-256,
+random, scrypt, AES-256-GCM, streaming AEAD, and key wrapping. Missing services
+never fall back to OpenSSL and are never advertised as available.
 
 ## Packaging, platforms, and licensing
 
@@ -195,10 +229,10 @@ exist for Linux, Windows, and Apple platform entropy and synchronization.
 Static package consumption remains unverified. Windows and macOS hosted
 verification is deferred, as are hosted artifact and provenance checks.
 
-Linux native verification inspects both the lifecycle executable and imported
-AnoCrypto-C library with `ldd`, rejecting `libcrypto` or `libssl`. Windows and
-macOS dependency inspection remains deferred until a suitable local or hosted
-package is available.
+Linux native verification inspects the lifecycle executable, public SHA-256
+test executable, and imported AnoCrypto-C library with `ldd`, rejecting
+`libcrypto` or `libssl`. Windows and macOS dependency inspection remains
+deferred until a suitable local or hosted package is available.
 
 AnoCrypto-C remains MPL-2.0. Enterprise does not relicense it. Applicable MPL
 source and notice obligations must be preserved; private-repository or
@@ -209,10 +243,10 @@ No public forced-KAT-failure hook is approved, so native self-test-failure
 injection remains deferred. Existing mock self-test-failure tests remain the
 only failure-path evidence.
 
-The proprietary lifecycle adapter and operation-status mapper are linked into
-the build-tree AnoCrypto-C profile, which reports no cryptographic capability
-bits. Their source/header files are not installed or exported, and the profile
-remains excluded from CPack, customer archives, and the delivery SBOM.
-Lifecycle readiness and status translation therefore do not make the complete
-profile ready. The AnoCrypto-C production profile remains blocked from customer
-delivery.
+The proprietary lifecycle adapter, operation-status mapper, and SHA-256
+provider are linked into the opt-in build-tree AnoCrypto-C development profile,
+which reports only the `sha256` capability bit. Their source/header files are
+not installed or exported, and the profile remains excluded from CPack,
+customer archives, and the delivery SBOM. Lifecycle readiness and one service
+therefore do not make the complete profile ready. The AnoCrypto-C production
+profile remains blocked from customer delivery.

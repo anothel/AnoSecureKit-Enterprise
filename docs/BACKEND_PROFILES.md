@@ -31,11 +31,12 @@ This profile requires:
 - complete static and runtime capabilities required by the selected product
   surface.
 
-The profile fails configuration or runtime readiness when any requirement is
-missing. It never falls back to OpenSSL. The real native lifecycle adapter is
-connected and identity-pinned, but no cryptographic service adapter is
-connected and its runtime capability mask remains zero, so this profile is not
-production-ready.
+Normal production configuration fails when any static requirement is missing.
+Explicit native test mode may build the Enterprise-owned SHA-256 development
+provider while keeping production gates closed. It never falls back to OpenSSL.
+The native lifecycle adapter is identity-pinned and the first service adapter
+connects public `anosecurekit::sha256` to `ano_crypto_hash_digest`. Its runtime
+capability mask contains only `sha256`, so this profile is not production-ready.
 It intentionally produces no install/export or customer-delivery package.
 
 ## Production capability gate

@@ -32,6 +32,8 @@ verification are mandatory. See
 - production native state/lifecycle mapping and Linux dependency-purity checks;
 - exhaustive service-operation status mapping with unknown-value fail-closed
   coverage;
+- public SHA-256 through `ano_crypto_hash_digest` with OpenSSL parity and native
+  negative tests;
 - no silent OpenSSL fallback.
 
 ## Current runtime boundary
@@ -46,18 +48,19 @@ The exact native public headers and lifecycle symbols are verified and pinned.
 The production adapter calls them directly, verifies runtime/build identity at
 initialization, and reports module/self-test state through runtime contract
 version `1`. The opt-in harness compiles the same adapter and verifies the real
-lifecycle sequence. Its capability mask is zero, so lifecycle readiness does
-not advertise cryptographic service parity or make the complete profile ready.
+lifecycle sequence. The runtime capability mask now contains only `sha256`, so
+lifecycle readiness still does not make the complete profile ready.
 
 A separate production helper maps every defined AnoCrypto-C service status to
-the stable Enterprise operation-status contract. It invokes no service and does
-not change the zero capability mask. Unknown values map to `internal_error`.
+the stable Enterprise operation-status contract. The SHA-256 provider uses that
+mapper for `ano_crypto_hash_digest`; unknown values map to `internal_error`.
+All unconnected backend functions fail closed without OpenSSL fallback.
 
 ## Remaining implementation
 
 1. Approve and record the package/archive digest.
 2. Verify static package consumption.
-3. Map SHA-256, HMAC-SHA-256, and platform-backed random using confirmed APIs.
+3. Map HMAC-SHA-256 and platform-backed random using confirmed APIs.
 4. Fail closed for missing HKDF, AEAD, streaming, key-wrap, and password-KDF
    capabilities until AnoCrypto-C supplies them.
 5. Run the Community API/fixture suite through the profile.
@@ -71,14 +74,16 @@ not change the zero capability mask. Unknown values map to `internal_error`.
 2. Build the proprietary cryptographic provider adapter.
 3. Build the proprietary runtime/lifecycle adapter.
 4. Build and verify the separate native operation-status mapper.
-5. Validate CMake identity, contract version, direct module linkage, and static
+5. Build and verify the native SHA-256 adapter and cross-backend vectors.
+6. Validate CMake identity, contract version, direct module linkage, and static
    capabilities.
-6. Initialize the actual module and verify self-test/operational state.
-7. Compare runtime capabilities against the complete product requirement.
-8. Only then enable public API parity tests and production packaging.
+7. Initialize the actual module and verify self-test/operational state.
+8. Compare runtime capabilities against the complete product requirement.
+9. Only then enable full API parity tests and production packaging.
 
 The verified AnoCrypto-C feature set is not sufficient for the full production
-gate because HKDF-SHA-256, scrypt, AES-256-GCM, streaming AEAD, and key wrapping
-are absent. The approved package digest is also unresolved. Passing the native
-lifecycle target does not enable installation, customer packaging, fallback,
-or production profile readiness.
+gate because HMAC-SHA-256, HKDF-SHA-256, random, scrypt, AES-256-GCM, streaming
+AEAD, and key wrapping are absent from the Enterprise adapter. The approved
+package digest is also unresolved. Passing native lifecycle and SHA-256 targets
+does not enable installation, customer packaging, fallback, or production
+profile readiness.

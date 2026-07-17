@@ -87,8 +87,8 @@ matched its generated v0.4.0 source-offer archive to that subtree.
 
 The verified AnoCrypto-C API/package contract is pinned in
 `ANOCRYPTO_C_PINNED_CONTRACT.md`. The proprietary production lifecycle adapter
-is connected; the native installed-package harness remains opt-in. No
-cryptographic service adapter is connected.
+and operation-status mapper are connected; the native installed-package harness
+remains opt-in. SHA-256 is the first connected cryptographic service.
 
 Local WSL2 verification used this installed shared package:
 
@@ -106,37 +106,40 @@ Resolved library:
 <prefix>/lib/libanocrypto_c.so.0.1.0
 ```
 
-With warnings treated as errors, `enterprise-release-preflight` passed for GCC
-15.2.0 Release static, GCC 15.2.0 Release shared, and Clang 21.1.8 Release
-static Enterprise builds. The harness compiled the production lifecycle
-adapter source. Full CTest passed all six tests, including the installed OpenSSL
-consumer, delivery package, production lifecycle adapter, and dependency-purity
-entries. A separate default-`OFF` GCC build passed without discovering or
-requiring `AnoCryptoC`, and the native lifecycle target was absent.
+With warnings treated as errors, the AnoCrypto-C development profile passed six
+CTest entries on GCC 15.2.0 Release static, GCC 15.2.0 Release shared, and Clang
+21.1.8 Release static. The entries cover profile/runtime state, public SHA-256,
+production lifecycle, operation-status mapping, Linux dependency purity, and CI
+policy. A separate default-`OFF` GCC OpenSSL build passed the complete five-test
+CTest inventory, installed consumer, and delivery package gate without
+discovering or requiring `AnoCryptoC`; native targets were absent.
 
 The runtime identity was `0.1.0-p1-33-release-rehearsal`; build identity ABI was
 `1`; fingerprint was `AnoCrypto-C-p1-33-release-rehearsal`. This local package
 reported commit `unknown`, so verification required the explicit
 development-only unknown-commit override while still configuring expected
-commit `cf0f3c425dd265c7509fb64a6123db97f71055dd`. This is lifecycle evidence, not
-approved provenance. A separate build without the override rejected
+commit `cf0f3c425dd265c7509fb64a6123db97f71055dd`. This is native development
+evidence, not approved provenance. A separate build without the override rejected
 initialization as required.
 
 The lifecycle sequence passed: clean pre-init state, rejected pre-init service
 gate, initialization and startup self-test, operational state/gate, repeated
 initialization, shutdown, rejected post-shutdown gate, reinitialization,
 repeated shutdown, and final clean shutdown. Linux `ldd` inspection found no
-`libcrypto` or `libssl` dependency in either the native test executable or the
-resolved AnoCrypto-C library. The production snapshot matched the native
-runtime identity/fingerprint and reported lifecycle ready, capability mask `0`,
-and complete profile not ready.
+`libcrypto` or `libssl` dependency in the lifecycle executable, SHA-256
+executable, or resolved AnoCrypto-C library. The production snapshot matched the
+native runtime identity/fingerprint and reported lifecycle ready, capability
+mask `sha256`, and complete profile not ready.
 
-A build-tree AnoCrypto-C profile smoke build linked the built-in production
-lifecycle object and the installed module. Initialization reported `ready`,
-module state `operational`, and self-test `passed`, while `Profile ready`
-remained `no` and runtime capabilities remained empty. Its diagnostic
-executable had no `libcrypto`/`libssl` dependency, installation produced no
-files, and no Enterprise delivery target was available.
+The build-tree AnoCrypto-C development profile linked the Enterprise SHA-256
+provider, lifecycle object, status mapper, and installed module. Public
+`anosecurekit::sha256` output matched OpenSSL exactly for empty input, `abc`, a
+binary zero-byte vector, 257-byte multi-block input, and deterministic 1 MiB
+input. Pre-initialization, post-shutdown, invalid-argument, short-buffer, unknown
+status, and output-safety checks failed closed. HMAC and HKDF entry points also
+failed closed without fallback. Runtime state was `ready`/`operational`/`passed`
+with only `sha256`; complete profile readiness remained `no`. Installation
+produced no files, and no Enterprise delivery target was available.
 
 Static package consumption, native forced-self-test-failure injection, and
 Windows/macOS package verification remain deferred. No approved package digest

@@ -40,6 +40,7 @@ int main()
 {
     using namespace anosecurekit_enterprise;
     using namespace anosecurekit_enterprise::providers::anocrypto_c;
+    constexpr auto sha256_mask = backend_capability_bit(crypto_backend_capability::sha256);
 
     if (map_native_module_state(ANO_CRYPTO_MODULE_STATE_UNINITIALIZED)
             != backend_module_state::uninitialized
@@ -85,7 +86,7 @@ int main()
     }
     auto runtime = current_backend_runtime();
     if (native_lifecycle_ready(runtime) || backend_profile_ready()
-        || anocrypto_backend_available() || runtime.capability_mask != 0)
+        || anocrypto_backend_available() || runtime.capability_mask != sha256_mask)
     {
         return fail(5, "pre-init Enterprise snapshot");
     }
@@ -98,7 +99,7 @@ int main()
     if (runtime.status != backend_runtime_status::ready
         || runtime.module_state != backend_module_state::operational
         || runtime.self_test_status != backend_self_test_status::passed
-        || !native_lifecycle_ready(runtime) || runtime.capability_mask != 0
+        || !native_lifecycle_ready(runtime) || runtime.capability_mask != sha256_mask
         || backend_profile_ready() || anocrypto_backend_available()
         || required_backend_capability_mask() == 0)
     {
@@ -212,6 +213,6 @@ int main()
               << "build_fingerprint=" << identity.fingerprint << '\n'
               << "lifecycle_ready=yes\n"
               << "complete_profile_ready=no\n"
-              << "capability_mask=0\n";
+              << "capability_mask=sha256\n";
     return 0;
 }

@@ -309,7 +309,7 @@ backend_runtime_info snapshot_native_runtime() noexcept
         runtime_status,
         state.state,
         self_test.status,
-        0,
+        backend_capability_bit(crypto_backend_capability::sha256),
     };
 }
 

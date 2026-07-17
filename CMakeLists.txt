@@ -90,6 +90,7 @@ set(_anosecurekit_enterprise_required_capabilities
   scrypt
   aes256-gcm
   aes256-gcm-stream)
+set(_anosecurekit_enterprise_builtin_partial_provider FALSE)
 
 if(NOT ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl"
    AND NOT ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
@@ -107,10 +108,30 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
       "AnoCrypto-C profile requires imported target AnoCryptoC::AnoCryptoC")
   endif()
   if(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET STREQUAL "")
-    message(FATAL_ERROR
-      "AnoCrypto-C profile is fail-closed until a complete Enterprise provider adapter is supplied. "
-      "Set ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET to an existing non-imported "
-      "OBJECT_LIBRARY that implements the full AnoSecureKit provider contract.")
+    if(NOT ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
+      message(FATAL_ERROR
+        "AnoCrypto-C profile is fail-closed until a complete Enterprise provider adapter is supplied. "
+        "Set ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET to an existing non-imported "
+        "OBJECT_LIBRARY that implements the full AnoSecureKit provider contract.")
+    endif()
+    add_library(anosecurekit_enterprise_anocrypto_c_provider OBJECT
+      src/providers/anocrypto_c/crypto_adapter.cpp)
+    set_property(TARGET anosecurekit_enterprise_anocrypto_c_provider PROPERTY
+      ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID "anocrypto-c")
+    set_property(TARGET anosecurekit_enterprise_anocrypto_c_provider PROPERTY
+      ANOSECUREKIT_ENTERPRISE_PROVIDER_CAPABILITIES "sha256")
+    target_include_directories(anosecurekit_enterprise_anocrypto_c_provider PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/include"
+      "${CMAKE_CURRENT_SOURCE_DIR}/src/providers/anocrypto_c"
+      "${CMAKE_CURRENT_SOURCE_DIR}/third_party/anosecurekit-community/include"
+      "${CMAKE_CURRENT_SOURCE_DIR}/third_party/anosecurekit-community/src")
+    target_compile_features(anosecurekit_enterprise_anocrypto_c_provider PRIVATE cxx_std_20)
+    target_link_libraries(anosecurekit_enterprise_anocrypto_c_provider PRIVATE
+      AnoCryptoC::AnoCryptoC)
+    _anosecurekit_enterprise_apply_warnings(anosecurekit_enterprise_anocrypto_c_provider)
+    set(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET
+      anosecurekit_enterprise_anocrypto_c_provider)
+    set(_anosecurekit_enterprise_builtin_partial_provider TRUE)
   endif()
   if(NOT TARGET "${ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_PROVIDER_TARGET}")
     message(FATAL_ERROR
@@ -152,10 +173,17 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
   endforeach()
   if(_enterprise_missing_capabilities)
     list(JOIN _enterprise_missing_capabilities ", " _enterprise_missing_capabilities_text)
-    message(FATAL_ERROR
-      "AnoCrypto-C provider is incomplete for the Enterprise production profile. "
-      "Missing required capabilities: ${_enterprise_missing_capabilities_text}. "
-      "No OpenSSL fallback is permitted.")
+    if(_anosecurekit_enterprise_builtin_partial_provider)
+      message(STATUS
+        "AnoCrypto-C SHA-256 development provider enabled; full production profile remains blocked. "
+        "Missing required capabilities: ${_enterprise_missing_capabilities_text}. "
+        "No OpenSSL fallback is permitted.")
+    else()
+      message(FATAL_ERROR
+        "AnoCrypto-C provider is incomplete for the Enterprise production profile. "
+        "Missing required capabilities: ${_enterprise_missing_capabilities_text}. "
+        "No OpenSSL fallback is permitted.")
+    endif()
   endif()
 
   get_target_property(_enterprise_provider_link_libraries
@@ -369,6 +397,22 @@ if(BUILD_TESTING)
   add_test(NAME enterprise.profile COMMAND anosecurekit_enterprise_profile_test)
   set_tests_properties(enterprise.profile PROPERTIES LABELS "profile;runtime")
 
+  add_executable(anosecurekit_enterprise_sha256_test tests/sha256_test.cpp)
+  target_link_libraries(anosecurekit_enterprise_sha256_test PRIVATE anosecurekit::enterprise)
+  target_compile_features(anosecurekit_enterprise_sha256_test PRIVATE cxx_std_20)
+  if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
+    target_include_directories(anosecurekit_enterprise_sha256_test PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src/providers/anocrypto_c")
+    target_link_libraries(anosecurekit_enterprise_sha256_test PRIVATE AnoCryptoC::AnoCryptoC)
+  endif()
+  _anosecurekit_enterprise_apply_warnings(anosecurekit_enterprise_sha256_test)
+  add_test(NAME enterprise.sha256 COMMAND anosecurekit_enterprise_sha256_test)
+  if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
+    set_tests_properties(enterprise.sha256 PROPERTIES LABELS "native-anocrypto-c;sha256")
+  else()
+    set_tests_properties(enterprise.sha256 PROPERTIES LABELS "openssl;sha256")
+  endif()
+
   if(ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
     add_executable(anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
       tests/native_anocrypto_c/native_lifecycle_test.cpp
@@ -421,10 +465,16 @@ if(BUILD_TESTING)
     set_tests_properties(enterprise.native-anocrypto-c-status-mapping PROPERTIES
       LABELS "native-anocrypto-c;status")
 
+    set(_anosecurekit_enterprise_native_sha256_dependency_arg "")
+    if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
+      set(_anosecurekit_enterprise_native_sha256_dependency_arg
+        -DNATIVE_SHA256_EXECUTABLE=$<TARGET_FILE:anosecurekit_enterprise_sha256_test>)
+    endif()
     add_test(NAME enterprise.native-anocrypto-c-dependencies
       COMMAND ${CMAKE_COMMAND}
         -DNATIVE_TEST_EXECUTABLE=$<TARGET_FILE:anosecurekit_enterprise_native_anocrypto_c_lifecycle_test>
         -DANOCRYPTO_C_LIBRARY=$<TARGET_FILE:AnoCryptoC::AnoCryptoC>
+        ${_anosecurekit_enterprise_native_sha256_dependency_arg}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/native_anocrypto_c/check_dependencies.cmake)
     set_tests_properties(enterprise.native-anocrypto-c-dependencies PROPERTIES
       LABELS "native-anocrypto-c;dependency")
@@ -442,6 +492,20 @@ if(BUILD_TESTING)
       COMMAND $<TARGET_FILE:anosecurekit_enterprise_native_anocrypto_c_status_mapping_test>
       DEPENDS anosecurekit_enterprise_native_anocrypto_c_status_mapping_test
       USES_TERMINAL)
+
+    if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
+      add_custom_target(enterprise-native-anocrypto-c-sha256-check
+        COMMAND $<TARGET_FILE:anosecurekit_enterprise_sha256_test>
+        COMMAND ${CMAKE_COMMAND}
+          -DNATIVE_TEST_EXECUTABLE=$<TARGET_FILE:anosecurekit_enterprise_native_anocrypto_c_lifecycle_test>
+          -DNATIVE_SHA256_EXECUTABLE=$<TARGET_FILE:anosecurekit_enterprise_sha256_test>
+          -DANOCRYPTO_C_LIBRARY=$<TARGET_FILE:AnoCryptoC::AnoCryptoC>
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/native_anocrypto_c/check_dependencies.cmake
+        DEPENDS
+          anosecurekit_enterprise_sha256_test
+          anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
+        USES_TERMINAL)
+    endif()
   endif()
 endif()
 
@@ -588,6 +652,7 @@ endif()
 if(BUILD_TESTING)
   set(_anosecurekit_enterprise_check_dependencies
     anosecurekit_enterprise_profile_test
+    anosecurekit_enterprise_sha256_test
     anosecurekit_enterprise_info)
   if(ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
     list(APPEND _anosecurekit_enterprise_check_dependencies

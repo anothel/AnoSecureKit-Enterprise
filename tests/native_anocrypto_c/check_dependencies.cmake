@@ -13,7 +13,12 @@ endif()
 
 find_program(_ldd_executable NAMES ldd REQUIRED)
 
-foreach(_binary IN ITEMS "${NATIVE_TEST_EXECUTABLE}" "${ANOCRYPTO_C_LIBRARY}")
+set(_native_binaries "${NATIVE_TEST_EXECUTABLE}" "${ANOCRYPTO_C_LIBRARY}")
+if(DEFINED NATIVE_SHA256_EXECUTABLE AND NOT NATIVE_SHA256_EXECUTABLE STREQUAL "")
+  list(APPEND _native_binaries "${NATIVE_SHA256_EXECUTABLE}")
+endif()
+
+foreach(_binary IN LISTS _native_binaries)
   if(NOT EXISTS "${_binary}")
     message(FATAL_ERROR "Dependency inspection input does not exist: ${_binary}")
   endif()
@@ -31,7 +36,7 @@ foreach(_binary IN ITEMS "${NATIVE_TEST_EXECUTABLE}" "${ANOCRYPTO_C_LIBRARY}")
   string(TOLOWER "${_ldd_out}" _ldd_lower)
   if(_ldd_lower MATCHES "libcrypto|libssl")
     message(FATAL_ERROR
-      "AnoCrypto-C native lifecycle dependency purity failed for ${_binary}\n${_ldd_out}")
+      "AnoCrypto-C native dependency purity failed for ${_binary}\n${_ldd_out}")
   endif()
   message(STATUS "No libcrypto/libssl dependency: ${_binary}")
 endforeach()

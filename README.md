@@ -118,9 +118,10 @@ contract, not a runtime plugin system. A wrong contract version, failed
 self-test, non-operational module state, or incomplete runtime capability mask
 keeps the profile unavailable.
 
-The current repository validates this boundary with mock adapters. Exact native
-headers and symbols are pinned, but no concrete AnoCrypto-C function is called
-yet. See [docs/PROVIDER_RUNTIME_CONTRACT.md](docs/PROVIDER_RUNTIME_CONTRACT.md).
+The native lifecycle and SHA-256 development path uses the pinned public
+AnoCrypto-C API. SHA-256 is the only connected native cryptographic capability;
+the complete profile remains blocked. See
+[docs/PROVIDER_RUNTIME_CONTRACT.md](docs/PROVIDER_RUNTIME_CONTRACT.md).
 
 
 ## CI and release gate

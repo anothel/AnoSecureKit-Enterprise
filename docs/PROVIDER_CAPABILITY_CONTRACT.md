@@ -40,11 +40,18 @@ set_property(TARGET <provider> PROPERTY
 target_link_libraries(<provider> PRIVATE AnoCryptoC::AnoCryptoC)
 ```
 
-Configuration fails when the identity, capability list, direct module link, target type, or module package contract is missing.
+Configuration fails when the identity, capability list, direct module link,
+target type, or module package contract is missing. The opt-in native test mode
+may build the Enterprise-owned partial provider declaring only `sha256`; this is
+a development path and cannot enable installation or delivery.
 
 ## Fail-closed rule
 
-A partial AnoCrypto-C provider is not promoted to the production profile. Missing services are not sent to OpenSSL and are not represented as available. Development work may implement capabilities incrementally, but production profile configuration remains blocked until the complete requirement set is met.
+A partial AnoCrypto-C provider is not promoted to the production profile.
+Missing services are not sent to OpenSSL and are not represented as available.
+Development work may implement capabilities incrementally through the explicit
+native test option, but normal production profile configuration remains blocked
+until the complete requirement set is met.
 
 ## Runtime gate implemented as a contract
 
@@ -59,19 +66,22 @@ The static CMake capability declaration is only the first gate. Enterprise now a
 - absence of OpenSSL production linkage in the AnoCrypto-C profile.
 
 The runtime adapter is selected at link time and independently reports a
-capability mask. The production AnoCrypto-C lifecycle implementation uses the
-pinned external public API and reports mask `0`; cryptographic service adapters
-remain pending. Tests retain mock runtime adapters for failure paths and use the
-installed package for the production lifecycle path. See
-`PROVIDER_RUNTIME_CONTRACT.md`.
+capability mask. The AnoCrypto-C lifecycle implementation uses the pinned
+external public API and now reports only `sha256`. The first service adapter
+implements Community `sha256` with public `ano_crypto_hash_digest`; all other
+backend functions remain fail-closed and advertise no capability. Tests retain
+mock runtime adapters for failure paths and use the installed package for the
+native lifecycle and SHA-256 path. See `PROVIDER_RUNTIME_CONTRACT.md`.
 
 The production source also includes a separate exhaustive native
-service-operation status mapper. It calls no cryptographic service, advertises
-no capability, and does not alter lifecycle readiness. Unknown native operation
-values map to `internal_error`; no error maps to `success`.
+service-operation status mapper. SHA-256 consumes its direct native result
+through this mapper. Unknown native operation values map to `internal_error`;
+no error maps to `success`. Public SHA-256 failures preserve the existing
+Community `backend_failure` exception contract.
 
-HKDF-SHA-256, scrypt, AES-256-GCM, streaming AEAD, and key wrapping are absent
-from the pinned baseline and block full parity. They must not be declared in an
-actual adapter capability mask until implemented and verified.
+HMAC-SHA-256, HKDF-SHA-256, random, scrypt, AES-256-GCM, streaming AEAD, and key
+wrapping remain absent from the Enterprise provider and block full parity. They
+must not be declared in an actual adapter capability mask until implemented and
+verified.
 
 Static or mock metadata must not be treated as KCMVP or FIPS validation evidence.

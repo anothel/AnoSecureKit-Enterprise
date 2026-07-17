@@ -5,6 +5,20 @@ int main()
 {
     using namespace anosecurekit_enterprise;
 
+#ifdef ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C
+    constexpr auto expected_profile = crypto_backend_profile::anocrypto_c;
+    constexpr auto expected_profile_name = "anocrypto-c";
+    constexpr auto expected_backend_name = "anocrypto-c";
+    constexpr auto expected_self_test = backend_self_test_status::passed;
+    constexpr auto expected_capability_mask =
+        backend_capability_bit(crypto_backend_capability::sha256);
+#else
+    constexpr auto expected_profile = crypto_backend_profile::openssl;
+    constexpr auto expected_profile_name = "openssl";
+    constexpr auto expected_backend_name = "openssl";
+    constexpr auto expected_self_test = backend_self_test_status::not_applicable;
+#endif
+
     if (enterprise_version() != "0.1.0")
     {
         return 1;
@@ -13,7 +27,7 @@ int main()
     {
         return 2;
     }
-    if (backend_profile() != crypto_backend_profile::openssl || backend_profile_name() != "openssl")
+    if (backend_profile() != expected_profile || backend_profile_name() != expected_profile_name)
     {
         return 3;
     }
@@ -23,13 +37,14 @@ int main()
     }
 
     const auto runtime = current_backend_runtime();
-    if (runtime.backend_name != "openssl" || runtime.status != backend_runtime_status::ready)
+    if (runtime.backend_name != expected_backend_name
+        || runtime.status != backend_runtime_status::ready)
     {
         shutdown_backend();
         return 5;
     }
     if (runtime.module_state != backend_module_state::operational
-        || runtime.self_test_status != backend_self_test_status::not_applicable)
+        || runtime.self_test_status != expected_self_test)
     {
         shutdown_backend();
         return 6;
@@ -39,12 +54,20 @@ int main()
         shutdown_backend();
         return 7;
     }
+#ifdef ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C
+    if (runtime.capability_mask != expected_capability_mask)
+#else
     if (runtime.capability_mask != required_backend_capability_mask())
+#endif
     {
         shutdown_backend();
         return 8;
     }
+#ifdef ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C
+    if (backend_profile_ready() || anocrypto_backend_available())
+#else
     if (!backend_profile_ready() || anocrypto_backend_available())
+#endif
     {
         shutdown_backend();
         return 9;
@@ -58,7 +81,16 @@ int main()
     }
     for (const auto capability : capabilities)
     {
-        if (!backend_supports(capability) || backend_capability_name(capability).empty())
+        if (backend_capability_name(capability).empty())
+        {
+            shutdown_backend();
+            return 11;
+        }
+#ifdef ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C
+        if (backend_supports(capability))
+#else
+        if (!backend_supports(capability))
+#endif
         {
             shutdown_backend();
             return 11;
@@ -67,7 +99,8 @@ int main()
 
     if (backend_runtime_status_name(runtime.status) != "ready"
         || backend_module_state_name(runtime.module_state) != "operational"
-        || backend_self_test_status_name(runtime.self_test_status) != "not-applicable")
+        || backend_self_test_status_name(runtime.self_test_status)
+            != backend_self_test_status_name(expected_self_test))
     {
         shutdown_backend();
         return 12;
