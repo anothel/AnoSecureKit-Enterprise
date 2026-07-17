@@ -136,6 +136,79 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  artifact-validation:
+    name: downloaded-artifact-validation
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download matrix artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: anosecurekit-enterprise-*
+          path: downloaded-artifacts
+
+      - name: Reverify downloaded artifacts
+        shell: bash
+        run: |
+          for artifact in downloaded-artifacts/*; do
+            cmake \
+              -DENTERPRISE_SOURCE_DIR="$GITHUB_WORKSPACE" \
+              -DARTIFACT_DIR="$artifact" \
+              -DWORK_DIR="$RUNNER_TEMP/$(basename "$artifact")" \
+              -DEXPECTED_SOURCE_REVISION="$GITHUB_SHA" \
+              -P tests/package/check_downloaded_artifact.cmake
+          done
+          {
+            echo "run_id=$GITHUB_RUN_ID"
+            echo "source_revision=$GITHUB_SHA"
+            find downloaded-artifacts -name SHA256SUMS.txt -print -exec cat {} \;
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  codeql:
+    name: CodeQL C/C++
+    if: ${{ vars.ANOSECUREKIT_ENABLE_CODEQL == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      actions: read
+      contents: read
+      packages: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev ninja-build
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: c-cpp
+          build-mode: manual
+
+      - name: Configure
+        env:
+          CC: gcc
+          CXX: g++
+        run: >
+          cmake -S . -B build-codeql -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND=openssl
+          -DANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY=ON
+          -DANOSECUREKIT_ENTERPRISE_WARNINGS_AS_ERRORS=ON
+          -DANOSECUREKIT_WARNINGS_AS_ERRORS=ON
+
+      - name: Build
+        run: cmake --build build-codeql --target enterprise-check --parallel 4
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
+
   sanitizers:
     name: ubuntu-latest clang Debug sanitizers
     runs-on: ubuntu-latest

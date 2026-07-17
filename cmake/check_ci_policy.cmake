@@ -24,6 +24,7 @@ set(_required_terms
   "compiler: appleclang"
   "shared: 'OFF'"
   "shared: 'ON'"
+  "fail-fast: false"
   "-DBUILD_SHARED_LIBS="
   "enterprise-release-preflight"
   "enterprise-check"
@@ -31,6 +32,14 @@ set(_required_terms
   "enterprise-delivery-check"
   "non-bundled-consumer"
   "actions/upload-artifact@v7"
+  "artifact-validation:"
+  "actions/download-artifact@v8"
+  "check_downloaded_artifact.cmake"
+  "codeql:"
+  "ANOSECUREKIT_ENABLE_CODEQL == 'true'"
+  "github/codeql-action/init@v4"
+  "github/codeql-action/analyze@v4"
+  "security-events: write"
   "retention-days: 14")
 
 foreach(_term IN LISTS _required_terms)
@@ -44,7 +53,10 @@ set(_forbidden_terms
   "softprops/action-gh-release"
   "gh release create"
   "gh release upload"
-  "contents: write")
+  "contents: write"
+  "id-token: write"
+  "pull_request_target"
+  "secrets.")
 foreach(_term IN LISTS _forbidden_terms)
   string(FIND "${_content}" "${_term}" _position)
   if(NOT _position EQUAL -1)
