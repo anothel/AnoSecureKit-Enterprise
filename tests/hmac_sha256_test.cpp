@@ -98,7 +98,8 @@ int main()
 #ifdef ANOSECUREKIT_ENTERPRISE_BACKEND_ANOCRYPTO_C
     constexpr auto capability_mask =
         backend_capability_bit(crypto_backend_capability::sha256)
-        | backend_capability_bit(crypto_backend_capability::hmac_sha256);
+        | backend_capability_bit(crypto_backend_capability::hmac_sha256)
+        | backend_capability_bit(crypto_backend_capability::random);
     const auto initial = current_backend_runtime();
     if ((initial.module_state != backend_module_state::uninitialized
          && initial.module_state != backend_module_state::shutdown)

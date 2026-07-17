@@ -42,7 +42,8 @@ int main()
     using namespace anosecurekit_enterprise::providers::anocrypto_c;
     constexpr auto capability_mask =
         backend_capability_bit(crypto_backend_capability::sha256)
-        | backend_capability_bit(crypto_backend_capability::hmac_sha256);
+        | backend_capability_bit(crypto_backend_capability::hmac_sha256)
+        | backend_capability_bit(crypto_backend_capability::random);
 
     if (map_native_module_state(ANO_CRYPTO_MODULE_STATE_UNINITIALIZED)
             != backend_module_state::uninitialized

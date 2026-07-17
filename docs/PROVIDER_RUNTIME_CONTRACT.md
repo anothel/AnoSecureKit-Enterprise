@@ -104,11 +104,11 @@ fatal status consult the native last-error query.
 
 The opt-in harness compiles that production source into a standalone test
 executable and compares its native identity query with the Enterprise snapshot.
-The adapter reports exactly the `sha256` and `hmac-sha256` capability bits;
-`backend_profile_ready()` therefore remains false despite lifecycle readiness
-and working SHA-256/HMAC-SHA-256. The build-tree AnoCrypto-C profile, adapter
-headers, and adapter objects remain excluded from installation, exports,
-customer archives, and the delivered SBOM.
+The adapter reports exactly the `sha256`, `hmac-sha256`, and `random` capability
+bits; `backend_profile_ready()` therefore remains false despite lifecycle
+readiness and working SHA-256/HMAC-SHA-256/random. The build-tree AnoCrypto-C
+profile, adapter headers, and adapter objects remain excluded from installation,
+exports, customer archives, and the delivered SBOM.
 
 ## Operation status contract
 
@@ -130,11 +130,14 @@ public category. Unknown operation values fail closed as `internal_error`.
 
 The operation mapper performs no lifecycle transition. SHA-256 uses it for
 `ano_crypto_hash_digest`; HMAC-SHA-256 uses it for raw-key
-`ano_crypto_hmac_compute`. Both require exactly 32 output bytes. All remaining
-service adapters stay unimplemented and fail closed. The runtime mask therefore
-contains exactly `sha256` and `hmac-sha256`, and complete profile readiness
-remains false. The exhaustive opt-in native test also verifies every stable
-public status name.
+`ano_crypto_hmac_compute`; random uses it for public random init/generate/
+uninitialize results. Hash/MAC require exactly 32 output bytes. Random uses one
+context per call, 65,536-byte maximum chunks, full-output clearing on failure,
+and no Enterprise retry or reseed schedule. All remaining service adapters stay
+unimplemented and fail closed. The runtime mask therefore contains exactly
+`sha256`, `hmac-sha256`, and `random`, and complete profile readiness remains
+false. The exhaustive opt-in native test also verifies every stable public
+status name.
 
 ## Required adapter behavior
 

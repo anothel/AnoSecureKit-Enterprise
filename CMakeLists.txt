@@ -119,7 +119,7 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
     set_property(TARGET anosecurekit_enterprise_anocrypto_c_provider PROPERTY
       ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID "anocrypto-c")
     set_property(TARGET anosecurekit_enterprise_anocrypto_c_provider PROPERTY
-      ANOSECUREKIT_ENTERPRISE_PROVIDER_CAPABILITIES "sha256;hmac-sha256")
+      ANOSECUREKIT_ENTERPRISE_PROVIDER_CAPABILITIES "sha256;hmac-sha256;random")
     target_include_directories(anosecurekit_enterprise_anocrypto_c_provider PRIVATE
       "${CMAKE_CURRENT_SOURCE_DIR}/include"
       "${CMAKE_CURRENT_SOURCE_DIR}/src/providers/anocrypto_c"
@@ -175,7 +175,7 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
     list(JOIN _enterprise_missing_capabilities ", " _enterprise_missing_capabilities_text)
     if(_anosecurekit_enterprise_builtin_partial_provider)
       message(STATUS
-        "AnoCrypto-C SHA-256/HMAC-SHA-256 development provider enabled; full production profile remains blocked. "
+        "AnoCrypto-C SHA-256/HMAC-SHA-256/random development provider enabled; full production profile remains blocked. "
         "Missing required capabilities: ${_enterprise_missing_capabilities_text}. "
         "No OpenSSL fallback is permitted.")
     else()
@@ -433,6 +433,25 @@ if(BUILD_TESTING)
     set_tests_properties(enterprise.hmac-sha256 PROPERTIES LABELS "openssl;hmac-sha256")
   endif()
 
+  add_executable(anosecurekit_enterprise_random_test tests/random_test.cpp)
+  target_link_libraries(anosecurekit_enterprise_random_test PRIVATE
+    anosecurekit::enterprise)
+  target_compile_features(anosecurekit_enterprise_random_test PRIVATE cxx_std_20)
+  if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
+    target_include_directories(anosecurekit_enterprise_random_test PRIVATE
+      "${CMAKE_CURRENT_SOURCE_DIR}/src/providers/anocrypto_c")
+    target_link_libraries(anosecurekit_enterprise_random_test PRIVATE
+      AnoCryptoC::AnoCryptoC)
+  endif()
+  _anosecurekit_enterprise_apply_warnings(anosecurekit_enterprise_random_test)
+  add_test(NAME enterprise.random COMMAND anosecurekit_enterprise_random_test)
+  if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
+    set_tests_properties(enterprise.random PROPERTIES
+      LABELS "native-anocrypto-c;random")
+  else()
+    set_tests_properties(enterprise.random PROPERTIES LABELS "openssl;random")
+  endif()
+
   if(ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
     add_executable(anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
       tests/native_anocrypto_c/native_lifecycle_test.cpp
@@ -487,11 +506,14 @@ if(BUILD_TESTING)
 
     set(_anosecurekit_enterprise_native_sha256_dependency_arg "")
     set(_anosecurekit_enterprise_native_hmac_sha256_dependency_arg "")
+    set(_anosecurekit_enterprise_native_random_dependency_arg "")
     if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
       set(_anosecurekit_enterprise_native_sha256_dependency_arg
         -DNATIVE_SHA256_EXECUTABLE=$<TARGET_FILE:anosecurekit_enterprise_sha256_test>)
       set(_anosecurekit_enterprise_native_hmac_sha256_dependency_arg
         -DNATIVE_HMAC_SHA256_EXECUTABLE=$<TARGET_FILE:anosecurekit_enterprise_hmac_sha256_test>)
+      set(_anosecurekit_enterprise_native_random_dependency_arg
+        -DNATIVE_RANDOM_EXECUTABLE=$<TARGET_FILE:anosecurekit_enterprise_random_test>)
     endif()
     add_test(NAME enterprise.native-anocrypto-c-dependencies
       COMMAND ${CMAKE_COMMAND}
@@ -499,6 +521,7 @@ if(BUILD_TESTING)
         -DANOCRYPTO_C_LIBRARY=$<TARGET_FILE:AnoCryptoC::AnoCryptoC>
         ${_anosecurekit_enterprise_native_sha256_dependency_arg}
         ${_anosecurekit_enterprise_native_hmac_sha256_dependency_arg}
+        ${_anosecurekit_enterprise_native_random_dependency_arg}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/native_anocrypto_c/check_dependencies.cmake)
     set_tests_properties(enterprise.native-anocrypto-c-dependencies PROPERTIES
       LABELS "native-anocrypto-c;dependency")
@@ -539,6 +562,18 @@ if(BUILD_TESTING)
           -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/native_anocrypto_c/check_dependencies.cmake
         DEPENDS
           anosecurekit_enterprise_hmac_sha256_test
+          anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
+        USES_TERMINAL)
+
+      add_custom_target(enterprise-native-anocrypto-c-random-check
+        COMMAND $<TARGET_FILE:anosecurekit_enterprise_random_test>
+        COMMAND ${CMAKE_COMMAND}
+          -DNATIVE_TEST_EXECUTABLE=$<TARGET_FILE:anosecurekit_enterprise_native_anocrypto_c_lifecycle_test>
+          -DNATIVE_RANDOM_EXECUTABLE=$<TARGET_FILE:anosecurekit_enterprise_random_test>
+          -DANOCRYPTO_C_LIBRARY=$<TARGET_FILE:AnoCryptoC::AnoCryptoC>
+          -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/native_anocrypto_c/check_dependencies.cmake
+        DEPENDS
+          anosecurekit_enterprise_random_test
           anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
         USES_TERMINAL)
     endif()
@@ -690,6 +725,7 @@ if(BUILD_TESTING)
     anosecurekit_enterprise_profile_test
     anosecurekit_enterprise_sha256_test
     anosecurekit_enterprise_hmac_sha256_test
+    anosecurekit_enterprise_random_test
     anosecurekit_enterprise_info)
   if(ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
     list(APPEND _anosecurekit_enterprise_check_dependencies

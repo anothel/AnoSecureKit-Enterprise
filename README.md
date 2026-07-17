@@ -118,9 +118,11 @@ contract, not a runtime plugin system. A wrong contract version, failed
 self-test, non-operational module state, or incomplete runtime capability mask
 keeps the profile unavailable.
 
-The native lifecycle, SHA-256, and raw-key HMAC-SHA-256 development path uses
-the pinned public AnoCrypto-C API. The runtime advertises exactly `sha256` and
-`hmac-sha256`; the complete profile remains blocked. See
+The native lifecycle, SHA-256, raw-key HMAC-SHA-256, and random development path
+uses the pinned public AnoCrypto-C API. Random requests use one caller-owned
+context per call and split generation into chunks of at most 65,536 bytes. The
+runtime advertises exactly `sha256`, `hmac-sha256`, and `random`; the complete
+profile remains blocked. See
 [docs/PROVIDER_RUNTIME_CONTRACT.md](docs/PROVIDER_RUNTIME_CONTRACT.md).
 
 

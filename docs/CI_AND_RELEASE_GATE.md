@@ -29,7 +29,7 @@ The aggregate target requires:
 `ANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL` controls CTest concurrency and must
 be a positive integer.
 
-## Opt-in AnoCrypto-C lifecycle, SHA-256, and HMAC-SHA-256 gate
+## Opt-in AnoCrypto-C lifecycle, SHA-256, HMAC-SHA-256, and random gate
 
 The installed-package harness compiles the production lifecycle adapter and is
 disabled by default. Enable it only with an external exact-version package and
@@ -45,7 +45,8 @@ cmake -S . -B build-native -G Ninja \
   -DAnoCryptoC_DIR=<installed-prefix>/lib/cmake/AnoCryptoC
 cmake --build build-native \
   --target enterprise-native-anocrypto-c-sha256-check \
-    enterprise-native-anocrypto-c-hmac-sha256-check --parallel 4
+    enterprise-native-anocrypto-c-hmac-sha256-check \
+    enterprise-native-anocrypto-c-random-check --parallel 4
 ```
 
 A package reporting commit `unknown` fails by default. For development-only
@@ -56,15 +57,17 @@ lifecycle testing, add:
 ```
 
 The override does not approve package provenance. In the `anocrypto-c`
-development profile, the focused targets run lifecycle gating, public SHA-256
-and HMAC-SHA-256 vectors/negative cases, and dependency inspection. The HMAC
-target covers RFC 4231, empty/binary/block-boundary/large messages, exact output
-length, and pre-init/post-shutdown failure. An OpenSSL build may still enable
-the option for standalone lifecycle/status checks. With the option `OFF`,
-configuration and normal OpenSSL gates do not discover or require AnoCrypto-C.
+development profile, the focused targets run lifecycle gating, public SHA-256,
+HMAC-SHA-256, and random contracts, native negative cases, and dependency
+inspection. Random covers 0/1/65,535/65,536/65,537 bytes, multiple chunks, a
+fixed large size, key/token helpers, pre-init/post-shutdown rejection, mock
+unavailable/status failures, context cleanup, and whole-output clearing. An
+OpenSSL build may still enable the option for standalone lifecycle/status
+checks. With the option `OFF`, configuration and normal OpenSSL gates do not
+discover or require AnoCrypto-C.
 
 Linux uses `ldd` to reject `libcrypto` or `libssl` dependencies in the lifecycle,
-SHA-256, and HMAC-SHA-256 executables and imported AnoCrypto-C library.
+SHA-256, HMAC-SHA-256, and random executables and imported AnoCrypto-C library.
 Windows/macOS inspection remains deferred. Native self-test-failure injection
 remains deferred pending an approved upstream public hook.
 
@@ -89,9 +92,9 @@ they are not automatically published as GitHub Releases or approved customer pac
 The workflow has read-only repository permissions and contains no release-upload step.
 Publisher authentication, signing, provenance attestations, support approval, and legal
 approval remain separate future gates. The incomplete AnoCrypto-C profile cannot install
-or produce delivery artifacts. Native lifecycle, SHA-256, and HMAC-SHA-256
-success do not change its full required capability mask, approved-digest block,
-install/export state, or customer-delivery status.
+or produce delivery artifacts. Native lifecycle, SHA-256, HMAC-SHA-256, and
+random success do not change its full required capability mask,
+approved-digest block, install/export state, or customer-delivery status.
 
 When hosted execution is unavailable, [DEFERRED_CI_STATUS.md](DEFERRED_CI_STATUS.md)
 records local evidence, deferred remote checks, and the customer-release block.
