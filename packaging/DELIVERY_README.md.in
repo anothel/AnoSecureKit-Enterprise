@@ -16,6 +16,9 @@ This is an internal qualification artifact, not a customer release. Customer
 release readiness remains blocked while hosted verification and provenance are
 deferred.
 
+Release authorization: `denied or unavailable`.
+Customer release ready: `false`.
+
 The delivery does **not** contain AnoCrypto-C source, headers, binaries, or a
 production AnoCrypto-C provider adapter. It does not make a KCMVP or FIPS
 validation claim.

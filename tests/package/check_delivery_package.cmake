@@ -181,6 +181,7 @@ file(COPY
   "${ENTERPRISE_SOURCE_DIR}/docs/COMMUNITY_DEPENDENCY.md"
   "${ENTERPRISE_SOURCE_DIR}/docs/DEFERRED_CI_STATUS.md"
   "${ENTERPRISE_SOURCE_DIR}/docs/OPENSSL_PROFILE_SUPPORT_POLICY.md"
+  "${ENTERPRISE_SOURCE_DIR}/docs/RELEASE_AUTHORIZATION_POLICY.md"
   "${ENTERPRISE_SOURCE_DIR}/docs/SUPPORTED_CONFIGURATION_MATRIX.md"
   "${ENTERPRISE_BUILD_DIR}/DELIVERY_README.md"
   "${_enterprise_share}/BUILD_METADATA.txt"
@@ -273,6 +274,8 @@ foreach(_archive IN LISTS _binary_archives)
     "${_extract_dir}/*/share/anosecurekit-enterprise/DELIVERY_README.md")
   file(GLOB_RECURSE _required_support_policy
     "${_extract_dir}/*/share/anosecurekit-enterprise/OPENSSL_PROFILE_SUPPORT_POLICY.md")
+  file(GLOB_RECURSE _required_authorization_policy
+    "${_extract_dir}/*/share/anosecurekit-enterprise/RELEASE_AUTHORIZATION_POLICY.md")
   file(GLOB_RECURSE _required_community_dependency
     "${_extract_dir}/*/share/anosecurekit-enterprise/COMMUNITY_DEPENDENCY.md")
   file(GLOB_RECURSE _required_support_matrix
@@ -294,6 +297,7 @@ foreach(_archive IN LISTS _binary_archives)
       _required_metadata
       _required_delivery_readme
       _required_support_policy
+      _required_authorization_policy
       _required_community_dependency
       _required_support_matrix
       _required_deferred_status
@@ -310,6 +314,7 @@ foreach(_archive IN LISTS _binary_archives)
   file(READ "${_manifest_path}" _manifest_content)
   foreach(_manifest_term IN ITEMS
       "share/anosecurekit-enterprise/OPENSSL_PROFILE_SUPPORT_POLICY.md"
+      "share/anosecurekit-enterprise/RELEASE_AUTHORIZATION_POLICY.md"
       "share/anosecurekit-enterprise/SUPPORTED_CONFIGURATION_MATRIX.md"
       "share/anosecurekit-enterprise/DEFERRED_CI_STATUS.md")
     string(FIND "${_manifest_content}" "${_manifest_term}" _manifest_position)

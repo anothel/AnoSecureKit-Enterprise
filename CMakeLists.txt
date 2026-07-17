@@ -70,6 +70,9 @@ set(ANOSECUREKIT_ENTERPRISE_COMMUNITY_VERSION "0.4.0")
 
 option(ANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY "Use bundled Community source" ON)
 option(ANOSECUREKIT_ENTERPRISE_INSTALL_INFO "Install the Enterprise diagnostic executable" ON)
+set(ANOSECUREKIT_ENTERPRISE_RELEASE_AUTHORIZATION_RECORD
+  "${CMAKE_CURRENT_SOURCE_DIR}/release/customer-release-authorization.json"
+  CACHE FILEPATH "External customer release authorization record; defaults to deny")
 set(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND "openssl" CACHE STRING
   "Enterprise crypto profile: openssl or anocrypto-c")
 set_property(CACHE ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND PROPERTY STRINGS openssl anocrypto-c)
@@ -343,6 +346,7 @@ _anosecurekit_enterprise_apply_warnings(anosecurekit_enterprise_info)
 
 find_package(Git QUIET)
 set(_anosecurekit_enterprise_source_revision "not-recorded")
+set(_anosecurekit_enterprise_community_tree "not-recorded")
 if(Git_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
   execute_process(
     COMMAND "${GIT_EXECUTABLE}" rev-parse HEAD
@@ -354,6 +358,18 @@ if(Git_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
   if(_enterprise_git_result EQUAL 0 AND NOT _enterprise_git_revision STREQUAL "")
     set(_anosecurekit_enterprise_source_revision "${_enterprise_git_revision}")
   endif()
+  execute_process(
+    COMMAND "${GIT_EXECUTABLE}" rev-parse HEAD:third_party/anosecurekit-community
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    RESULT_VARIABLE _enterprise_community_tree_result
+    OUTPUT_VARIABLE _enterprise_community_tree
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET)
+  if(NOT _enterprise_community_tree_result EQUAL 0
+     OR _enterprise_community_tree STREQUAL "")
+    set(_enterprise_community_tree "not-recorded")
+  endif()
+  set(_anosecurekit_enterprise_community_tree "${_enterprise_community_tree}")
 endif()
 
 configure_file(
@@ -362,6 +378,14 @@ configure_file(
   @ONLY)
 
 if(BUILD_TESTING)
+  add_custom_target(enterprise-release-authorization-contract-check
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/release-authorization-contract-check
+      -DDEFAULT_AUTHORIZATION_RECORD=${CMAKE_CURRENT_SOURCE_DIR}/release/customer-release-authorization.json
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_release_authorization_contract.cmake
+    USES_TERMINAL)
+
   add_custom_target(enterprise-profile-config-check
     COMMAND ${CMAKE_COMMAND}
       -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -682,6 +706,7 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     docs/PROVIDER_CAPABILITY_CONTRACT.md
     docs/PROVIDER_RUNTIME_CONTRACT.md
     docs/DELIVERY_VERIFICATION.md
+    docs/RELEASE_AUTHORIZATION_POLICY.md
     docs/SUPPORTED_CONFIGURATION_MATRIX.md
     DESTINATION ${CMAKE_INSTALL_DATADIR}/anosecurekit-enterprise)
 
@@ -799,6 +824,42 @@ if(BUILD_TESTING)
   endif()
 endif()
 if(BUILD_TESTING)
+  if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl"
+     AND ANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY)
+    add_custom_target(enterprise-release-authorization-check
+      COMMAND ${CMAKE_COMMAND}
+        -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DENTERPRISE_DELIVERY_ROOT=${CMAKE_CURRENT_BINARY_DIR}/enterprise-delivery-check
+        -DAUTHORIZATION_RECORD=${ANOSECUREKIT_ENTERPRISE_RELEASE_AUTHORIZATION_RECORD}
+        -DEXPECTED_ENTERPRISE_VERSION=${PROJECT_VERSION}
+        -DEXPECTED_COMMUNITY_VERSION=${ANOSECUREKIT_ENTERPRISE_COMMUNITY_VERSION}
+        -DEXPECTED_COMMUNITY_TREE=${_anosecurekit_enterprise_community_tree}
+        -DEXPECTED_BACKEND_PROFILE=openssl
+        -DEXPECTED_PROVIDER_FAMILY=openssl
+        -DEXPECTED_SOURCE_REVISION=${_anosecurekit_enterprise_source_revision}
+        -DEXPECTED_CODEQL_REQUIRED=ON
+        -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_customer_release_authorization.cmake
+      USES_TERMINAL)
+    add_custom_target(enterprise-customer-delivery-check
+      COMMAND ${CMAKE_COMMAND} -E echo
+        "AnoSecureKit Enterprise customer delivery authorization passed"
+      DEPENDS enterprise-release-authorization-check
+      USES_TERMINAL)
+  else()
+    add_custom_target(enterprise-release-authorization-check
+      COMMAND ${CMAKE_COMMAND} -E echo
+        "enterprise-release-authorization-check requires the bundled Community OpenSSL delivery profile"
+      COMMAND ${CMAKE_COMMAND} -E false
+      USES_TERMINAL)
+    add_custom_target(enterprise-customer-delivery-check
+      COMMAND ${CMAKE_COMMAND} -E echo
+        "enterprise-customer-delivery-check requires an allowed release authorization"
+      COMMAND ${CMAKE_COMMAND} -E false
+      USES_TERMINAL)
+  endif()
+endif()
+if(BUILD_TESTING)
   set(_anosecurekit_enterprise_check_dependencies
     anosecurekit_enterprise_profile_test
     anosecurekit_enterprise_sha256_test
@@ -844,6 +905,7 @@ if(BUILD_TESTING)
         enterprise-profile-config-check
         enterprise-runtime-contract-check
         enterprise-ci-policy-check
+        enterprise-release-authorization-contract-check
         enterprise-openssl-profile-policy-check
         enterprise-package-check
         enterprise-delivery-check

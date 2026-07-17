@@ -16,6 +16,10 @@ opt-in AnoCrypto-C development gate is
 `enterprise-anocrypto-c-partial-profile-check`. Generated ZIP/TGZ files are
 internal qualification artifacts, not customer releases.
 
+Customer release additionally requires the strict
+`enterprise-release-authorization-check`; the checked-in record defaults to
+deny. See [release authorization policy](docs/RELEASE_AUTHORIZATION_POLICY.md).
+
 ## Authoritative contracts
 
 Product and OpenSSL profile:

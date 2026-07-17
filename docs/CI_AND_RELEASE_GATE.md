@@ -26,9 +26,24 @@ The aggregate target requires:
 - staged and archived SHA-256 manifest validation;
 - SPDX 2.3 delivery SBOM validation;
 - CI workflow policy validation.
+- release-authorization schema, default-deny, positive test-only fixture, and
+  fail-closed negative validation.
 
 `ANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL` controls CTest concurrency and must
 be a positive integer.
+
+The aggregate preflight validates the authorization contract but remains an
+internal qualification gate. It does not grant customer release. After creating
+the internal artifact set, the strict customer gates are:
+
+```sh
+cmake --build build --target enterprise-release-authorization-check
+cmake --build build --target enterprise-customer-delivery-check
+```
+
+Both fail with the repository's default deny record. See
+[RELEASE_AUTHORIZATION_POLICY.md](RELEASE_AUTHORIZATION_POLICY.md). Production
+allow also remains locked until trusted evidence verification is implemented.
 
 ## Opt-in AnoCrypto-C lifecycle, SHA-256, HMAC-SHA-256, and random gate
 

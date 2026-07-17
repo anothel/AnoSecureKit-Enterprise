@@ -45,6 +45,15 @@ This is still not a signed release, support agreement, legal approval, or
 KCMVP/FIPS validation claim. Checksums detect changes but do not authenticate
 the publisher.
 
+Customer delivery additionally requires an external authorization record that
+passes `enterprise-release-authorization-check`. The record must bind the exact
+source revision, versions, Community tree, backend/provider family, staged
+manifest, complete artifact set, hosted qualification, CodeQL policy, signing,
+provenance, approver role, and validity window. Current authorization is denied
+or unavailable; `customer_release_ready` remains `false`. Production allow is
+also hard-disabled until trusted hosted, signing, and provenance evidence
+verification exists.
+
 
 ## Continuous verification
 

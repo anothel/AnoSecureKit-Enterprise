@@ -27,6 +27,11 @@ endif()
 if(ANOSECUREKIT_ENTERPRISE_CUSTOMER_RELEASE_READY)
   message(FATAL_ERROR "Installed Enterprise package must keep customer release blocked")
 endif()
+if(NOT ANOSECUREKIT_ENTERPRISE_RELEASE_AUTHORIZATION_REQUIRED
+   OR NOT ANOSECUREKIT_ENTERPRISE_RELEASE_AUTHORIZATION_STATUS STREQUAL
+     "denied-or-unavailable")
+  message(FATAL_ERROR "Installed Enterprise package authorization metadata is incorrect")
+endif()
 
 add_executable(anosecurekit_enterprise_installed_consumer main.cpp)
 target_link_libraries(anosecurekit_enterprise_installed_consumer PRIVATE anosecurekit::enterprise)

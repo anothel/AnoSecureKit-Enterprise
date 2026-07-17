@@ -23,6 +23,7 @@ set(_required_text
   "Implementation: complete"
   "Local verification: passed"
   "Remote verification: deferred"
+  "Release authorization: denied or unavailable"
   "Customer release: blocked"
   "Install/export: enabled"
   "Internal delivery package: enabled"
@@ -60,6 +61,7 @@ _expect_json(implementation_complete "ON")
 _expect_json(local_verification "passed")
 _expect_json(remote_verification "deferred")
 _expect_json(qualification_status "local-pass-remote-deferred")
+_expect_json(release_authorization "denied-or-unavailable")
 _expect_json(customer_release_ready "OFF")
 _expect_json(install_enabled "ON")
 _expect_json(internal_delivery_enabled "ON")
