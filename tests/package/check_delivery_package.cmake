@@ -396,18 +396,18 @@ foreach(_archive IN LISTS _binary_archives)
   file(GLOB_RECURSE _packaged_files LIST_DIRECTORIES false
     RELATIVE "${_extract_dir}" "${_extract_dir}/*")
   foreach(_path IN LISTS _packaged_files)
-    if(_path MATCHES "(^|/)security-custody(/|$)")
+    if(_path MATCHES "(^|/)(security-custody|security-system-readiness)(/|$)")
       message(FATAL_ERROR
-        "Internal delivery archive contains security custody fixture material: ${_path}")
+        "Internal delivery archive contains security fixture material: ${_path}")
     endif()
   endforeach()
   file(GLOB_RECURSE _packaged_json LIST_DIRECTORIES false
     "${_extract_dir}/*.json" "${_extract_dir}/*.jsonl")
   foreach(_json IN LISTS _packaged_json)
     file(READ "${_json}" _json_content)
-    if(_json_content MATCHES "test-only-security-tabletop|test-only:evidence-|test-only:custody-")
+    if(_json_content MATCHES "test-only-security-tabletop|test-only:evidence-|test-only:custody-|test-only:unselected-backend|\"activation_decision\"")
       message(FATAL_ERROR
-        "Internal delivery archive contains a security tabletop/custody fixture: ${_json}")
+        "Internal delivery archive contains a security tabletop/custody/readiness fixture: ${_json}")
     endif()
   endforeach()
 endforeach()

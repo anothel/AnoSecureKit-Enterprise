@@ -536,6 +536,29 @@ if(BUILD_TESTING)
   set_tests_properties(enterprise.security-tabletop
     PROPERTIES LABELS "policy;security;tabletop")
 
+  add_custom_target(enterprise-security-system-activation-readiness-check
+    COMMAND ${CMAKE_COMMAND}
+      -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DFIXTURE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/security-system-readiness
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_security_system_activation_readiness.cmake
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/security-system-activation-readiness-contract-check
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_security_system_activation_readiness_contract.cmake
+    DEPENDS
+      enterprise-support-policy-check
+      enterprise-security-evidence-custody-check
+      enterprise-security-tabletop-check
+    USES_TERMINAL)
+
+  add_test(NAME enterprise.security-system-activation-readiness
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/security-system-activation-readiness-contract-test
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_security_system_activation_readiness_contract.cmake)
+  set_tests_properties(enterprise.security-system-activation-readiness
+    PROPERTIES LABELS "policy;security;activation-readiness")
+
   if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     add_custom_target(enterprise-openssl-boundary-check
       COMMAND ${CMAKE_COMMAND}
@@ -1060,6 +1083,7 @@ if(BUILD_TESTING)
         enterprise-support-policy-check
         enterprise-security-evidence-custody-check
         enterprise-security-tabletop-check
+        enterprise-security-system-activation-readiness-check
         enterprise-release-evidence-verifier-check
         enterprise-trusted-release-evidence-check
         enterprise-release-authorization-contract-check
