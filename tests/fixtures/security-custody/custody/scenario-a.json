@@ -1,0 +1,42 @@
+{
+    "schema_version":  "1",
+    "record_id":  "test-only:custody-a",
+    "incident_id":  "test-only:incident-a",
+    "evidence_id":  "test-only:evidence-a",
+    "evidence_type":  "source snapshot",
+    "source_revision":  "ea3b9d0dae40a359ecdb9cde8116d152a20b5a81",
+    "source_reference":  "evidence/scenario-a.txt",
+    "collected_at":  "2026-07-18T00:00:00Z",
+    "collected_by_role":  "security-intake-owner",
+    "custodian_role":  "evidence-reviewer",
+    "sha256":  "sha256:435b3e26019e118f50e7a4b707d37598b671782af7ac8fafadc18543259df2d7",
+    "size":  219,
+    "sensitivity":  "confidential",
+    "retention_class":  "security-record",
+    "access_class":  "incident-response",
+    "transfer_history":  [
+                             {
+                                 "sequence":  1,
+                                 "from_role":  "security-intake-owner",
+                                 "to_role":  "evidence-custodian",
+                                 "transferred_at":  "2026-07-18T00:01:00Z",
+                                 "reason":  "initial synthetic collection",
+                                 "previous_entry_digest":  "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                                 "entry_digest":  "sha256:f6d9d5e7159829fc39ac9eea23b008fec596967f7f00ab5ab914f7e0ff43e8b8"
+                             },
+                             {
+                                 "sequence":  2,
+                                 "from_role":  "evidence-custodian",
+                                 "to_role":  "evidence-reviewer",
+                                 "transferred_at":  "2026-07-18T00:02:00Z",
+                                 "reason":  "independent integrity review",
+                                 "previous_entry_digest":  "sha256:f6d9d5e7159829fc39ac9eea23b008fec596967f7f00ab5ab914f7e0ff43e8b8",
+                                 "entry_digest":  "sha256:444fce4410e71e4f5dae11a9698eb353a26bfc6bef10d11bf4f4db889d252c80"
+                             }
+                         ],
+    "integrity_status":  "verified",
+    "revocation_status":  "active",
+    "final_disposition":  "retained",
+    "custody_digest":  "sha256:5560510db5172ff8687e5e5ceb120b8dfd26eda4924f5d6c1b595d726eb9b93c",
+    "test_only":  true
+}

@@ -1,0 +1,42 @@
+{
+    "schema_version":  "1",
+    "record_id":  "test-only:custody-d",
+    "incident_id":  "test-only:incident-d",
+    "evidence_id":  "test-only:evidence-d",
+    "evidence_type":  "provenance",
+    "source_revision":  "ea3b9d0dae40a359ecdb9cde8116d152a20b5a81",
+    "source_reference":  "evidence/scenario-d.txt",
+    "collected_at":  "2026-07-18T00:30:00Z",
+    "collected_by_role":  "security-intake-owner",
+    "custodian_role":  "evidence-reviewer",
+    "sha256":  "sha256:508a0f4fd724afcca9a5406046ad95e1642bbf2d5a5f9590e1972368dd5b1c79",
+    "size":  157,
+    "sensitivity":  "restricted",
+    "retention_class":  "legal-hold",
+    "access_class":  "evidence-review",
+    "transfer_history":  [
+                             {
+                                 "sequence":  1,
+                                 "from_role":  "security-intake-owner",
+                                 "to_role":  "evidence-custodian",
+                                 "transferred_at":  "2026-07-18T00:31:00Z",
+                                 "reason":  "initial synthetic collection",
+                                 "previous_entry_digest":  "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                                 "entry_digest":  "sha256:02aa0b6c43427aa090b64f2ee9590d9afe0bd0dd0c24b5208cf8462da8e9d04b"
+                             },
+                             {
+                                 "sequence":  2,
+                                 "from_role":  "evidence-custodian",
+                                 "to_role":  "evidence-reviewer",
+                                 "transferred_at":  "2026-07-18T00:32:00Z",
+                                 "reason":  "independent integrity review",
+                                 "previous_entry_digest":  "sha256:02aa0b6c43427aa090b64f2ee9590d9afe0bd0dd0c24b5208cf8462da8e9d04b",
+                                 "entry_digest":  "sha256:7ac30f199dd87c2399468778dd4c2c5b0415af5a16ccca699ae59f2496e2ff83"
+                             }
+                         ],
+    "integrity_status":  "compromised",
+    "revocation_status":  "revoked",
+    "final_disposition":  "preserved-legal-hold",
+    "custody_digest":  "sha256:3fb88308a5028bb1e40e536e760c9c0e563223a31bdcb3be8892284d2f262f77",
+    "test_only":  true
+}

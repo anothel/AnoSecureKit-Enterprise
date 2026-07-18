@@ -50,12 +50,17 @@ FIPS validation is claimed.
 - [Security release and revocation policy](docs/SECURITY_RELEASE_AND_REVOCATION_POLICY.md)
 - [Release authorization policy](docs/RELEASE_AUTHORIZATION_POLICY.md)
 - [Trusted release evidence policy](docs/TRUSTED_RELEASE_EVIDENCE_POLICY.md)
+- [Security evidence custody policy](docs/SECURITY_EVIDENCE_CUSTODY_POLICY.md)
+- [Security decision log policy](docs/SECURITY_DECISION_LOG_POLICY.md)
+- [Security record retention policy](docs/SECURITY_RECORD_RETENTION_POLICY.md)
 
 Test-only operational rehearsal material is separate from production incident
 records and does not activate a reporting or customer communication channel:
 
 - [Security incident response runbook](docs/SECURITY_INCIDENT_RESPONSE_RUNBOOK.md)
+- [Security evidence handling runbook](docs/SECURITY_EVIDENCE_HANDLING_RUNBOOK.md)
 - [Security operations role model](docs/SECURITY_OPERATIONS_ROLE_MODEL.md)
 - [Security tabletop exercise plan](docs/SECURITY_TABLETOP_EXERCISE_PLAN.md)
 - [Release revocation rehearsal](docs/RELEASE_REVOCATION_REHEARSAL.md)
 - [Latest tabletop result](docs/SECURITY_TABLETOP_RESULT.md)
+- [Latest evidence custody rehearsal result](docs/SECURITY_EVIDENCE_CUSTODY_REHEARSAL_RESULT.md)

@@ -6,7 +6,7 @@
 
 ```text
 execution_date: 2026-07-18
-source_baseline_revision: e3f919412d3e487b154125f4001a5405f3a7ed9e
+source_baseline_revision: ea3b9d0dae40a359ecdb9cde8116d152a20b5a81
 exercise_scope: test-only Enterprise worktree anchored to source baseline
 scenarios: A, B, C, D, E, F
 ```
@@ -23,13 +23,14 @@ reported -> acknowledged -> triaged -> confirmed -> mitigating -> fixed -> requa
 
 ## Validator result
 
-The focused validator passed all six fixtures and 20 generated negative
-mutations on Windows and WSL.
+The tabletop validator passed all six fixtures and 20 generated negative
+mutations. The linked evidence-custody validator passed six custody chains,
+six decision histories, and 39 generated negative cases on Windows and WSL.
 
 Windows clean Visual Studio 2026/MSVC Release verification passed:
 
 - aggregate `enterprise-release-preflight`;
-- full CTest `13/13`;
+- full CTest `14/14`;
 - support, tabletop, evidence, authorization-contract, diagnostics, installed
   consumer, ZIP/TGZ, manifest, SHA256SUMS, SPDX, downloaded-artifact, and
   Community subtree checks;
@@ -38,7 +39,7 @@ Windows clean Visual Studio 2026/MSVC Release verification passed:
 WSL Ubuntu 26.04/GCC 15.2.0/Ninja Release verification passed:
 
 - aggregate `enterprise-release-preflight`;
-- full CTest `13/13`;
+- full CTest `14/14`;
 - support, tabletop, evidence, authorization-contract, diagnostics, installed
   consumer, ZIP/TGZ, manifest, SHA256SUMS, SPDX, downloaded-artifact, and
   Community subtree checks;
@@ -58,6 +59,9 @@ Both paths keep customer delivery blocked without changing either record.
 
 - Operational ownership was implicit: added non-personal roles, all still
   `not yet assigned`.
+- Evidence classification, custody transfer, decision history, and retention
+  were implicit: added fixed schemas, SHA-256 chains, source/size verification,
+  release-block semantics, and internal retention targets.
 - Incident/revocation narratives were not executable: added strict test-only
   JSON records, state-transition validation, scenario routing, and negative
   contract checks.
@@ -68,15 +72,19 @@ Both paths keep customer delivery blocked without changing either record.
 
 ## Remaining operational dependencies
 
-Actual role assignment, private reporting/contact activation, hosted runner
-completion, CodeQL, attestation, signing/provenance verification, trusted
-evidence, legal/support approval, and release authorization remain external and
-unavailable.
+Actual role assignment, evidence repository, incident tracker, long-term
+archive, private reporting/contact activation, hosted runner completion,
+CodeQL, attestation, signing/provenance verification, trusted evidence,
+legal/support approval, and release authorization remain external and
+unavailable. Hosted run `29624647348` remains `BLOCKED_EXTERNAL`.
 
 ```text
 private vulnerability reporting: not yet activated
 security contact: not yet published
 public disclosure channel: not yet activated
+approved evidence repository: not yet activated
+approved incident tracking system: not yet activated
+approved long-term archive: not yet activated
 release_authorization: denied-or-unavailable
 customer_release_ready: false
 ```

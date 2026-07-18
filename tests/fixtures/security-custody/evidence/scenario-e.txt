@@ -1,0 +1,5 @@
+test_only: true
+scenario: E
+evidence_type: workflow log
+source_revision: ea3b9d0dae40a359ecdb9cde8116d152a20b5a81
+payload: synthetic custody contract evidence

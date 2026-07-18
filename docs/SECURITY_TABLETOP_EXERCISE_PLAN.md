@@ -43,11 +43,16 @@ cmake --build build --config Release --target enterprise-security-tabletop-check
 cmake --build build --config Release --target enterprise-release-preflight --parallel 4
 ```
 
-The focused target validates all six records, strict fields, timestamps,
-non-personal ownership, state transitions, routing, dependency boundaries,
+The tabletop and custody targets validate all six records, synthetic evidence,
+custody transfers, decision histories, strict fields, timestamps, non-personal
+ownership, state transitions, routing, dependency boundaries,
 evidence/authorization actions, requalification, no fallback, no production
-use, and 20 generated negative mutations. Package verification independently
-rejects any JSON carrying `test-only-security-tabletop`.
+use, and their generated negative mutations. Package verification independently
+rejects `test-only-security-tabletop` and `test-only-security-custody` material.
+
+```sh
+cmake --build build --config Release --target enterprise-security-evidence-custody-check
+```
 
 ## Pass criteria
 

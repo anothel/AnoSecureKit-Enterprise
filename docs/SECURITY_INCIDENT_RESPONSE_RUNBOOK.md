@@ -21,8 +21,9 @@ security contact: not yet published
 public disclosure channel: not yet activated
 ```
 
-For this tabletop, use only `tests/fixtures/security-tabletop/*.json` and the
-non-personal roles in `SECURITY_OPERATIONS_ROLE_MODEL.md`.
+For this tabletop, use only `tests/fixtures/security-tabletop/*.json`,
+`tests/fixtures/security-custody/`, and the non-personal roles in
+`SECURITY_OPERATIONS_ROLE_MODEL.md`.
 
 ## Incident flow
 
@@ -46,6 +47,11 @@ At triage, the `incident-commander` records severity, affected exact revision,
 profile, dependency, artifact set, evidence basis, authorization impact, and
 owner. Critical/high release-path cases immediately block delivery while scope
 is bounded.
+
+Evidence collection, custody transfer, invalidation, and disposition follow
+[SECURITY_EVIDENCE_HANDLING_RUNBOOK.md](SECURITY_EVIDENCE_HANDLING_RUNBOOK.md).
+Every material decision follows the append-only digest chain in
+[SECURITY_DECISION_LOG_POLICY.md](SECURITY_DECISION_LOG_POLICY.md).
 
 ## Ownership and containment
 

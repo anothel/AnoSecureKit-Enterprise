@@ -138,7 +138,7 @@ set(_root_fields
   fallback_action remediation_path execution_mode production_use
   customer_delivery_target)
 set(_roles
-  security-intake-owner incident-commander product-owner community-liaison
+  security-intake-owner incident-commander evidence-custodian product-owner community-liaison
   anocrypto-c-liaison release-authorizer evidence-reviewer
   customer-communications-owner)
 set(_incident_states

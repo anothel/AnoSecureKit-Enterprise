@@ -29,6 +29,17 @@ not yet assigned
 Owns incident state, scope, severity, containment decisions, decision log, and
 closure criteria.
 
+### `evidence-custodian`
+
+```text
+assignment:
+not yet assigned
+```
+
+Receives, inventories, integrity-checks, transfers, retains, and disposes of
+incident evidence under the custody and retention policies. This role cannot
+authorize release or convert test-only material into production evidence.
+
 ### `product-owner`
 
 ```text
@@ -96,6 +107,17 @@ affected customer releases. Tabletop records never send a notice.
 Evidence review and release authorization are separate decisions. Dependency
 liaisons cannot patch upstream-owned source here. Customer communications do
 not begin from a repository fixture.
+
+```text
+approved evidence repository:
+not yet activated
+
+approved incident tracking system:
+not yet activated
+
+approved long-term archive:
+not yet activated
+```
 
 ```text
 private vulnerability reporting: not yet activated

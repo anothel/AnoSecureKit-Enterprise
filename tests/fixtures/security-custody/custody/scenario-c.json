@@ -1,0 +1,42 @@
+{
+    "schema_version":  "1",
+    "record_id":  "test-only:custody-c",
+    "incident_id":  "test-only:incident-c",
+    "evidence_id":  "test-only:evidence-c",
+    "evidence_type":  "dependency package",
+    "source_revision":  "ea3b9d0dae40a359ecdb9cde8116d152a20b5a81",
+    "source_reference":  "evidence/scenario-c.txt",
+    "collected_at":  "2026-07-18T00:20:00Z",
+    "collected_by_role":  "security-intake-owner",
+    "custodian_role":  "evidence-reviewer",
+    "sha256":  "sha256:59a8c9fe6d43783571bf5a36e02b9c686d28bc9a008122424bb482dff32ece38",
+    "size":  165,
+    "sensitivity":  "confidential",
+    "retention_class":  "security-record",
+    "access_class":  "evidence-review",
+    "transfer_history":  [
+                             {
+                                 "sequence":  1,
+                                 "from_role":  "security-intake-owner",
+                                 "to_role":  "evidence-custodian",
+                                 "transferred_at":  "2026-07-18T00:21:00Z",
+                                 "reason":  "initial synthetic collection",
+                                 "previous_entry_digest":  "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                                 "entry_digest":  "sha256:9e8a2bc228dc3feb227c82bbc76e843cea70d6e35b3448118565992e58826f77"
+                             },
+                             {
+                                 "sequence":  2,
+                                 "from_role":  "evidence-custodian",
+                                 "to_role":  "evidence-reviewer",
+                                 "transferred_at":  "2026-07-18T00:22:00Z",
+                                 "reason":  "independent integrity review",
+                                 "previous_entry_digest":  "sha256:9e8a2bc228dc3feb227c82bbc76e843cea70d6e35b3448118565992e58826f77",
+                                 "entry_digest":  "sha256:35f8d1ae376786542a4ae0120185d92f66b481dbd9092390a285e1e9788ac4d8"
+                             }
+                         ],
+    "integrity_status":  "compromised",
+    "revocation_status":  "revoked",
+    "final_disposition":  "invalidated",
+    "custody_digest":  "sha256:96fd68b8266e540a5424283e36274d7d3f4ec9a0cac0f2b04fd59830a7b2166d",
+    "test_only":  true
+}

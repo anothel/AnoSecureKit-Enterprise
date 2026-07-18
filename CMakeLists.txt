@@ -491,6 +491,29 @@ if(BUILD_TESTING)
       -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_support_policy_contract.cmake)
   set_tests_properties(enterprise.support-policy PROPERTIES LABELS "policy;support")
 
+  add_custom_target(enterprise-security-evidence-custody-check
+    COMMAND ${CMAKE_COMMAND}
+      -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DFIXTURE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/security-custody
+      -DTABLETOP_FIXTURE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/security-tabletop
+      -DEXPECTED_COMMUNITY_TREE=${_anosecurekit_enterprise_community_tree}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_security_evidence_custody.cmake
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/security-evidence-custody-contract-check
+      -DEXPECTED_COMMUNITY_TREE=${_anosecurekit_enterprise_community_tree}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_security_evidence_custody_contract.cmake
+    USES_TERMINAL)
+
+  add_test(NAME enterprise.security-evidence-custody
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/security-evidence-custody-contract-test
+      -DEXPECTED_COMMUNITY_TREE=${_anosecurekit_enterprise_community_tree}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_security_evidence_custody_contract.cmake)
+  set_tests_properties(enterprise.security-evidence-custody
+    PROPERTIES LABELS "policy;security;custody")
+
   add_custom_target(enterprise-security-tabletop-check
     COMMAND ${CMAKE_COMMAND}
       -DFIXTURE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/security-tabletop
@@ -501,6 +524,7 @@ if(BUILD_TESTING)
       -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/security-tabletop-contract-check
       -DEXPECTED_SOURCE_REVISION=${_anosecurekit_enterprise_source_revision}
       -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_security_tabletop_contract.cmake
+    DEPENDS enterprise-security-evidence-custody-check
     USES_TERMINAL)
 
   add_test(NAME enterprise.security-tabletop
@@ -1034,6 +1058,7 @@ if(BUILD_TESTING)
         enterprise-runtime-contract-check
         enterprise-ci-policy-check
         enterprise-support-policy-check
+        enterprise-security-evidence-custody-check
         enterprise-security-tabletop-check
         enterprise-release-evidence-verifier-check
         enterprise-trusted-release-evidence-check

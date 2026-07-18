@@ -1,0 +1,5 @@
+test_only: true
+scenario: C
+evidence_type: dependency package
+source_revision: ea3b9d0dae40a359ecdb9cde8116d152a20b5a81
+payload: synthetic custody contract evidence
