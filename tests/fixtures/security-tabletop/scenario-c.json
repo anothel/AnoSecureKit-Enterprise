@@ -1,0 +1,46 @@
+{
+  "schema_version": "1",
+  "record_type": "test-only-security-tabletop",
+  "scenario_id": "C",
+  "severity": "critical",
+  "affected_product": "AnoCrypto-C",
+  "affected_revision": "test-only:anocrypto-c-package:revoked-digest",
+  "affected_profile": "anocrypto-c-partial",
+  "affected_dependency": "AnoCrypto-C package digest",
+  "reported_at": "2026-07-17T00:10:00Z",
+  "triage_state": [
+    "reported",
+    "acknowledged",
+    "triaged",
+    "confirmed",
+    "mitigating",
+    "fixed",
+    "requalifying",
+    "closed"
+  ],
+  "qualification_action": "invalidate",
+  "evidence_action": "reject",
+  "authorization_action": "revoke",
+  "artifact_action": "withdraw-test-only",
+  "routing_owner": "anocrypto-c-liaison",
+  "required_requalification": [
+    "approved-anocrypto-c-digest",
+    "anocrypto-c-partial-profile",
+    "no-openssl-fallback",
+    "windows-regression",
+    "wsl-regression",
+    "authorization"
+  ],
+  "customer_notification_state": "not-sent-test-only",
+  "final_decision": {
+    "qualification": "invalidated",
+    "trusted_evidence": "rejected",
+    "release_authorization": "denied-or-unavailable",
+    "customer_release_ready": false
+  },
+  "fallback_action": "none",
+  "remediation_path": "consume-new-anocrypto-c-package",
+  "execution_mode": "test-only",
+  "production_use": false,
+  "customer_delivery_target": false
+}

@@ -491,6 +491,27 @@ if(BUILD_TESTING)
       -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_support_policy_contract.cmake)
   set_tests_properties(enterprise.support-policy PROPERTIES LABELS "policy;support")
 
+  add_custom_target(enterprise-security-tabletop-check
+    COMMAND ${CMAKE_COMMAND}
+      -DFIXTURE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/security-tabletop
+      -DEXPECTED_SOURCE_REVISION=${_anosecurekit_enterprise_source_revision}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_security_tabletop.cmake
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/security-tabletop-contract-check
+      -DEXPECTED_SOURCE_REVISION=${_anosecurekit_enterprise_source_revision}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_security_tabletop_contract.cmake
+    USES_TERMINAL)
+
+  add_test(NAME enterprise.security-tabletop
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/security-tabletop-contract-test
+      -DEXPECTED_SOURCE_REVISION=${_anosecurekit_enterprise_source_revision}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_security_tabletop_contract.cmake)
+  set_tests_properties(enterprise.security-tabletop
+    PROPERTIES LABELS "policy;security;tabletop")
+
   if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     add_custom_target(enterprise-openssl-boundary-check
       COMMAND ${CMAKE_COMMAND}
@@ -1013,6 +1034,7 @@ if(BUILD_TESTING)
         enterprise-runtime-contract-check
         enterprise-ci-policy-check
         enterprise-support-policy-check
+        enterprise-security-tabletop-check
         enterprise-release-evidence-verifier-check
         enterprise-trusted-release-evidence-check
         enterprise-release-authorization-contract-check

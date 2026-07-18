@@ -1,0 +1,46 @@
+{
+  "schema_version": "1",
+  "record_type": "test-only-security-tabletop",
+  "scenario_id": "A",
+  "severity": "critical",
+  "affected_product": "AnoSecureKit Community",
+  "affected_revision": "test-only:community-tree:9b498f5431f217ac71e8d2e2c92df9e8b0122626",
+  "affected_profile": "openssl",
+  "affected_dependency": "Community OpenSSL provider",
+  "reported_at": "2026-07-17T00:00:00Z",
+  "triage_state": [
+    "reported",
+    "acknowledged",
+    "triaged",
+    "confirmed",
+    "mitigating",
+    "fixed",
+    "requalifying",
+    "closed"
+  ],
+  "qualification_action": "invalidate",
+  "evidence_action": "reject",
+  "authorization_action": "deny",
+  "artifact_action": "block-generation",
+  "routing_owner": "community-liaison",
+  "required_requalification": [
+    "community-revision",
+    "windows-full",
+    "wsl-full",
+    "artifact-set",
+    "trusted-evidence",
+    "authorization"
+  ],
+  "customer_notification_state": "not-sent-test-only",
+  "final_decision": {
+    "qualification": "invalidated",
+    "trusted_evidence": "rejected",
+    "release_authorization": "denied-or-unavailable",
+    "customer_release_ready": false
+  },
+  "fallback_action": "none",
+  "remediation_path": "consume-new-community-revision",
+  "execution_mode": "test-only",
+  "production_use": false,
+  "customer_delivery_target": false
+}

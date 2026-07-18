@@ -1,0 +1,47 @@
+{
+  "schema_version": "1",
+  "record_type": "test-only-security-tabletop",
+  "scenario_id": "E",
+  "severity": "high",
+  "affected_product": "AnoSecureKit Enterprise",
+  "affected_revision": "test-only:hosted-run:invalidated-evidence",
+  "affected_profile": "openssl",
+  "affected_dependency": "hosted qualification evidence",
+  "reported_at": "2026-07-17T00:20:00Z",
+  "triage_state": [
+    "reported",
+    "acknowledged",
+    "triaged",
+    "confirmed",
+    "mitigating",
+    "fixed",
+    "requalifying",
+    "closed"
+  ],
+  "qualification_action": "set-not-passed",
+  "evidence_action": "reject",
+  "authorization_action": "deny",
+  "artifact_action": "block-generation",
+  "routing_owner": "evidence-reviewer",
+  "required_requalification": [
+    "hosted-qualification",
+    "attestation",
+    "trusted-evidence",
+    "artifact-set",
+    "windows-full",
+    "wsl-full",
+    "authorization"
+  ],
+  "customer_notification_state": "not-sent-test-only",
+  "final_decision": {
+    "qualification": "not-passed",
+    "trusted_evidence": "rejected",
+    "release_authorization": "denied-or-unavailable",
+    "customer_release_ready": false
+  },
+  "fallback_action": "none",
+  "remediation_path": "rerun-hosted-qualification",
+  "execution_mode": "test-only",
+  "production_use": false,
+  "customer_delivery_target": false
+}

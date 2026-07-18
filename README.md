@@ -56,6 +56,11 @@ Support and security:
 - [Support lifecycle policy](docs/SUPPORT_LIFECYCLE_POLICY.md)
 - [Vulnerability response policy](docs/VULNERABILITY_RESPONSE_POLICY.md)
 - [Security release and revocation policy](docs/SECURITY_RELEASE_AND_REVOCATION_POLICY.md)
+- [Security incident response runbook](docs/SECURITY_INCIDENT_RESPONSE_RUNBOOK.md)
+- [Security operations role model](docs/SECURITY_OPERATIONS_ROLE_MODEL.md)
+- [Security tabletop exercise plan](docs/SECURITY_TABLETOP_EXERCISE_PLAN.md)
+- [Release revocation rehearsal](docs/RELEASE_REVOCATION_REHEARSAL.md)
+- [Security tabletop result](docs/SECURITY_TABLETOP_RESULT.md)
 
 Qualification and delivery:
 

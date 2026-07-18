@@ -28,6 +28,8 @@ The aggregate target requires:
 - CI workflow policy validation;
 - support lifecycle, vulnerability response, ownership, and release-revocation
   policy validation;
+- test-only incident/revocation scenarios, ownership routing, state transitions,
+  fail-closed decisions, and negative contract validation;
 - external release-evidence verifier capability and fail-closed contract tests;
 - release-authorization schema, default-deny, positive test-only fixture, and
   fail-closed negative validation.

@@ -1,0 +1,46 @@
+{
+  "schema_version": "1",
+  "record_type": "test-only-security-tabletop",
+  "scenario_id": "D",
+  "severity": "critical",
+  "affected_product": "AnoSecureKit Enterprise",
+  "affected_revision": "test-only:signing-chain:revoked-identity",
+  "affected_profile": "openssl",
+  "affected_dependency": "signing trust chain",
+  "reported_at": "2026-07-17T00:15:00Z",
+  "triage_state": [
+    "reported",
+    "acknowledged",
+    "triaged",
+    "confirmed",
+    "mitigating",
+    "fixed",
+    "requalifying",
+    "closed"
+  ],
+  "qualification_action": "invalidate",
+  "evidence_action": "reject",
+  "authorization_action": "revoke",
+  "artifact_action": "withdraw-test-only",
+  "routing_owner": "evidence-reviewer",
+  "required_requalification": [
+    "signing-provenance-chain",
+    "hosted-qualification",
+    "attestation",
+    "trusted-evidence",
+    "artifact-set",
+    "authorization"
+  ],
+  "customer_notification_state": "not-sent-test-only",
+  "final_decision": {
+    "qualification": "invalidated",
+    "trusted_evidence": "rejected",
+    "release_authorization": "denied-or-unavailable",
+    "customer_release_ready": false
+  },
+  "fallback_action": "none",
+  "remediation_path": "new-signing-provenance-chain",
+  "execution_mode": "test-only",
+  "production_use": false,
+  "customer_delivery_target": false
+}

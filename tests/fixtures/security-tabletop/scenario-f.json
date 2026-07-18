@@ -1,0 +1,47 @@
+{
+  "schema_version": "1",
+  "record_type": "test-only-security-tabletop",
+  "scenario_id": "F",
+  "severity": "high",
+  "affected_product": "AnoSecureKit Enterprise",
+  "affected_revision": "test-only:artifact-set:digest-mismatch",
+  "affected_profile": "openssl",
+  "affected_dependency": "artifact manifest SBOM",
+  "reported_at": "2026-07-17T00:25:00Z",
+  "triage_state": [
+    "reported",
+    "acknowledged",
+    "triaged",
+    "confirmed",
+    "mitigating",
+    "fixed",
+    "requalifying",
+    "closed"
+  ],
+  "qualification_action": "invalidate",
+  "evidence_action": "reject",
+  "authorization_action": "revoke",
+  "artifact_action": "quarantine-and-regenerate-test-only",
+  "routing_owner": "product-owner",
+  "required_requalification": [
+    "artifact-set",
+    "manifest",
+    "sbom",
+    "trusted-evidence",
+    "windows-full",
+    "wsl-full",
+    "authorization"
+  ],
+  "customer_notification_state": "not-sent-test-only",
+  "final_decision": {
+    "qualification": "invalidated",
+    "trusted_evidence": "rejected",
+    "release_authorization": "denied-or-unavailable",
+    "customer_release_ready": false
+  },
+  "fallback_action": "none",
+  "remediation_path": "regenerate-artifact-set",
+  "execution_mode": "test-only",
+  "production_use": false,
+  "customer_delivery_target": false
+}

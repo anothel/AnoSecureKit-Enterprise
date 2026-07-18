@@ -1,0 +1,46 @@
+{
+  "schema_version": "1",
+  "record_type": "test-only-security-tabletop",
+  "scenario_id": "B",
+  "severity": "high",
+  "affected_product": "AnoSecureKit Enterprise",
+  "affected_revision": "test-only:enterprise-adapter:e3f919412d3e487b154125f4001a5405f3a7ed9e",
+  "affected_profile": "anocrypto-c-partial",
+  "affected_dependency": "AnoCrypto-C adapter",
+  "reported_at": "2026-07-17T00:05:00Z",
+  "triage_state": [
+    "reported",
+    "acknowledged",
+    "triaged",
+    "confirmed",
+    "mitigating",
+    "fixed",
+    "requalifying",
+    "closed"
+  ],
+  "qualification_action": "set-not-passed",
+  "evidence_action": "reject",
+  "authorization_action": "deny",
+  "artifact_action": "block-generation",
+  "routing_owner": "product-owner",
+  "required_requalification": [
+    "enterprise-adapter",
+    "windows-regression",
+    "wsl-regression",
+    "anocrypto-c-partial-profile",
+    "no-openssl-fallback",
+    "authorization"
+  ],
+  "customer_notification_state": "not-sent-test-only",
+  "final_decision": {
+    "qualification": "not-passed",
+    "trusted_evidence": "rejected",
+    "release_authorization": "denied-or-unavailable",
+    "customer_release_ready": false
+  },
+  "fallback_action": "none",
+  "remediation_path": "fix-enterprise-adapter",
+  "execution_mode": "test-only",
+  "production_use": false,
+  "customer_delivery_target": false
+}
