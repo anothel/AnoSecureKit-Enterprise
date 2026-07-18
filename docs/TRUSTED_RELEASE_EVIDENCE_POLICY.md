@@ -112,3 +112,8 @@ Contract fixtures are generated only below the build test directory. They hold
 no production trust root or secret and can exercise structural states only.
 Production gates set `ALLOW_TEST_FIXTURE=OFF`; test mode cannot enable signing,
 authorization, package publication, or customer readiness.
+
+An incident affecting an artifact, dependency, signing identity, verifier,
+trust root, hosted/CodeQL result, or attestation makes the applicable evidence
+`rejected` or `unavailable` under the
+[security release and revocation policy](SECURITY_RELEASE_AND_REVOCATION_POLICY.md).

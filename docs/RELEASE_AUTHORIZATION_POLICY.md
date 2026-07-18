@@ -77,3 +77,7 @@ Current status:
 authorization: denied or unavailable
 customer_release_ready: false
 ```
+
+Security response may require immediate deny, expiry, or revocation under the
+[security release and revocation policy](SECURITY_RELEASE_AND_REVOCATION_POLICY.md).
+That decision never bypasses this validator or expands schema version 1.

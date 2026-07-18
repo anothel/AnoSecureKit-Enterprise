@@ -474,6 +474,23 @@ if(BUILD_TESTING)
       -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_ci_policy.cmake)
   set_tests_properties(enterprise.ci-policy PROPERTIES LABELS "policy;ci")
 
+  add_custom_target(enterprise-support-policy-check
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_support_policy.cmake
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/support-policy-contract-check
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_support_policy_contract.cmake
+    USES_TERMINAL)
+
+  add_test(NAME enterprise.support-policy
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/support-policy-contract-test
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_support_policy_contract.cmake)
+  set_tests_properties(enterprise.support-policy PROPERTIES LABELS "policy;support")
+
   if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     add_custom_target(enterprise-openssl-boundary-check
       COMMAND ${CMAKE_COMMAND}
@@ -756,6 +773,7 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     LICENSE
     THIRD_PARTY_NOTICES.md
     README.md
+    SECURITY.md
     docs/BACKEND_PROFILES.md
     docs/CI_AND_RELEASE_GATE.md
     docs/COMMUNITY_DEPENDENCY.md
@@ -768,8 +786,11 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     docs/DELIVERY_VERIFICATION.md
     docs/RELEASE_AUTHORIZATION_POLICY.md
     docs/RELEASE_EVIDENCE_VERIFIER_POLICY.md
+    docs/SECURITY_RELEASE_AND_REVOCATION_POLICY.md
     docs/SUPPORTED_CONFIGURATION_MATRIX.md
+    docs/SUPPORT_LIFECYCLE_POLICY.md
     docs/TRUSTED_RELEASE_EVIDENCE_POLICY.md
+    docs/VULNERABILITY_RESPONSE_POLICY.md
     DESTINATION ${CMAKE_INSTALL_DATADIR}/anosecurekit-enterprise)
   install(FILES
     release/customer-release-evidence.json
@@ -991,6 +1012,7 @@ if(BUILD_TESTING)
         enterprise-profile-config-check
         enterprise-runtime-contract-check
         enterprise-ci-policy-check
+        enterprise-support-policy-check
         enterprise-release-evidence-verifier-check
         enterprise-trusted-release-evidence-check
         enterprise-release-authorization-contract-check

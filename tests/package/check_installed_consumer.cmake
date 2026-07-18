@@ -35,14 +35,18 @@ set(_required_paths
   "${_install_prefix}/include/anosecurekit_enterprise/enterprise.hpp"
   "${_install_prefix}/include/anosecurekit_enterprise/provider_runtime.hpp"
   "${_install_prefix}/share/anosecurekit-enterprise/LICENSE"
+  "${_install_prefix}/share/anosecurekit-enterprise/SECURITY.md"
   "${_install_prefix}/share/anosecurekit-enterprise/THIRD_PARTY_NOTICES.md"
   "${_install_prefix}/share/anosecurekit-enterprise/BACKEND_PROFILES.md"
   "${_install_prefix}/share/anosecurekit-enterprise/COMMUNITY_DEPENDENCY.md"
   "${_install_prefix}/share/anosecurekit-enterprise/DEFERRED_CI_STATUS.md"
   "${_install_prefix}/share/anosecurekit-enterprise/OPENSSL_PROFILE_SUPPORT_POLICY.md"
   "${_install_prefix}/share/anosecurekit-enterprise/RELEASE_AUTHORIZATION_POLICY.md"
+  "${_install_prefix}/share/anosecurekit-enterprise/SECURITY_RELEASE_AND_REVOCATION_POLICY.md"
   "${_install_prefix}/share/anosecurekit-enterprise/SUPPORTED_CONFIGURATION_MATRIX.md"
+  "${_install_prefix}/share/anosecurekit-enterprise/SUPPORT_LIFECYCLE_POLICY.md"
   "${_install_prefix}/share/anosecurekit-enterprise/TRUSTED_RELEASE_EVIDENCE_POLICY.md"
+  "${_install_prefix}/share/anosecurekit-enterprise/VULNERABILITY_RESPONSE_POLICY.md"
   "${_install_prefix}/share/anosecurekit-enterprise/customer-release-evidence.json")
 foreach(_path IN LISTS _required_paths)
   if(NOT EXISTS "${_path}")

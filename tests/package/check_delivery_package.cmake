@@ -190,13 +190,17 @@ endif()
 
 file(COPY
   "${ENTERPRISE_SOURCE_DIR}/LICENSE"
+  "${ENTERPRISE_SOURCE_DIR}/SECURITY.md"
   "${ENTERPRISE_SOURCE_DIR}/THIRD_PARTY_NOTICES.md"
   "${ENTERPRISE_SOURCE_DIR}/docs/COMMUNITY_DEPENDENCY.md"
   "${ENTERPRISE_SOURCE_DIR}/docs/DEFERRED_CI_STATUS.md"
   "${ENTERPRISE_SOURCE_DIR}/docs/OPENSSL_PROFILE_SUPPORT_POLICY.md"
   "${ENTERPRISE_SOURCE_DIR}/docs/RELEASE_AUTHORIZATION_POLICY.md"
+  "${ENTERPRISE_SOURCE_DIR}/docs/SECURITY_RELEASE_AND_REVOCATION_POLICY.md"
   "${ENTERPRISE_SOURCE_DIR}/docs/SUPPORTED_CONFIGURATION_MATRIX.md"
+  "${ENTERPRISE_SOURCE_DIR}/docs/SUPPORT_LIFECYCLE_POLICY.md"
   "${ENTERPRISE_SOURCE_DIR}/docs/TRUSTED_RELEASE_EVIDENCE_POLICY.md"
+  "${ENTERPRISE_SOURCE_DIR}/docs/VULNERABILITY_RESPONSE_POLICY.md"
   "${ENTERPRISE_SOURCE_DIR}/release/customer-release-evidence.json"
   "${ENTERPRISE_BUILD_DIR}/DELIVERY_README.md"
   "${_enterprise_share}/BUILD_METADATA.txt"
@@ -289,6 +293,14 @@ foreach(_archive IN LISTS _binary_archives)
     "${_extract_dir}/*/share/anosecurekit-enterprise/DELIVERY_README.md")
   file(GLOB_RECURSE _required_support_policy
     "${_extract_dir}/*/share/anosecurekit-enterprise/OPENSSL_PROFILE_SUPPORT_POLICY.md")
+  file(GLOB_RECURSE _required_security_policy
+    "${_extract_dir}/*/share/anosecurekit-enterprise/SECURITY.md")
+  file(GLOB_RECURSE _required_lifecycle_policy
+    "${_extract_dir}/*/share/anosecurekit-enterprise/SUPPORT_LIFECYCLE_POLICY.md")
+  file(GLOB_RECURSE _required_vulnerability_policy
+    "${_extract_dir}/*/share/anosecurekit-enterprise/VULNERABILITY_RESPONSE_POLICY.md")
+  file(GLOB_RECURSE _required_security_release_policy
+    "${_extract_dir}/*/share/anosecurekit-enterprise/SECURITY_RELEASE_AND_REVOCATION_POLICY.md")
   file(GLOB_RECURSE _required_authorization_policy
     "${_extract_dir}/*/share/anosecurekit-enterprise/RELEASE_AUTHORIZATION_POLICY.md")
   file(GLOB_RECURSE _required_evidence_policy
@@ -316,6 +328,10 @@ foreach(_archive IN LISTS _binary_archives)
       _required_metadata
       _required_delivery_readme
       _required_support_policy
+      _required_security_policy
+      _required_lifecycle_policy
+      _required_vulnerability_policy
+      _required_security_release_policy
       _required_authorization_policy
       _required_evidence_policy
       _required_evidence_record
@@ -335,8 +351,12 @@ foreach(_archive IN LISTS _binary_archives)
   file(READ "${_manifest_path}" _manifest_content)
   foreach(_manifest_term IN ITEMS
       "share/anosecurekit-enterprise/OPENSSL_PROFILE_SUPPORT_POLICY.md"
+      "share/anosecurekit-enterprise/SECURITY.md"
       "share/anosecurekit-enterprise/RELEASE_AUTHORIZATION_POLICY.md"
+      "share/anosecurekit-enterprise/SECURITY_RELEASE_AND_REVOCATION_POLICY.md"
+      "share/anosecurekit-enterprise/SUPPORT_LIFECYCLE_POLICY.md"
       "share/anosecurekit-enterprise/TRUSTED_RELEASE_EVIDENCE_POLICY.md"
+      "share/anosecurekit-enterprise/VULNERABILITY_RESPONSE_POLICY.md"
       "share/anosecurekit-enterprise/customer-release-evidence.json"
       "share/anosecurekit-enterprise/SUPPORTED_CONFIGURATION_MATRIX.md"
       "share/anosecurekit-enterprise/DEFERRED_CI_STATUS.md")

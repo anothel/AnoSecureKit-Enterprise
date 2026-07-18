@@ -16,6 +16,10 @@ opt-in AnoCrypto-C development gate is
 `enterprise-anocrypto-c-partial-profile-check`. Generated ZIP/TGZ files are
 internal qualification artifacts, not customer releases.
 
+Enterprise `0.1.0` is `unsupported` pre-release/internal qualification work,
+not generally available or a production release, with no active customer
+support commitment.
+
 Customer release additionally requires the strict
 `enterprise-release-authorization-check`; the checked-in record defaults to
 deny. Structural evidence contracts run through
@@ -45,6 +49,13 @@ Provider contracts:
 
 - [Runtime contract](docs/PROVIDER_RUNTIME_CONTRACT.md)
 - [Capability contract](docs/PROVIDER_CAPABILITY_CONTRACT.md)
+
+Support and security:
+
+- [Security policy](SECURITY.md)
+- [Support lifecycle policy](docs/SUPPORT_LIFECYCLE_POLICY.md)
+- [Vulnerability response policy](docs/VULNERABILITY_RESPONSE_POLICY.md)
+- [Security release and revocation policy](docs/SECURITY_RELEASE_AND_REVOCATION_POLICY.md)
 
 Qualification and delivery:
 

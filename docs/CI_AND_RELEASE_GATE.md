@@ -26,6 +26,8 @@ The aggregate target requires:
 - staged and archived SHA-256 manifest validation;
 - SPDX 2.3 delivery SBOM validation;
 - CI workflow policy validation;
+- support lifecycle, vulnerability response, ownership, and release-revocation
+  policy validation;
 - external release-evidence verifier capability and fail-closed contract tests;
 - release-authorization schema, default-deny, positive test-only fixture, and
   fail-closed negative validation.
