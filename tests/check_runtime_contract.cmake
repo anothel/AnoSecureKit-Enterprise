@@ -138,7 +138,7 @@ execute_process(
   ERROR_VARIABLE _ready_install_err)
 if(NOT _ready_install_result EQUAL 0)
   string(CONCAT _ready_install_log "${_ready_install_out}" "${_ready_install_err}")
-  message(FATAL_ERROR "ready: incomplete AnoCrypto-C profile install command failed unexpectedly
+  message(FATAL_ERROR "ready: non-delivery AnoCrypto-C profile install command failed unexpectedly
 ${_ready_install_log}")
 endif()
 file(GLOB_RECURSE _ready_installed_files LIST_DIRECTORIES FALSE "${_ready_install}/*")
@@ -146,7 +146,7 @@ if(_ready_installed_files)
   list(JOIN _ready_installed_files "
 " _ready_installed_files_text)
   message(FATAL_ERROR
-    "ready: incomplete AnoCrypto-C profile must not produce installable customer files
+    "ready: non-delivery AnoCrypto-C profile must not produce installable customer files
 ${_ready_installed_files_text}")
 endif()
 
@@ -158,7 +158,7 @@ execute_process(
   ERROR_VARIABLE _ready_delivery_err)
 if(_ready_delivery_result EQUAL 0)
   message(FATAL_ERROR
-    "ready: incomplete AnoCrypto-C profile unexpectedly produced a customer-delivery package")
+    "ready: non-delivery AnoCrypto-C profile unexpectedly produced a customer-delivery package")
 endif()
 
 find_program(_enterprise_ldd_executable NAMES ldd)

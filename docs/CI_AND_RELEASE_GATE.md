@@ -7,7 +7,7 @@ verifies source builds, installed package consumption, internal-delivery archive
 license/source-offer obligations, checksums, and SPDX metadata. It does not publish
 or sign a customer release.
 
-## Aggregate local gate
+## OpenSSL aggregate local gate
 
 Configure a bundled Community OpenSSL profile with tests enabled, then run:
 
@@ -29,7 +29,7 @@ The aggregate target requires:
 - support lifecycle, vulnerability response, ownership, and release-revocation
   policy validation;
 - the authoritative pre-GA blocker registry, development-freeze contract, exact
-  revision binding, queue routing, and 15 false-closure negative cases;
+  revision binding, queue routing, and false-closure negative cases;
 - test-only incident/revocation scenarios, ownership routing, state transitions,
   fail-closed decisions, and negative contract validation;
 - external release-evidence verifier capability and fail-closed contract tests;
@@ -55,49 +55,36 @@ trusted-evidence verification.
 
 The registry-only gate is also available as
 `enterprise-pre-ga-blocker-registry-check`. Its OpenSSL scope does not require
-the separate future AnoCrypto-C profile to reach GA.
+the separate AnoCrypto-C profile to reach GA.
 
-## Opt-in AnoCrypto-C lifecycle, SHA-256, HMAC-SHA-256, and random gate
+## AnoCrypto-C P3-06 parity gate
 
-The installed-package harness compiles the production lifecycle adapter and is
-disabled by default. Enable it only with an external exact-version package and
-explicit development test pins:
+Configure with the exact P3-05 package:
 
 ```sh
 cmake -S . -B build-native -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND=anocrypto-c \
   -DANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS=ON \
-  -DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID=0.1.0-p1-33-release-rehearsal \
-  -DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT=cf0f3c425dd265c7509fb64a6123db97f71055dd \
-  -DAnoCryptoC_DIR=<installed-prefix>/lib/cmake/AnoCryptoC
-cmake --build build-native \
-  --target enterprise-native-anocrypto-c-sha256-check \
-    enterprise-native-anocrypto-c-hmac-sha256-check \
-    enterprise-native-anocrypto-c-random-check --parallel 4
+  -DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID=0.1.0-p3-05-scrypt-fixed-profile \
+  -DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT=89e16a261ab7696d9489167d7403d9f2c704629e \
+  -DAnoCryptoC_DIR=<prefix>/lib/cmake/AnoCryptoC
+cmake --build build-native --target enterprise-anocrypto-c-parity-check
 ```
 
-A package reporting commit `unknown` fails by default. For development-only
-lifecycle testing, add:
+The gate covers:
 
-```sh
--DANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS=ON
-```
+- lifecycle, identity, self-test and status mapping;
+- all seven required capabilities;
+- exact `SKT1`, `SKF1` and `SKP1` fixtures;
+- packet/file/password/key-wrap round trips;
+- wrong-key authentication and no-output behavior;
+- source/package boundary checks;
+- Linux `ldd` rejection of `libcrypto` and `libssl`.
 
-The override does not approve package provenance. In the `anocrypto-c`
-development profile, the focused targets run lifecycle gating, public SHA-256,
-HMAC-SHA-256, and random contracts, native negative cases, and dependency
-inspection. Random covers 0/1/65,535/65,536/65,537 bytes, multiple chunks, a
-fixed large size, key/token helpers, pre-init/post-shutdown rejection, mock
-unavailable/status failures, context cleanup, and whole-output clearing. An
-OpenSSL build may still enable the option for standalone lifecycle/status
-checks. With the option `OFF`, configuration and normal OpenSSL gates do not
-discover or require AnoCrypto-C.
-
-Linux uses `ldd` to reject `libcrypto` or `libssl` dependencies in the lifecycle,
-SHA-256, HMAC-SHA-256, and random executables and imported AnoCrypto-C library.
-Windows/macOS inspection remains deferred. Native self-test-failure injection
-remains deferred pending an approved upstream public hook.
+P3-06 is engineering parity only. The AnoCrypto-C profile remains non-installable,
+has no CPack/customer-delivery path, and cannot fall back to OpenSSL. With native
+tests disabled, configuration does not enable test-only lifecycle seams.
 
 ## GitHub Actions matrix
 
@@ -108,7 +95,8 @@ The private workflow covers:
 - Linux GCC Release shared;
 - Windows MSVC Release shared;
 - macOS AppleClang Release static;
-- Linux Clang Debug with AddressSanitizer and UndefinedBehaviorSanitizer through the runtime-only `enterprise-sanitizer-check`;
+- Linux Clang Debug with AddressSanitizer and UndefinedBehaviorSanitizer through
+  the runtime-only `enterprise-sanitizer-check`;
 - a non-bundled Community package consumer path.
 
 Each platform build executes `enterprise-release-preflight` and uploads the verified
@@ -122,15 +110,21 @@ A following job verifies every downloaded subject with the same installed
 attestation permissions. Until a hosted run completes both jobs, cryptographic
 and trusted evidence remain unavailable and customer release remains denied.
 
-## Current release policy
+## Current external state
+
+- hosted lanes: `NOT_RUN`;
+- hosted review: `UNREVIEWED`;
+- repository/production signing: `UNSIGNED`;
+- signing handoff: `BLOCKED`;
+- external release authorization: `NO`;
+- KCMVP work: `DEFERRED`.
 
 The workflow has global read-only repository permissions and contains no
 release-upload step. Only the post-validation attestation job receives scoped
 OIDC and attestation write permissions. Publisher authentication, support
-approval, and legal approval remain separate gates. The incomplete AnoCrypto-C
-profile cannot install or produce delivery artifacts. Native lifecycle,
-SHA-256, HMAC-SHA-256, and random success do not change its full required capability mask,
-approved-digest block, install/export state, or customer-delivery status.
+approval, legal approval, hosted qualification, and OpenSSL GA blockers remain
+separate gates. P3-06 does not change these states. Windows and macOS runtime
+dependency inspection is `EXTERNAL_CONFIRMATION_REQUIRED` until hosted lanes run.
 
 When hosted execution is unavailable, [DEFERRED_CI_STATUS.md](DEFERRED_CI_STATUS.md)
 records local evidence, deferred remote checks, and the customer-release block.

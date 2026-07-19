@@ -34,6 +34,6 @@ KCMVP or FIPS validation evidence.
 
 Enterprise has an engineering contract for module initialization, self-test
 status, operational state, module/build identity, and capability reporting.
-The OpenSSL profile and proprietary partial AnoCrypto-C adapters test that gate;
+The OpenSSL profile and the P3-06 AnoCrypto-C parity adapter test that gate;
 mocks retain failure-path coverage. This does not constitute module validation
-evidence, and the incomplete profile remains blocked from customer delivery.
+evidence, and the non-delivery profile remains blocked from customer delivery.

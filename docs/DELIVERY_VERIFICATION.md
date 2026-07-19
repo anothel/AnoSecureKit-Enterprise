@@ -36,17 +36,33 @@ the staged `MANIFEST.sha256` and the top-level artifact set through the digest o
 `SHA256SUMS.txt`. It is deliberately not part of internal artifact generation;
 the repository default record denies customer release.
 
-The incomplete AnoCrypto-C profile has no install/export/CPack path and cannot
-produce this delivery.
-
 The exact evidence schema, canonical digest, complete artifact inventory rules,
 and fail-closed signing/provenance boundary are defined in
 `TRUSTED_RELEASE_EVIDENCE_POLICY.md`.
 
+## AnoCrypto-C P3-06 boundary
+
+P3-06 completes the current primitive and Community-format engineering parity
+checkpoint. The AnoCrypto-C profile still has no install/export/CPack path and
+cannot produce this delivery.
+
+Before a future AnoCrypto-C delivery profile may be enabled, verification must
+cover:
+
+1. an approved exact AnoCrypto-C package and source identity;
+2. the exact Community source identity and MPL-2.0 source offer;
+3. hosted supported-platform builds and tests;
+4. cross-platform proof of no OpenSSL runtime linkage;
+5. signed artifacts and verified attestations;
+6. SBOM, notices, checksums and reproducible package contents;
+7. explicit release authorization.
+
+A parity checkpoint must not be represented as production release evidence.
 
 ## CI gate
 
 The private GitHub Actions workflow is configured to run the aggregate
-`enterprise-release-preflight` target on Linux, Windows, and macOS. Verified delivery
-directories are retained as short-lived internal workflow artifacts only. The workflow
-has read-only repository permissions and does not publish a GitHub Release.
+`enterprise-release-preflight` target on Linux, Windows, and macOS. Verified
+delivery directories are retained as short-lived internal workflow artifacts
+only. The workflow has read-only repository permissions and does not publish a
+GitHub Release.

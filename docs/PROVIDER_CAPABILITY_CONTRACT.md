@@ -1,92 +1,29 @@
 # SPDX-License-Identifier: LicenseRef-AnoSecureKit-Enterprise-Proprietary
 
-# Enterprise Provider Capability Contract
+# Provider Capability Contract
 
-AnoSecureKit Enterprise treats backend selection as a product profile, not as a best-effort runtime preference.
-
-## Required production capabilities
-
-The AnoCrypto-C production profile must provide the complete Community v1 primitive surface:
+The complete Enterprise product capability set is:
 
 ```text
-sha256
-hmac-sha256
-hkdf-sha256
-random
-scrypt
-aes256-gcm
-aes256-gcm-stream
+sha256;hmac-sha256;hkdf-sha256;random;scrypt;aes256-gcm;aes256-gcm-stream
 ```
 
-The list covers the primitives required by the current Community public API and the `SKT1`, `SKF1`, and `SKP1` formats. It does not assert that the external AnoCrypto-C package currently implements every item.
+The selected AnoCrypto-C provider must be a non-imported CMake `OBJECT_LIBRARY`
+with backend identity `anocrypto-c`, the exact list above, and a direct private
+link to `AnoCryptoC::AnoCryptoC`.
 
-The pinned `0.1.0-p1-33-release-rehearsal` baseline is integrated for
-module lifecycle, self-test reporting, version/build identity, SHA-256,
-HMAC-SHA-256, HMAC_DRBG-SHA-256, and platform-backed random. It also implements
-SHA-384/SHA-512, matching HMAC variants, AES-CBC, AES-CMAC, and in-memory key
-handles. These additional services do not satisfy the missing product
-capabilities.
+Configuration fails when:
 
-## Provider target metadata
+- the target does not exist or is imported;
+- the target is not an `OBJECT_LIBRARY`;
+- backend identity is not `anocrypto-c`;
+- any required capability is missing;
+- the direct AnoCrypto-C target link is absent.
 
-The proprietary provider adapter must be a non-imported CMake `OBJECT_LIBRARY` and set:
+P3-06 implements and verifies all seven services. Runtime readiness requires the
+runtime mask to equal the same complete set after successful module lifecycle
+and self-test checks.
 
-```cmake
-set_property(TARGET <provider> PROPERTY
-  ANOSECUREKIT_ENTERPRISE_PROVIDER_BACKEND_ID "anocrypto-c")
-set_property(TARGET <provider> PROPERTY
-  ANOSECUREKIT_ENTERPRISE_PROVIDER_CAPABILITIES
-  "sha256;hmac-sha256;hkdf-sha256;random;scrypt;aes256-gcm;aes256-gcm-stream")
-target_link_libraries(<provider> PRIVATE AnoCryptoC::AnoCryptoC)
-```
-
-Configuration fails when the identity, capability list, direct module link,
-target type, or module package contract is missing. The opt-in native test mode
-may build the Enterprise-owned partial provider declaring exactly `sha256`,
-`hmac-sha256`, and `random`; this is a development path and cannot enable
-installation or delivery.
-
-## Fail-closed rule
-
-A partial AnoCrypto-C provider is not promoted to the production profile.
-Missing services are not sent to OpenSSL and are not represented as available.
-Development work may implement capabilities incrementally through the explicit
-native test option, but normal production profile configuration remains blocked
-until the complete requirement set is met.
-
-## Runtime gate implemented as a contract
-
-The static CMake capability declaration is only the first gate. Enterprise now also defines runtime contract version `1` and verifies:
-
-- AnoCrypto-C module initialization;
-- startup self-test result;
-- operational state;
-- runtime module version and build identity;
-- service availability reported by the module;
-- error/status translation;
-- absence of OpenSSL production linkage in the AnoCrypto-C profile.
-
-The runtime adapter is selected at link time and independently reports a
-capability mask. The AnoCrypto-C lifecycle implementation uses the pinned
-external public API and now reports exactly `sha256`, `hmac-sha256`, and
-`random`. Service adapters implement Community `sha256` with
-`ano_crypto_hash_digest`, raw-key `hmac_sha256` with
-`ano_crypto_hmac_compute`, and random/key/token generation with the public
-AnoCrypto-C random wrapper; all other backend functions remain fail-closed and
-advertise no capability. Tests retain mock runtime adapters for failure paths
-and use the installed package for native lifecycle, SHA-256, HMAC-SHA-256, and
-random paths. See `PROVIDER_RUNTIME_CONTRACT.md`.
-
-The production source also includes a separate exhaustive native
-service-operation status mapper. SHA-256, HMAC-SHA-256, and random consume
-direct native results through this mapper. Hash/MAC require exact 32-byte
-outputs; random requires exact requested length across chunks no larger than
-65,536 bytes. Unknown native operation values map to `internal_error`; no error
-maps to `success`. Public failures preserve the existing Community
-`backend_failure` exception contract.
-
-HKDF-SHA-256, scrypt, AES-256-GCM, streaming AEAD, and key wrapping remain
-absent from the Enterprise provider and block full parity. They must not be
-declared in an actual adapter capability mask until implemented and verified.
-
-Static or mock metadata must not be treated as KCMVP or FIPS validation evidence.
+Capability completeness is not customer release authorization. The AnoCrypto-C
+profile remains excluded from installation, exports and delivery packages until
+those independent gates are approved.

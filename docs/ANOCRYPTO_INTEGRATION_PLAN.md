@@ -1,96 +1,36 @@
+# SPDX-License-Identifier: LicenseRef-AnoSecureKit-Enterprise-Proprietary
+
 # AnoCrypto-C Integration Plan
 
-AnoCrypto-C is an external C99 module managed in its own repository. Enterprise
-integrates it through proprietary C++ provider adapters; the module itself is
-not copied into this repository.
+## Adapter work completed through P3-06
 
-## Package contract
+1. Pin exact installed AnoCrypto-C identity and fail on mismatch.
+2. Preserve lifecycle, startup self-test and status mapping.
+3. Connect SHA-256, HMAC-SHA-256 and random.
+4. Connect HKDF-SHA-256.
+5. Connect AES-256-GCM one-shot and streaming.
+6. Connect the fixed `SKP1` v1 scrypt profile with a bounded caller workspace.
+7. Advertise all seven capabilities only after implementation.
+8. Verify exact `SKT1`/`SKF1`/`SKP1` fixtures and product round trips.
+9. Reject OpenSSL linkage or fallback in the AnoCrypto-C profile.
+10. Keep customer installation and release authorization closed.
 
-```cmake
-find_package(AnoCryptoC 0.1.0 EXACT CONFIG REQUIRED)
-target_link_libraries(provider PRIVATE AnoCryptoC::AnoCryptoC)
-```
+## Next work
 
-The verified baseline is commit
-`cf0f3c425dd265c7509fb64a6123db97f71055dd`, runtime identity
-`0.1.0-p1-33-release-rehearsal`, build identity ABI `1`, and 69 public symbols.
-Version matching alone is insufficient; package digest and runtime identity
-verification are mandatory. See
-[ANOCRYPTO_C_PINNED_CONTRACT.md](ANOCRYPTO_C_PINNED_CONTRACT.md).
+P3-06 is a parity checkpoint, not a release. The next work belongs to product
+qualification and governance:
 
-## Implemented gates
+- resolve or externally confirm remaining source-provenance records;
+- run hosted platform lanes when billing/authorization allows;
+- review Windows and macOS dependency inspection;
+- define trusted signing/attestation intake;
+- obtain explicit customer release authorization;
+- only then design an install/export profile for AnoCrypto-C.
 
-- explicit `openssl` and `anocrypto-c` profile selection;
-- exact `AnoCryptoC::AnoCryptoC` target requirement;
-- non-imported cryptographic provider `OBJECT_LIBRARY` requirement;
-- complete static production capability declaration;
-- built-in proprietary production lifecycle adapter;
-- runtime contract version and backend identity validation;
-- direct `AnoCryptoC::AnoCryptoC` linkage for both adapters;
-- fail-closed runtime status, module state, self-test, and capability checks;
-- opt-in installed-package lifecycle tests with explicit runtime/commit pins;
-- production native state/lifecycle mapping and Linux dependency-purity checks;
-- exhaustive service-operation status mapping with unknown-value fail-closed
-  coverage;
-- public SHA-256 through `ano_crypto_hash_digest` with OpenSSL parity and native
-  negative tests;
-- public raw-key HMAC-SHA-256 through `ano_crypto_hmac_compute` with OpenSSL
-  parity and native negative tests;
-- public random, key, and token generation through `anocrypto/ac_random.h` with
-  65,536-byte chunking, per-call context cleanup, and behavioral parity tests;
-- no silent OpenSSL fallback.
+No additional primitive is authorized by this plan.
 
-## Current runtime boundary
-
-Enterprise defines runtime contract version `1` for initialization, shutdown,
-module/self-test state, module version/build identity, status mapping, and
-runtime capability reporting. The OpenSSL profile supplies a built-in
-implementation. Mock AnoCrypto-C adapters verify ready, self-test-failed, and
-invalid-contract behavior.
-
-The exact native public headers and lifecycle symbols are verified and pinned.
-The production adapter calls them directly, verifies runtime/build identity at
-initialization, and reports module/self-test state through runtime contract
-version `1`. The opt-in harness compiles the same adapter and verifies the real
-lifecycle sequence. The runtime capability mask now contains exactly `sha256`,
-`hmac-sha256`, and `random`, so lifecycle readiness still does not make the
-complete profile ready.
-
-A separate production helper maps every defined AnoCrypto-C service status to
-the stable Enterprise operation-status contract. SHA-256, HMAC-SHA-256, and
-random use that mapper for `ano_crypto_hash_digest`,
-`ano_crypto_hmac_compute`, and the public random service; unknown values map to
-`internal_error`. All unconnected backend functions fail closed without
-OpenSSL fallback.
-
-## Remaining implementation
-
-1. Approve and record the package/archive digest.
-2. Verify static package consumption.
-3. Fail closed for missing HKDF, AEAD, streaming, key-wrap, and password-KDF
-   capabilities until AnoCrypto-C supplies them.
-4. Run the Community API/fixture suite through the profile.
-5. Add native self-test-failure evidence only after an upstream public test hook
-   is approved.
-6. Verify Windows/macOS package dependency purity and hosted execution.
-
-## Adapter readiness sequence
-
-1. Discover `AnoCryptoC` and require `AnoCryptoC::AnoCryptoC`.
-2. Build the proprietary cryptographic provider adapter.
-3. Build the proprietary runtime/lifecycle adapter.
-4. Build and verify the separate native operation-status mapper.
-5. Build and verify the native SHA-256, raw-key HMAC-SHA-256, and random
-   adapters plus cross-backend contracts.
-6. Validate CMake identity, contract version, direct module linkage, and static
-   capabilities.
-7. Initialize the actual module and verify self-test/operational state.
-8. Compare runtime capabilities against the complete product requirement.
-9. Only then enable full API parity tests and production packaging.
-
-The verified AnoCrypto-C feature set is not sufficient for the full production
-gate because HKDF-SHA-256, scrypt, AES-256-GCM, streaming AEAD, and key wrapping
-are absent from the Enterprise adapter. The approved package digest is also
-unresolved. Passing native lifecycle, SHA-256, HMAC-SHA-256, and random targets
-does not enable installation, customer packaging, fallback, or production
-profile readiness.
+Local compatibility evidence currently comes from unapproved development
+revision `c101c9655f881044c14d8efbc20ea94a2e84f30b`. The pinned reviewed revision
+and source digest remain unavailable, and the development package's Linux CMake
+config does not load its exported `Threads::Threads` dependency. Exact package
+and install qualification therefore remain open.

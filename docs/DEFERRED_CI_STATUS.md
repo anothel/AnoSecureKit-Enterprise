@@ -2,6 +2,19 @@
 
 # Deferred CI Status
 
+## P3-06 supersession note
+
+The P1-33 partial-profile records below are retained as historical evidence.
+The current local checkpoint is P3-06: all seven AnoSecureKit primitive
+capabilities are connected and locally compatibility-tested against unapproved
+development revision `c101c9655f881044c14d8efbc20ea94a2e84f30b`, which reports
+runtime `0.1.0-p3-05-scrypt-fixed-profile`. The required reviewed revision and
+digest were unavailable. Hosted lanes remain `NOT_RUN`, hosted review remains
+`UNREVIEWED`, signing remains `UNSIGNED`, and external release authorization
+remains `NO`. Nothing below may be read as the current capability or package
+approval status.
+
+
 Status date: 2026-07-17
 
 GitHub-hosted Actions execution is temporarily unavailable. Local verification

@@ -2,23 +2,34 @@
 
 # Pinned AnoCrypto-C Contract
 
-AnoCrypto-C is an external dependency. Enterprise does not copy, vendor, or
-relicense its source.
+AnoCrypto-C is an external generic C99 cryptographic module. Enterprise consumes
+its installed CMake package and public headers; it does not copy product formats
+or orchestration into AnoCrypto-C.
 
 ## Dependency identity
 
 | Field | Required value |
 |---|---|
-| Repository commit | `cf0f3c425dd265c7509fb64a6123db97f71055dd` |
+| Repository | `anocrypto-c` |
+| Reviewed source commit | `89e16a261ab7696d9489167d7403d9f2c704629e` |
+| Source artifact SHA-256 | `18aa9050a808e4d541b2a6a10e91aa8e51367b95962b90db2183e26377bdbac1` |
+| Runtime identity | `0.1.0-p3-05-scrypt-fixed-profile` |
 | CMake package version | `0.1.0` |
-| Runtime identity | `0.1.0-p1-33-release-rehearsal` |
-| Package | `AnoCryptoC` |
-| Imported target | `AnoCryptoC::AnoCryptoC` |
-| Include root | `include/anocrypto` |
-| Public symbol count | `69` |
-| Build identity ABI | `1` |
+| Package/target | `AnoCryptoC` / `AnoCryptoC::AnoCryptoC` |
+| Public headers/symbols | `16` / `80` |
+| Symbol-version lines | `ANOCRYPTO_C_0` through `ANOCRYPTO_C_4` |
+| Retained compatibility | P1-29 and all prior ABI lines |
 | License | `MPL-2.0` |
-| Approved package/archive SHA-256 | `TBD-NOT-APPROVED` |
+
+## Dependency availability at reintegration
+
+The required reviewed commit and matching source artifact were not available in
+the local AnoCrypto-C repository, upstream Git, or the inspected source
+artifacts. Development revision
+`c101c9655f881044c14d8efbc20ea94a2e84f30b` reports the required runtime and was
+used only for compatibility testing. It is not an approved substitute for the
+pinned commit or digest. Configuration with the pinned expected commit rejects
+that development package, as required.
 
 Package discovery is exact:
 
@@ -26,43 +37,14 @@ Package discovery is exact:
 find_package(AnoCryptoC 0.1.0 EXACT CONFIG REQUIRED)
 ```
 
-The CMake version check is not sufficient. Package intake must compare the
-installed package or approved archive with the recorded SHA-256 and source
-commit. The production lifecycle adapter rejects a runtime version other than
-`0.1.0-p1-33-release-rehearsal`, validates build identity ABI `1`, and retains
-module version/build fingerprint for diagnostics. Until an approved digest
-replaces `TBD-NOT-APPROVED`, no package satisfies the delivery contract.
+Configuration additionally requires the expected runtime identity and reviewed
+commit. A package reporting an unknown or different identity fails closed unless
+the explicitly test-only unknown-commit override is used. That override is not
+provenance or release approval.
 
-The local AnoCrypto-C repository root file `AnoCrypto-C.zip` is untracked and
-is not an approved package. Only a verified installed package or separately
-approved archive may be used.
+## Public dependency surface
 
-## Production lifecycle adapter and opt-in harness
-
-Enterprise owns the production lifecycle adapter under
-`src/providers/anocrypto_c`. The opt-in harness compiles that same adapter
-source against the installed package. Enable the harness only with:
-
-```cmake
--DANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS=ON
--DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID=0.1.0-p1-33-release-rehearsal
--DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT=cf0f3c425dd265c7509fb64a6123db97f71055dd
--DAnoCryptoC_DIR=<installed-prefix>/lib/cmake/AnoCryptoC
-```
-
-The option defaults to `OFF`. Enabling it requires both expected identity
-values and performs exact config-package discovery. It does not use
-`FetchContent`, a source checkout, or `AnoCrypto-C.zip`.
-
-The installed package must expose a non-empty commit matching the configured
-pin. A package reporting `unknown` fails unless the explicitly development-only
-`ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS=ON`
-override is set. That override permits native development only, is not
-delivery provenance or approval, and cannot enable AnoCrypto-C packaging.
-
-## Required public headers
-
-Lifecycle and identity:
+Enterprise uses only installed public headers:
 
 ```text
 anocrypto/ac_status.h
@@ -70,282 +52,72 @@ anocrypto/ac_module.h
 anocrypto/ac_selftest.h
 anocrypto/ac_version.h
 anocrypto/ac_build.h
-```
-
-Initial services:
-
-```text
 anocrypto/ac_hash.h
 anocrypto/ac_hmac.h
 anocrypto/ac_random.h
+anocrypto/ac_key.h
+anocrypto/ac_kdf.h
+anocrypto/ac_aead.h
 ```
 
-Adapters use these specific headers. The umbrella `anocrypto/anocrypto.h` is
-unnecessary for the initial integration and must not expand the dependency
-surface implicitly. Private AnoCrypto-C headers are outside this contract.
+Private AnoCrypto-C headers and source files are outside the contract.
 
-## Lifecycle contract
+## Required capability mapping
 
-Required symbols:
-
-```text
-ano_crypto_module_init
-ano_crypto_module_shutdown
-ano_crypto_module_get_state
-ano_crypto_module_get_last_error
-ano_crypto_module_require_operational
-ano_crypto_selftest_get_last_status
-ano_crypto_version_string
-ano_crypto_build_identity
-ano_crypto_build_fingerprint
-```
-
-Required order:
-
-```text
-optional version/build query
--> ano_crypto_module_init(NULL)
--> self-test status == ANO_CRYPTO_OK
--> module state == ANO_CRYPTO_MODULE_STATE_OPERATIONAL
--> ano_crypto_module_require_operational() == ANO_CRYPTO_OK
--> pinned runtime/build identity verification
--> cryptographic services
--> ano_crypto_module_shutdown()
-```
-
-Initialization automatically runs startup self-tests. Error state is sticky for
-the process, and shutdown does not recover it. Repeated initialization while
-operational and repeated shutdown succeed. Normal shutdown may be followed by
-reinitialization. Enterprise owns lifecycle ordering and prohibits concurrent
-initialize, shutdown, and explicit self-test operations.
-
-The native harness verifies the production adapter's clean starting snapshot,
-startup self-test, operational gate, repeated initialization, shutdown,
-reinitialization, repeated shutdown, runtime identity, build identity ABI,
-fingerprint, commit policy, identity-mismatch rejection, and the SHA-256 plus
-HMAC-SHA-256 plus random capability mask against the installed package.
-
-Native module states map without loss:
-
-| AnoCrypto-C | Enterprise |
+| Enterprise primitive requirement | AnoCrypto-C public service |
 |---|---|
-| `ANO_CRYPTO_MODULE_STATE_UNINITIALIZED` | `uninitialized` |
-| `ANO_CRYPTO_MODULE_STATE_SELF_TEST_RUNNING` | `self_test_running` |
-| `ANO_CRYPTO_MODULE_STATE_OPERATIONAL` | `operational` |
-| `ANO_CRYPTO_MODULE_STATE_ERROR_STATE` | `error` |
-| `ANO_CRYPTO_MODULE_STATE_SHUTDOWN` | `shutdown` |
+| SHA-256 | `ano_crypto_hash_digest` |
+| HMAC-SHA-256 | `ano_crypto_hmac_compute` |
+| HKDF-SHA-256 | `ano_crypto_hkdf_sha256` |
+| random/key/token bytes | public random context API |
+| fixed `SKP1` v1 scrypt profile | `ano_crypto_scrypt_derive_key` |
+| AES-256-GCM one-shot | one-shot encrypt/decrypt API |
+| AES-256-GCM streaming | stream context API |
+| AES key lifecycle | in-memory block-cipher CSP handles |
 
-## Operation status contract
+The scrypt adapter accepts only `N=32768`, `r=8`, `p=1`, a 32-byte result and
+the 64 MiB product ceiling. Enterprise allocates the exact caller-owned
+workspace required by AnoCrypto-C, removes it on every exit, and performs no
+silent parameter substitution.
 
-Lifecycle status remains separate from per-operation status. The production
-operation-status mapper under `src/providers/anocrypto_c` preserves these
-mappings without calling a cryptographic service or mutating lifecycle state:
+AES-256-GCM uses 32-byte keys, 12-byte nonces and 16-byte tags. Key material is
+imported as an in-memory block-cipher CSP handle and destroyed after use. The
+streaming context receives a key snapshot during initialization; Community owns
+packet/file buffering and commits no unauthenticated plaintext.
 
-| AnoCrypto-C | Enterprise operation status |
-|---|---|
-| `ANO_CRYPTO_OK` | `success` |
-| `ANO_CRYPTO_ERR_INVALID_ARGUMENT` | `invalid_argument` |
-| `ANO_CRYPTO_ERR_BUFFER_TOO_SMALL` | `buffer_too_small` |
-| `ANO_CRYPTO_ERR_UNSUPPORTED_ALGORITHM`, `ANO_CRYPTO_ERR_UNSUPPORTED_PARAMETER`, `ANO_CRYPTO_ERR_NOT_IMPLEMENTED` | `unsupported` |
-| `ANO_CRYPTO_ERR_NOT_APPROVED_IN_MODE` | `not_approved` |
-| `ANO_CRYPTO_ERR_SELF_TEST_FAILED`, `ANO_CRYPTO_ERR_NOT_INITIALIZED`, `ANO_CRYPTO_ERR_FATAL_STATE` | `not_operational` |
-| `ANO_CRYPTO_ERR_ENTROPY_SOURCE_FAILED` | `entropy_failure` |
-| `ANO_CRYPTO_ERR_DRBG_RESEED_REQUIRED` | `reseed_required` |
-| `ANO_CRYPTO_ERR_AUTHENTICATION_FAILED` | `authentication_failed` |
-| `ANO_CRYPTO_ERR_INTEGRITY_CHECK_FAILED` | `integrity_failure` |
-| `ANO_CRYPTO_ERR_RESOURCE_EXHAUSTED` | `resource_exhausted` |
-| `ANO_CRYPTO_ERR_INTERNAL_ERROR` or unknown | `internal_error` |
+## Lifecycle and status
 
-When returned by lifecycle initialization, `ANO_CRYPTO_ERR_SELF_TEST_FAILED`
-remains a lifecycle `self_test_failed` result and places the module in a
-non-operational error state. When observed as a direct service-operation
-result, the operation mapper reports `not_operational`.
+Enterprise initializes the module, verifies startup self-test, operational
+state, runtime identity, build identity and configured commit before exposing
+profile readiness. Shutdown and repeated lifecycle calls preserve the existing
+contract. Native operation statuses are mapped without treating an error as
+success; authentication failure remains distinct from invalid input and backend
+failure.
 
-The production lifecycle conversion and service-operation conversion are
-separate functions. Unknown native states map to Enterprise `error`; unknown
-lifecycle statuses and unknown operation statuses map to `internal_error`.
-Compile-time assertions pin every known numeric native status, and the opt-in
-native test covers every known value plus reviewed unknown cast values.
+## Product boundary
 
-## SHA-256 service contract
+AnoCrypto-C owns only generic primitives, module state, CSP lifecycle and stable
+C ABI. Enterprise/Community continue to own:
 
-SHA-256 is the first connected native service. The Enterprise provider calls
-the public AnoCrypto-C one-shot API exactly as declared by `ac_hash.h`:
+- `SKT1`, `SKF1`, `SKP1` parsing and serialization;
+- nonce composition, AAD composition and output-commit policy;
+- path handling, temporary files and transactional replacement;
+- capability reporting, backend selection and no-fallback policy;
+- package, provenance, authorization and support decisions.
 
-```c
-ano_crypto_status_t ano_crypto_hash_digest(
-    ano_crypto_hash_algorithm_t algorithm,
-    const uint8_t *input,
-    size_t input_len,
-    uint8_t *out,
-    size_t out_len,
-    size_t *out_written);
+## Build example
+
+```sh
+cmake -S . -B build-native -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND=anocrypto-c \
+  -DANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS=ON \
+  -DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID=0.1.0-p3-05-scrypt-fixed-profile \
+  -DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT=89e16a261ab7696d9489167d7403d9f2c704629e \
+  -DAnoCryptoC_DIR=<prefix>/lib/cmake/AnoCryptoC
+cmake --build build-native --target enterprise-anocrypto-c-parity-check
 ```
 
-The adapter passes `ANO_CRYPTO_HASH_ALG_SHA256`, a 32-byte output buffer, and
-requires exactly 32 bytes written. It calls the established operational gate
-before the hash API. Empty input passes `NULL` with length zero; non-empty input
-passes its exact byte span and length. Native results use the operation-status
-mapper. Any mapped error or wrong output length becomes the existing public
-`anosecurekit::error_code::backend_failure`; no partial digest is returned.
-
-The same public `anosecurekit::sha256` test covers empty input, `abc`, embedded
-zero bytes, 257-byte multi-block input, and deterministic 1 MiB input on both
-OpenSSL and AnoCrypto-C. It also verifies rejection before initialization and
-after shutdown, native validation failures, output-buffer safety, and unknown
-status fail-closed behavior.
-
-## HMAC-SHA-256 service contract
-
-The Enterprise provider uses AnoCrypto-C's one-shot raw-key API from
-`ac_hmac.h`:
-
-```c
-ano_crypto_status_t ano_crypto_hmac_compute(
-    ano_crypto_hash_algorithm_t hash_algorithm,
-    const uint8_t *key,
-    size_t key_len,
-    const uint8_t *input,
-    size_t input_len,
-    uint8_t *out,
-    size_t out_len,
-    size_t *out_written);
-```
-
-The algorithm is `ANO_CRYPTO_HASH_ALG_SHA256` (`1`). The adapter calls the
-existing operational gate first, zero-initializes its 32-byte temporary output,
-passes raw key/message bytes without key handles, and accepts output only when
-the shared operation-status mapper reports success and `out_written == 32`.
-Empty key or message uses `NULL` with length zero, as explicitly accepted by the
-native contract; a nonzero length always has a non-null pointer. Arbitrary byte
-keys are accepted, including embedded zeros and keys below, equal to, or above
-the 64-byte SHA-256 block size. Any native error or wrong output length becomes
-the existing public `backend_failure`; no partial MAC is returned.
-
-The same public `anosecurekit::hmac_sha256` test passed OpenSSL/AnoCrypto-C
-byte-for-byte parity for RFC 4231 cases 1, 2, 3, 4, 6, and 7; empty key/input;
-separate empty-key and empty-message cases; embedded-zero binary input; short,
-64-byte, and long keys; 257-byte multi-block input; and deterministic 1 MiB
-input. Each case runs twice and verifies that key/message buffers are unchanged.
-Native negative coverage includes pre-initialization, post-shutdown, invalid
-argument, short output, mapped error, unknown status, wrong reported length,
-and unchanged output on rejected calls.
-
-## Random service contract
-
-The Enterprise provider uses only the public declarations from
-`anocrypto/ac_random.h`:
-
-```c
-int ano_crypto_random_is_available(void);
-const char *ano_crypto_random_service_name(void);
-ano_crypto_status_t ano_crypto_random_context_size(size_t *out_size);
-ano_crypto_status_t ano_crypto_random_init(
-    void *ctx, size_t ctx_len,
-    const uint8_t *personalization, size_t personalization_len,
-    uint32_t flags);
-ano_crypto_status_t ano_crypto_random_generate(
-    void *ctx, uint8_t *out, size_t out_len,
-    const uint8_t *additional_input, size_t additional_input_len,
-    uint32_t flags);
-ano_crypto_status_t ano_crypto_random_reseed(
-    void *ctx,
-    const uint8_t *additional_input, size_t additional_input_len,
-    uint32_t flags);
-ano_crypto_status_t ano_crypto_random_uninit(void *ctx, size_t ctx_len);
-```
-
-The reported service name is
-`AnoCrypto-C HMAC_DRBG-SHA-256 random service`. For each non-empty Community
-request, Enterprise requires the native module to be operational, checks
-`ano_crypto_random_is_available()`, queries the opaque context size, allocates
-caller-owned context storage, initializes it with no personalization, generates
-with no additional input, uninitializes it, and securely erases the context.
-Each call owns its context; no mutable context is shared concurrently. A
-zero-length `random_bytes` request returns empty before native generation.
-
-`ANO_CRYPTO_RANDOM_MAX_REQUEST_SIZE` is exactly 65,536. Enterprise uses
-overflow-safe remaining-length arithmetic and ordered chunks no larger than
-that limit. Any failed chunk stops generation, preserves the exact native
-status for the shared operation-status mapper, uninitializes and erases the
-context, securely erases the entire output, and throws the existing Community
-`backend_failure`; no partial result is returned. `generate_key()` fills its
-fixed 32-byte `key256` through the same path, and `random_token(size)` continues
-to reject zero and encode exactly `size` backend-generated bytes.
-
-The public wrapper does not automatically reseed during generation. Its DRBG
-reseed counter or process-marker check can return
-`ANO_CRYPTO_ERR_DRBG_RESEED_REQUIRED`; a detected fork/process change clears
-the requested output and requires `ano_crypto_random_reseed()` before retrying
-that inherited context. Enterprise adds no reseed schedule or retry: it maps
-and reports the failure. VM snapshot/restore, clone, and suspend/resume changes
-are not detected by this API; known inherited/restored contexts must be
-discarded. Because Enterprise creates a fresh context for every public call,
-normal calls seed during initialization and do not retain a context for a later
-call. An inherited in-flight context remains subject to the native
-process-marker check.
-
-Focused native/OpenSSL tests cover 0, 1, 65,535, 65,536, 65,537, multiple full
-chunks, a fixed large request size, exact length, nonzero output, consecutive
-calls, `generate_key`, and `random_token`. Adapter mocks cover unavailable
-service, entropy failure, reseed required, non-operational, invalid argument,
-resource exhaustion, internal error, stop-on-first-failure, cleanup, and whole
-output clearing. AnoCrypto-C exposes no approved public entropy-failure or
-reseed-required injection hook, so those injected cases are mock evidence, not
-native entropy-failure evidence.
-
-## Capability status
-
-Connected through Enterprise native adapters:
-
-- module lifecycle and self-test reporting;
-- version and build identity;
-- SHA-256;
-- raw-key HMAC-SHA-256;
-- platform-backed random through the public random wrapper.
-
-Additional implemented AnoCrypto-C services are SHA-384/SHA-512, matching HMAC
-variants, AES-128/192/256-CBC, AES-CMAC, and in-memory key handles. They are not
-added to the current Enterprise provider capability mask because they do not
-replace missing product requirements.
-
-The SHA-256, HMAC-SHA-256, and random adapters use the shared operation-status
-mapper. The development runtime reports exactly the `sha256`, `hmac-sha256`,
-and `random` capability bits. Fail-closed stubs for the remaining Community
-backend symbols contain no cryptographic implementation and advertise no
-capability.
-
-Full Enterprise parity remains blocked by missing HKDF-SHA-256, scrypt,
-AES-256-GCM, streaming AEAD, and key wrapping. Missing services never fall back
-to OpenSSL and are never advertised as available.
-
-## Packaging, platforms, and licensing
-
-AnoCrypto-C has shared-package evidence for Linux and Windows. Source branches
-exist for Linux, Windows, and Apple platform entropy and synchronization.
-Static package consumption remains unverified. Windows and macOS hosted
-verification is deferred, as are hosted artifact and provenance checks.
-
-Linux native verification inspects the lifecycle executable, public SHA-256,
-HMAC-SHA-256, and random test executables, and imported AnoCrypto-C library with
-`ldd`, rejecting `libcrypto` or `libssl`. Windows and macOS dependency
-inspection remains deferred until a suitable local or hosted package is
-available.
-
-AnoCrypto-C remains MPL-2.0. Enterprise does not relicense it. Applicable MPL
-source and notice obligations must be preserved; private-repository or
-commercial status does not remove them. Legal review is required before
-customer delivery. This document is an engineering record, not legal advice.
-
-No public forced-KAT-failure hook is approved, so native self-test-failure
-injection remains deferred. Existing mock self-test-failure tests remain the
-only failure-path evidence.
-
-The proprietary lifecycle adapter, operation-status mapper, SHA-256 provider,
-HMAC-SHA-256 provider, and random provider are linked into the opt-in build-tree
-AnoCrypto-C development profile, which reports exactly `sha256`,
-`hmac-sha256`, and `random`. Their source/header files are not installed or
-exported, and the profile remains excluded from CPack, customer archives, and
-the delivery SBOM. Lifecycle readiness and three services therefore do not make
-the complete profile ready. The AnoCrypto-C production profile remains blocked
-from customer delivery.
+The completed primitive profile is still non-installable in this repository.
+Hosted qualification, signing, trusted provenance, support approval and external
+release authorization remain independent blockers.

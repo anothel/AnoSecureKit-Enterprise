@@ -2,5 +2,5 @@ test_only: true
 scenario: A
 evidence_type: source snapshot
 source_revision: ea3b9d0dae40a359ecdb9cde8116d152a20b5a81
-community_tree: 9b498f5431f217ac71e8d2e2c92df9e8b0122626
+community_tree: 5478a5c37e96aa1017f8f4604234de48c1115d7c
 payload: synthetic custody contract evidence

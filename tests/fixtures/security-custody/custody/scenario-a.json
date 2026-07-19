@@ -9,7 +9,7 @@
     "collected_at":  "2026-07-18T00:00:00Z",
     "collected_by_role":  "security-intake-owner",
     "custodian_role":  "evidence-reviewer",
-    "sha256":  "sha256:435b3e26019e118f50e7a4b707d37598b671782af7ac8fafadc18543259df2d7",
+    "sha256":  "sha256:442a5447d6069220994e7308dda35be4e4c1b0e70d90a7e11424c8d0e0715784",
     "size":  219,
     "sensitivity":  "confidential",
     "retention_class":  "security-record",
@@ -37,6 +37,6 @@
     "integrity_status":  "verified",
     "revocation_status":  "active",
     "final_disposition":  "retained",
-    "custody_digest":  "sha256:5560510db5172ff8687e5e5ceb120b8dfd26eda4924f5d6c1b595d726eb9b93c",
+    "custody_digest":  "sha256:7c8e5aa11cd315a81d2d6b5996ba8ffb2a8facef9e38aecb6c2fbf8402d90551",
     "test_only":  true
 }

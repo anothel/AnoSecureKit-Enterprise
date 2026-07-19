@@ -3,9 +3,9 @@
 # Enterprise OpenSSL Profile Installation
 
 AnoSecureKit Enterprise currently exposes an installable CMake package only for
-the verified OpenSSL delivery profile. The incomplete AnoCrypto-C profile is a
-build-tree integration path and intentionally produces no install/export or
-customer package.
+the verified OpenSSL delivery profile. The P3-06 AnoCrypto-C profile is a
+build-tree engineering-parity path and intentionally produces no install/export
+or customer package.
 
 ## Build and install
 
@@ -58,16 +58,27 @@ checks Enterprise runtime/profile information.
 
 ## AnoCrypto-C profile restriction
 
-The AnoCrypto-C profile is not installable until all of the following are true:
+P3-06 completes the current primitive and Community-format parity checkpoint,
+but the AnoCrypto-C profile remains non-installable. CMake install rules,
+package exports and delivery/CPack targets are not produced for this profile.
 
-- a pinned `AnoCryptoC::AnoCryptoC` package is supplied;
-- the proprietary provider supplies every required capability and the pinned
-  runtime adapter passes all gates;
-- the complete capability contract is satisfied;
-- Community API/format parity and no-OpenSSL linkage gates pass;
-- customer delivery, license, security, and validation claims are reviewed.
+This restriction remains until all of the following are true:
 
-A build-tree partial or metadata-only adapter is never a customer-delivery package.
+- the exact dependency provenance and package digest are approved;
+- the proprietary adapter and complete capability contract pass all gates;
+- Community API/format parity and cross-platform no-OpenSSL linkage gates pass;
+- hosted platform qualification and review complete;
+- trusted signing and attestation evidence is verified;
+- legal, security and support transition is approved;
+- external customer release is explicitly authorized.
+
+A successful build-tree parity test is never a customer-delivery package.
+
+The reintegration validation used AnoCrypto-C development revision
+`c101c9655f881044c14d8efbc20ea94a2e84f30b` for compatibility only. Its Linux
+installed-package smoke test fails because its exported CMake target references
+`Threads::Threads` without loading that dependency. This repository does not
+work around that package defect in production configuration.
 
 ## Customer delivery archive gate
 
@@ -80,7 +91,6 @@ cmake --build build --target enterprise-delivery-check
 The output directory contains CPack ZIP/TGZ install archives, a Community
 source-offer ZIP, delivery metadata, an SPDX 2.3 SBOM, and `SHA256SUMS.txt`. See
 `docs/DELIVERY_VERIFICATION.md` for the verification contract.
-
 
 ## Release preflight
 

@@ -1,20 +1,21 @@
 # AnoSecureKit Enterprise
 
 AnoSecureKit Enterprise is the private/commercial superset of AnoSecureKit
-Community. It uses Community v0.4.0 as the common C++ API and implementation
-baseline and selects one explicit cryptographic backend profile.
+Community. It keeps the Community v0.4.0 API and product formats while selecting
+one explicit cryptographic backend at configure time.
 
 ## Current baseline
 
 | Profile | Current status |
 |---|---|
 | `openssl` | Implementation complete; local verification passed; hosted qualification not passed / `BLOCKED_EXTERNAL`; install/export and internal ZIP/TGZ delivery enabled; customer release blocked (`customer_release_ready: false`). |
-| `anocrypto-c` | Development/partial; lifecycle, self-test/state/identity, native status mapping, SHA-256, HMAC-SHA-256, and random connected; exact capability mask `sha256 hmac-sha256 random`; complete readiness, install/export, CPack, and customer delivery blocked; OpenSSL fallback absent. |
+| `anocrypto-c` | P3-06 adapter and format compatibility pass locally against development revision `c101c9655f881044c14d8efbc20ea94a2e84f30b`, which reports runtime `0.1.0-p3-05-scrypt-fixed-profile`. All seven required primitive capabilities are connected, exact `SKT1`/`SKF1`/`SKP1` fixtures pass, and OpenSSL fallback/linkage is prohibited. The required reviewed source `89e16a261ab7696d9489167d7403d9f2c704629e` and digest were unavailable, so package approval, customer install/export and delivery remain blocked. |
 
-The bundled OpenSSL aggregate gate is `enterprise-release-preflight`. The
-opt-in AnoCrypto-C development gate is
-`enterprise-anocrypto-c-partial-profile-check`. Generated ZIP/TGZ files are
-internal qualification artifacts, not customer releases.
+The AnoCrypto-C parity gate is:
+
+```text
+enterprise-anocrypto-c-parity-check
+```
 
 Enterprise `0.1.0` is `unsupported` pre-release/internal qualification work,
 not generally available or a production release, with no active customer
@@ -24,7 +25,7 @@ support commitment.
 support: unsupported pre-release/internal qualification
 OpenSSL local qualification: PASS
 OpenSSL hosted qualification: not passed / BLOCKED_EXTERNAL
-AnoCrypto-C profile: partial
+AnoCrypto-C profile: P3-06 local compatibility; exact package/install/hosted/authorization blocked
 actual operational systems: inactive
 assigned operational roles: none
 activation_ready: false
@@ -42,7 +43,8 @@ through `enterprise-release-evidence-verifier-check`. No hosted attestation
 exists, so cryptographic evidence remains unavailable. See
 [release authorization policy](docs/RELEASE_AUTHORIZATION_POLICY.md).
 
-## Authoritative contracts
+This checkpoint is engineering evidence only. It is not a production release,
+formal validation, signing approval, or external distribution authorization.
 
 Pre-GA work control:
 
@@ -63,6 +65,7 @@ AnoCrypto-C profile:
 
 - [Pinned contract](docs/ANOCRYPTO_C_PINNED_CONTRACT.md)
 - [Parity gaps](docs/ANOCRYPTO_C_PARITY_GAPS.md)
+- [P3-06 parity checkpoint](docs/ANOCRYPTO_C_P3_06_PARITY_CHECKPOINT.md)
 - [Upstream requirements](docs/ANOCRYPTO_C_UPSTREAM_REQUIREMENTS.md)
 - [Integration plan](docs/ANOCRYPTO_INTEGRATION_PLAN.md)
 

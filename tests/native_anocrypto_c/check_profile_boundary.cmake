@@ -23,12 +23,12 @@ file(READ "${_install_script}" _install_contents)
 if(_install_contents MATCHES "file\\(INSTALL"
    OR _install_contents MATCHES "anosecurekitEnterpriseTargets"
    OR _install_contents MATCHES "third_party/anosecurekit-community/cmake_install")
-  message(FATAL_ERROR "Partial AnoCrypto-C profile exposes install or CMake export content")
+  message(FATAL_ERROR "AnoCrypto-C checkpoint profile unexpectedly exposes install or CMake export content")
 endif()
 
 if(EXISTS "${ENTERPRISE_BINARY_DIR}/CPackConfig.cmake"
    OR EXISTS "${ENTERPRISE_BINARY_DIR}/CPackSourceConfig.cmake")
-  message(FATAL_ERROR "Partial AnoCrypto-C profile exposes CPack configuration")
+  message(FATAL_ERROR "AnoCrypto-C checkpoint profile unexpectedly exposes CPack configuration")
 endif()
 
-message(STATUS "AnoCrypto-C source, install, export, and CPack boundary passed")
+message(STATUS "AnoCrypto-C no-OpenSSL, non-delivery, export, and CPack boundary passed")

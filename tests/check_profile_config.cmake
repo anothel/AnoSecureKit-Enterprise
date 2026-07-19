@@ -50,7 +50,8 @@ expect_configure_failure(native-missing-commit
   -DANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS=ON
   -DANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID=test-runtime
   -DCMAKE_PREFIX_PATH=${_fake_prefix})
-expect_configure_failure(missing-adapter "AnoCrypto-C profile is fail-closed"
+expect_configure_failure(missing-production-runtime-id
+  "ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID is required"
   -DANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND=anocrypto-c
   -DCMAKE_PREFIX_PATH=${_fake_prefix})
 
@@ -133,7 +134,7 @@ write_provider_fixture(wrong-backend-id "openssl" "${_complete_capabilities}" TR
 expect_fixture_failure(wrong-backend-id "PROVIDER_BACKEND_ID to 'anocrypto-c'")
 
 write_provider_fixture(missing-capabilities "anocrypto-c" "sha256;hmac-sha256;random" TRUE TRUE "anocrypto-c" "1" TRUE)
-expect_fixture_failure(missing-capabilities "Missing required capabilities: hkdf-sha256")
+expect_fixture_failure(missing-capabilities "hkdf-sha256")
 
 write_provider_fixture(missing-module-link "anocrypto-c" "${_complete_capabilities}" FALSE TRUE "anocrypto-c" "1" TRUE)
 expect_fixture_failure(missing-module-link "provider target must link AnoCryptoC::AnoCryptoC directly")

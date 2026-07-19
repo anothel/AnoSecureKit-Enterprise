@@ -86,8 +86,7 @@ native_self_test_query query_native_self_test() noexcept
     const auto query_status = ano_crypto_selftest_get_last_status(&status);
     if (query_status != ANO_CRYPTO_OK)
     {
-        return {map_native_status_with_last_error(query_status),
-                backend_self_test_status::failed};
+        return {map_native_status_with_last_error(query_status), backend_self_test_status::failed};
     }
 
     switch (status)
@@ -180,17 +179,7 @@ backend_runtime_status require_native_operational() noexcept
 native_identity_info query_native_identity() noexcept
 {
     native_identity_info result{
-        backend_runtime_status::internal_error,
-        {},
-        0,
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
+        backend_runtime_status::internal_error, {}, 0, {}, {}, {}, {}, {}, {}, {}, {},
     };
 
     const char* runtime_version = nullptr;
@@ -231,18 +220,14 @@ native_identity_info query_native_identity() noexcept
     return result;
 }
 
-bool native_identity_matches_expected(const native_identity_info& identity,
-                                      std::string_view expected_runtime,
-                                      std::string_view expected_commit,
-                                      bool allow_unknown) noexcept
+bool native_identity_matches_expected(const native_identity_info& identity, std::string_view expected_runtime,
+                                      std::string_view expected_commit, bool allow_unknown) noexcept
 {
-    if (identity.query_status != backend_runtime_status::ready
-        || identity.runtime_version != expected_runtime || expected_runtime.empty()
-        || identity.abi_version != ANO_CRYPTO_BUILD_IDENTITY_ABI_VERSION
-        || identity.product_name.empty() || identity.identity_version.empty()
-        || identity.git_commit.empty() || identity.build_type.empty() || identity.compiler.empty()
-        || identity.target.empty() || identity.notes.empty() || identity.fingerprint.empty()
-        || expected_commit.empty())
+    if (identity.query_status != backend_runtime_status::ready || identity.runtime_version != expected_runtime ||
+        expected_runtime.empty() || identity.abi_version != ANO_CRYPTO_BUILD_IDENTITY_ABI_VERSION ||
+        identity.product_name.empty() || identity.identity_version.empty() || identity.git_commit.empty() ||
+        identity.build_type.empty() || identity.compiler.empty() || identity.target.empty() || identity.notes.empty() ||
+        identity.fingerprint.empty() || expected_commit.empty())
     {
         return false;
     }
@@ -271,8 +256,7 @@ backend_runtime_info snapshot_native_runtime() noexcept
         {
         case backend_module_state::operational:
             runtime_status = self_test.query_status;
-            if (runtime_status == backend_runtime_status::ready
-                && self_test.status != backend_self_test_status::passed)
+            if (runtime_status == backend_runtime_status::ready && self_test.status != backend_self_test_status::passed)
             {
                 runtime_status = backend_runtime_status::self_test_failed;
             }
@@ -280,12 +264,10 @@ backend_runtime_info snapshot_native_runtime() noexcept
             {
                 runtime_status = require_native_operational();
             }
-            if (runtime_status == backend_runtime_status::ready
-                && !native_identity_matches_expected(
-                    identity,
-                    ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID_VALUE,
-                    ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT_VALUE,
-                    allow_unknown_commit()))
+            if (runtime_status == backend_runtime_status::ready &&
+                !native_identity_matches_expected(
+                    identity, ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID_VALUE,
+                    ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT_VALUE, allow_unknown_commit()))
             {
                 runtime_status = backend_runtime_status::initialization_failed;
             }
@@ -309,9 +291,13 @@ backend_runtime_info snapshot_native_runtime() noexcept
         runtime_status,
         state.state,
         self_test.status,
-        backend_capability_bit(crypto_backend_capability::sha256)
-            | backend_capability_bit(crypto_backend_capability::hmac_sha256)
-            | backend_capability_bit(crypto_backend_capability::random),
+        backend_capability_bit(crypto_backend_capability::sha256) |
+            backend_capability_bit(crypto_backend_capability::hmac_sha256) |
+            backend_capability_bit(crypto_backend_capability::hkdf_sha256) |
+            backend_capability_bit(crypto_backend_capability::random) |
+            backend_capability_bit(crypto_backend_capability::scrypt) |
+            backend_capability_bit(crypto_backend_capability::aes256_gcm) |
+            backend_capability_bit(crypto_backend_capability::aes256_gcm_stream),
     };
 }
 
@@ -321,8 +307,7 @@ backend_runtime_status initialize_native_runtime() noexcept
     if (init_status != ANO_CRYPTO_OK)
     {
         const auto state = query_native_state();
-        if (state.query_status == backend_runtime_status::ready
-            && state.state == backend_module_state::error)
+        if (state.query_status == backend_runtime_status::ready && state.state == backend_module_state::error)
         {
             return native_error_state_status();
         }
@@ -360,15 +345,12 @@ backend_runtime_status initialize_native_runtime() noexcept
     }
 
     const auto identity = query_native_identity();
-    if (!native_identity_matches_expected(
-            identity,
-            ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID_VALUE,
-            ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT_VALUE,
-            allow_unknown_commit()))
+    if (!native_identity_matches_expected(identity, ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID_VALUE,
+                                          ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT_VALUE,
+                                          allow_unknown_commit()))
     {
-        return identity.query_status == backend_runtime_status::ready
-            ? backend_runtime_status::initialization_failed
-            : identity.query_status;
+        return identity.query_status == backend_runtime_status::ready ? backend_runtime_status::initialization_failed
+                                                                      : identity.query_status;
     }
     return backend_runtime_status::ready;
 }
@@ -380,9 +362,9 @@ backend_runtime_status shutdown_native_runtime() noexcept
 
 bool native_lifecycle_ready(const backend_runtime_info& runtime) noexcept
 {
-    return runtime.status == backend_runtime_status::ready
-        && runtime.module_state == backend_module_state::operational
-        && runtime.self_test_status == backend_self_test_status::passed;
+    return runtime.status == backend_runtime_status::ready &&
+           runtime.module_state == backend_module_state::operational &&
+           runtime.self_test_status == backend_self_test_status::passed;
 }
 
 } // namespace anosecurekit_enterprise::providers::anocrypto_c
@@ -414,6 +396,9 @@ constexpr provider_runtime_api api{
 };
 } // namespace
 
-const provider_runtime_api& selected_provider_runtime() noexcept { return api; }
+const provider_runtime_api& selected_provider_runtime() noexcept
+{
+    return api;
+}
 
 } // namespace anosecurekit_enterprise::detail

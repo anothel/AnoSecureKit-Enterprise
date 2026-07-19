@@ -90,11 +90,11 @@ _run_mutation(previous-decision-digest-mismatch decisions/scenario-a.jsonl
   [=["previous_decision_digest":"sha256:0000000000000000000000000000000000000000000000000000000000000000"]=]
   "decision previous digest mismatch")
 _run_mutation(evidence-sha-mismatch custody/scenario-a.json
-  "sha256:435b3e26019e118f50e7a4b707d37598b671782af7ac8fafadc18543259df2d7"
-  "sha256:435b3e26019e118f50e7a4b707d37598b671782af7ac8fafadc18543259df2d8"
+  "sha256:442a5447d6069220994e7308dda35be4e4c1b0e70d90a7e11424c8d0e0715784"
+  "sha256:442a5447d6069220994e7308dda35be4e4c1b0e70d90a7e11424c8d0e0715785"
   "evidence SHA mismatch")
 _run_mutation(invalid-sha-format custody/scenario-a.json
-  "sha256:435b3e26019e118f50e7a4b707d37598b671782af7ac8fafadc18543259df2d7"
+  "sha256:442a5447d6069220994e7308dda35be4e4c1b0e70d90a7e11424c8d0e0715784"
   "sha256:not-a-digest" "must use sha256")
 _run_mutation(negative-size custody/scenario-a.json
   [=["size":  219]=] [=["size":  -1]=] "size must be non-negative")

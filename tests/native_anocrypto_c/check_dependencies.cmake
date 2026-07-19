@@ -12,6 +12,7 @@ if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 find_program(_ldd_executable NAMES ldd REQUIRED)
+find_program(_nm_executable NAMES nm REQUIRED)
 
 set(_native_binaries "${NATIVE_TEST_EXECUTABLE}" "${ANOCRYPTO_C_LIBRARY}")
 if(DEFINED NATIVE_SHA256_EXECUTABLE AND NOT NATIVE_SHA256_EXECUTABLE STREQUAL "")
@@ -24,14 +25,32 @@ endif()
 if(DEFINED NATIVE_RANDOM_EXECUTABLE AND NOT NATIVE_RANDOM_EXECUTABLE STREQUAL "")
   list(APPEND _native_binaries "${NATIVE_RANDOM_EXECUTABLE}")
 endif()
-if(DEFINED NATIVE_UNSUPPORTED_EXECUTABLE
-   AND NOT NATIVE_UNSUPPORTED_EXECUTABLE STREQUAL "")
-  list(APPEND _native_binaries "${NATIVE_UNSUPPORTED_EXECUTABLE}")
+if(DEFINED NATIVE_PARITY_EXECUTABLE
+   AND NOT NATIVE_PARITY_EXECUTABLE STREQUAL "")
+  list(APPEND _native_binaries "${NATIVE_PARITY_EXECUTABLE}")
 endif()
 
 foreach(_binary IN LISTS _native_binaries)
   if(NOT EXISTS "${_binary}")
     message(FATAL_ERROR "Dependency inspection input does not exist: ${_binary}")
+  endif()
+
+  if(_binary MATCHES "\\.a$")
+    execute_process(
+      COMMAND "${_nm_executable}" -u "${_binary}"
+      RESULT_VARIABLE _nm_result
+      OUTPUT_VARIABLE _nm_out
+      ERROR_VARIABLE _nm_err)
+    if(NOT _nm_result EQUAL 0)
+      string(CONCAT _nm_log "${_nm_out}" "${_nm_err}")
+      message(FATAL_ERROR "nm failed for ${_binary}\n${_nm_log}")
+    endif()
+    if(_nm_out MATCHES "EVP_|OPENSSL_|SSL_|CRYPTO_")
+      message(FATAL_ERROR
+        "AnoCrypto-C static archive references OpenSSL symbols: ${_binary}\n${_nm_out}")
+    endif()
+    message(STATUS "No OpenSSL symbol dependency: ${_binary}")
+    continue()
   endif()
 
   execute_process(
