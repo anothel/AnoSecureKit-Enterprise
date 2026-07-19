@@ -11,7 +11,7 @@ system, or change support state.
 support: unsupported pre-release/internal qualification
 OpenSSL local qualification: PASS
 OpenSSL hosted qualification: not passed / BLOCKED_EXTERNAL
-AnoCrypto-C profile: partial
+AnoCrypto-C profile: local compatibility only; exact package blocked
 actual operational systems: inactive
 assigned operational roles: none
 activation_ready: false
@@ -66,7 +66,7 @@ Windows CTest 15/15 plus preflight PASS, and WSL CTest 15/15 plus preflight
 PASS. They close only local qualification blockers. They do not close any
 hosted, evidence, authorization, operational, or support blocker.
 
-## AnoCrypto-C future-profile scope
+## AnoCrypto-C enablement scope
 
 | Blocker ID | Owner repository | Status | Queue |
 |---|---|---|---|
@@ -85,9 +85,11 @@ hosted, evidence, authorization, operational, or support blocker.
 | `PGA-ANO-CUSTOMER-AUTHORIZATION` | AnoSecureKit-Enterprise | `blocked-external` | EXTERNAL |
 
 These do not block completion of OpenSSL-profile engineering. Current product
-policy does not require both profiles to reach GA together. AnoCrypto-C remains
-`partial`; Enterprise must not implement upstream cryptographic primitives or
-use OpenSSL fallback.
+policy does not require both profiles to reach GA together. AnoCrypto-C has
+local P3-06 adapter compatibility evidence only: the pinned reviewed source and
+digest are unavailable, the inspected development package has a Linux CMake
+dependency defect, and no approved package exists. Enterprise must not
+implement upstream cryptographic primitives or use OpenSSL fallback.
 
 ## Next-work queue
 
@@ -101,8 +103,8 @@ attestation, trusted evidence, release authorization, and future AnoCrypto-C
 hosted/authorization evidence
 
 UPSTREAM:
-AnoCrypto-C primitives, stable failure contract, test seams, approved package,
-static/shared qualification, then dependent Enterprise parity/package work
+approved AnoCrypto-C reviewed source/digest, stable failure contract and test
+seams, static/shared package qualification, then Enterprise install/package work
 
 DECISION:
 private reporting, operational roles, support transition, and operational

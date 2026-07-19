@@ -248,12 +248,19 @@ if(NOT _hosted_workflow_name STREQUAL "AnoSecureKit Enterprise CI"
    OR NOT _hosted_workflow_id STREQUAL "312984578")
   message(FATAL_ERROR "Trusted evidence workflow identity mismatch")
 endif()
-if(NOT _hosted_run_id MATCHES "^[1-9][0-9]*$")
-  message(FATAL_ERROR "Trusted evidence hosted run_id must be a positive integer string")
-endif()
 _evidence_enum(hosted.event "${_hosted_event}" push workflow_dispatch)
 _evidence_enum(hosted.status "${_hosted_status}"
   passed failed cancelled blocked-external unavailable)
+if(_hosted_status MATCHES "^(passed|failed|cancelled)$")
+  if(NOT _hosted_run_id MATCHES "^[1-9][0-9]*$")
+    message(FATAL_ERROR
+      "Completed hosted evidence run_id must be a positive integer string")
+  endif()
+elseif(NOT _hosted_run_id STREQUAL "unavailable"
+    AND NOT _hosted_run_id MATCHES "^[1-9][0-9]*$")
+  message(FATAL_ERROR
+    "Non-completed hosted evidence run_id must be unavailable or a positive integer string")
+endif()
 _evidence_enum(codeql.status "${_codeql_status}"
   passed failed skipped not-run deferred blocked-external unavailable)
 if(NOT _codeql_required)
