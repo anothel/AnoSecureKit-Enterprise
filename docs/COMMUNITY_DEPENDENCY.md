@@ -5,12 +5,18 @@
 - Component: AnoSecureKit Community
 - Repository: <https://github.com/anothel/AnoSecureKit-Community>
 - Release: `v0.4.0`
-- Release commit: `102965bee601f2adfb1b624e8425d1c95aaa8c8d`
+- Release commit: `694459ebe497d15ba75ef76a52fa7c36ddd7bcce`
+- Git tree: `5478a5c37e96aa1017f8f4604234de48c1115d7c`
+- Upstream source ZIP SHA-256:
+  `a9b1e0bf6baca93509c4706b38066a539c5324151b338859063ebb8cf3cffeb5`
 - License: Mozilla Public License 2.0 (`MPL-2.0`)
 - Integration: bundled, unmodified source under `third_party/anosecurekit-community/`
 
 The annotated `v0.4.0` tag resolves to the release commit above. The bundled
-source tree is the Community v0.4.0 provider-seam baseline used by the
+source tree exactly reconstructs the release commit tree. The upstream source
+ZIP contains 178 matching tracked files and intentionally excludes only the
+four `.github` workflow/dependency files. The bundled tree is the Community
+v0.4.0 provider-seam baseline used by the
 Enterprise OpenSSL profile and by Community's build-tree external-provider hook
 for the future AnoCrypto-C profile.
 

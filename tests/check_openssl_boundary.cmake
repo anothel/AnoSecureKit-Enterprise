@@ -6,7 +6,7 @@ if(NOT DEFINED ENTERPRISE_SOURCE_DIR OR ENTERPRISE_SOURCE_DIR STREQUAL "")
 endif()
 
 set(_community_path "third_party/anosecurekit-community")
-set(_expected_community_tree "9b498f5431f217ac71e8d2e2c92df9e8b0122626")
+set(_expected_community_tree "5478a5c37e96aa1017f8f4604234de48c1115d7c")
 
 file(GLOB_RECURSE _enterprise_sources LIST_DIRECTORIES false
   "${ENTERPRISE_SOURCE_DIR}/src/*.c"
