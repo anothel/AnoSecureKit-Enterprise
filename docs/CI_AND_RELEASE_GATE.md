@@ -28,6 +28,8 @@ The aggregate target requires:
 - CI workflow policy validation;
 - support lifecycle, vulnerability response, ownership, and release-revocation
   policy validation;
+- the authoritative pre-GA blocker registry, development-freeze contract, exact
+  revision binding, queue routing, and 15 false-closure negative cases;
 - test-only incident/revocation scenarios, ownership routing, state transitions,
   fail-closed decisions, and negative contract validation;
 - external release-evidence verifier capability and fail-closed contract tests;
@@ -50,6 +52,10 @@ Both fail with the repository's default deny record. See
 [RELEASE_AUTHORIZATION_POLICY.md](RELEASE_AUTHORIZATION_POLICY.md). Production
 allow requires hosted evidence plus successful external cryptographic and
 trusted-evidence verification.
+
+The registry-only gate is also available as
+`enterprise-pre-ga-blocker-registry-check`. Its OpenSSL scope does not require
+the separate future AnoCrypto-C profile to reach GA.
 
 ## Opt-in AnoCrypto-C lifecycle, SHA-256, HMAC-SHA-256, and random gate
 

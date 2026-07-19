@@ -8,7 +8,7 @@ baseline and selects one explicit cryptographic backend profile.
 
 | Profile | Current status |
 |---|---|
-| `openssl` | Implementation complete; local verification passed; remote verification deferred; install/export and internal ZIP/TGZ delivery enabled; customer release blocked (`customer_release_ready: false`). |
+| `openssl` | Implementation complete; local verification passed; hosted qualification not passed / `BLOCKED_EXTERNAL`; install/export and internal ZIP/TGZ delivery enabled; customer release blocked (`customer_release_ready: false`). |
 | `anocrypto-c` | Development/partial; lifecycle, self-test/state/identity, native status mapping, SHA-256, HMAC-SHA-256, and random connected; exact capability mask `sha256 hmac-sha256 random`; complete readiness, install/export, CPack, and customer delivery blocked; OpenSSL fallback absent. |
 
 The bundled OpenSSL aggregate gate is `enterprise-release-preflight`. The
@@ -20,6 +20,20 @@ Enterprise `0.1.0` is `unsupported` pre-release/internal qualification work,
 not generally available or a production release, with no active customer
 support commitment.
 
+```text
+support: unsupported pre-release/internal qualification
+OpenSSL local qualification: PASS
+OpenSSL hosted qualification: not passed / BLOCKED_EXTERNAL
+AnoCrypto-C profile: partial
+actual operational systems: inactive
+assigned operational roles: none
+activation_ready: false
+cryptographic evidence: unavailable
+trusted evidence: unavailable
+release authorization: denied-or-unavailable
+customer_release_ready: false
+```
+
 Customer release additionally requires the strict
 `enterprise-release-authorization-check`; the checked-in record defaults to
 deny. Structural evidence contracts run through
@@ -29,6 +43,13 @@ exists, so cryptographic evidence remains unavailable. See
 [release authorization policy](docs/RELEASE_AUTHORIZATION_POLICY.md).
 
 ## Authoritative contracts
+
+Pre-GA work control:
+
+- [Blocker registry](docs/PRE_GA_BLOCKER_REGISTRY.md)
+- [Development freeze and change policy](docs/DEVELOPMENT_FREEZE_AND_CHANGE_POLICY.md)
+- [OpenSSL GA path](docs/OPENSSL_PROFILE_GA_PATH.md)
+- [AnoCrypto-C enablement path](docs/ANOCRYPTO_C_PROFILE_ENABLEMENT_PATH.md)
 
 Product and OpenSSL profile:
 

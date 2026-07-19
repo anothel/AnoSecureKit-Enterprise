@@ -409,6 +409,10 @@ foreach(_archive IN LISTS _binary_archives)
       message(FATAL_ERROR
         "Internal delivery archive contains a security tabletop/custody/readiness fixture: ${_json}")
     endif()
+    if(_json_content MATCHES "PGA-OSSL-|PGA-ANO-")
+      message(FATAL_ERROR
+        "Internal delivery archive contains the internal pre-GA blocker registry: ${_json}")
+    endif()
   endforeach()
 endforeach()
 

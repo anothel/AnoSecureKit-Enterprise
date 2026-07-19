@@ -559,6 +559,33 @@ if(BUILD_TESTING)
   set_tests_properties(enterprise.security-system-activation-readiness
     PROPERTIES LABELS "policy;security;activation-readiness")
 
+  add_custom_target(enterprise-pre-ga-blocker-registry-check
+    COMMAND ${CMAKE_COMMAND}
+      -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DREGISTRY_FILE=${CMAKE_CURRENT_SOURCE_DIR}/docs/PRE_GA_BLOCKER_REGISTRY.json
+      -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_pre_ga_blocker_registry.cmake
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/pre-ga-blocker-registry-contract-check
+      -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_pre_ga_blocker_registry_contract.cmake
+    DEPENDS
+      enterprise-support-policy-check
+      enterprise-security-evidence-custody-check
+      enterprise-security-tabletop-check
+      enterprise-security-system-activation-readiness-check
+    USES_TERMINAL)
+
+  add_test(NAME enterprise.pre-ga-blocker-registry
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/pre-ga-blocker-registry-contract-test
+      -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_pre_ga_blocker_registry_contract.cmake)
+  set_tests_properties(enterprise.pre-ga-blocker-registry
+    PROPERTIES LABELS "policy;pre-ga;freeze")
+
   if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     add_custom_target(enterprise-openssl-boundary-check
       COMMAND ${CMAKE_COMMAND}
@@ -1084,6 +1111,7 @@ if(BUILD_TESTING)
         enterprise-security-evidence-custody-check
         enterprise-security-tabletop-check
         enterprise-security-system-activation-readiness-check
+        enterprise-pre-ga-blocker-registry-check
         enterprise-release-evidence-verifier-check
         enterprise-trusted-release-evidence-check
         enterprise-release-authorization-contract-check
