@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: LicenseRef-AnoSecureKit-Enterprise-Proprietary
 
-# Enterprise 0.1.0 Pre-GA Blocker Registry
+# Enterprise 0.1.0 Closeout Blocker Registry
 
 [PRE_GA_BLOCKER_REGISTRY.json](PRE_GA_BLOCKER_REGISTRY.json) is the authoritative
-machine-readable registry. This document is its human view. The registry does
-not approve release, create trusted evidence, authorize an artifact, activate a
-system, or change support state.
+machine-readable historical ID/status registry. This document is its human
+view. [CURRENT_STATUS.md](CURRENT_STATUS.md) is authoritative for the current
+lifecycle and closeout state. The registry does not approve work, release,
+trusted evidence, an artifact, a system, or a support-state change.
 
 ```text
 support: unsupported pre-release/internal qualification
@@ -19,6 +20,9 @@ cryptographic evidence: unavailable
 trusted evidence: unavailable
 release authorization: denied-or-unavailable
 customer_release_ready: false
+engineering_status: CLOSED_AND_FROZEN
+active_blocker_count: 0
+active_next_work: none
 ```
 
 ## Record contract
@@ -34,10 +38,15 @@ Allowed categories are `external`, `organizational`, `technical`, `upstream`,
 `not-applicable`. Unknown values fail closed.
 
 `last_verified_revision` identifies the exact source revision whose blocker
-state/evidence was last audited. A policy-only registry commit cannot contain
-its own Git object ID, so the validator requires that revision to exist and be
-an ancestor of the current source. Closing a blocker requires new exact
-evidence and a new audit; local PASS never substitutes for hosted PASS.
+state/evidence was last audited. The closeout audit binds it to engineering
+baseline `dc87eae600713e482f490910233cb666b8f706b8`. Closing a blocker requires
+exact evidence; local PASS never substitutes for hosted PASS.
+
+Existing lowercase `status` values and `next_work` routing are retained to keep
+historical schema, IDs, negative contract tests, and evidence meaning intact.
+They are not active work authorization. Non-closed records carry an explicit
+`closeout_classification` in `deferred_reason`; `verified-closed` records derive
+their classification from evidenced status.
 
 ## OpenSSL GA scope
 
@@ -84,36 +93,64 @@ hosted, evidence, authorization, operational, or support blocker.
 | `PGA-ANO-HOSTED-QUALIFICATION` | AnoSecureKit-Enterprise | `blocked-external` | EXTERNAL |
 | `PGA-ANO-CUSTOMER-AUTHORIZATION` | AnoSecureKit-Enterprise | `blocked-external` | EXTERNAL |
 
-These do not block completion of OpenSSL-profile engineering. Current product
-policy does not require both profiles to reach GA together. AnoCrypto-C has
-local P3-06 adapter compatibility evidence only: the pinned reviewed source and
-digest are unavailable, the inspected development package has a Linux CMake
-dependency defect, and no approved package exists. Enterprise must not
-implement upstream cryptographic primitives or use OpenSSL fallback.
+These records do not block the closed Enterprise engineering state. Current
+product policy does not require both profiles to become GA together.
+AnoCrypto-C has seven-capability local P3-06 parity evidence against
+`c101c9655f881044c14d8efbc20ea94a2e84f30b`. The P3-06 contract is
+`89e16a261ab7696d9489167d7403d9f2c704629e`. Phase 1 archive
+`98f544a574f70b387c300f171243b4e87174937a` was not requalified by
+Enterprise. Enterprise must not implement upstream primitives or use OpenSSL
+fallback.
 
-## Next-work queue
+## Closeout classifications
+
+| Closeout classification | Count | Historical blocker IDs |
+|---|---:|---|
+| `VERIFIED_CLOSED` | 2 | `PGA-OSSL-LOCAL-WINDOWS`, `PGA-OSSL-LOCAL-WSL` |
+| `UPSTREAM_IMPLEMENTED_NOT_REQUALIFIED_ARCHIVED` | 10 | `PGA-ANO-HKDF-SHA256`, `PGA-ANO-SCRYPT`, `PGA-ANO-AES256-GCM`, `PGA-ANO-STREAMING-AEAD`, `PGA-ANO-CAPABILITY-STATUS-FAILURE-CONTRACT`, `PGA-ANO-FORCED-FAILURE-SEAMS`, `PGA-ANO-APPROVED-PACKAGE-DIGEST`, `PGA-ANO-STATIC-PACKAGE`, `PGA-ANO-SHARED-PACKAGE`, `PGA-ANO-ENTERPRISE-ADAPTER-PARITY` |
+| `DEFERRED_EXTERNAL_NOT_SELECTED` | 11 | `PGA-OSSL-HOSTED-UBUNTU`, `PGA-OSSL-HOSTED-WINDOWS`, `PGA-OSSL-HOSTED-MACOS`, `PGA-OSSL-CODEQL`, `PGA-OSSL-HOSTED-ARTIFACT-GENERATION`, `PGA-OSSL-HOSTED-ARTIFACT-DOWNLOAD`, `PGA-OSSL-ATTESTATION-GENERATION`, `PGA-OSSL-ATTESTATION-CRYPTO-VERIFY`, `PGA-OSSL-TRUSTED-EVIDENCE-CURRENT-REVISION`, `PGA-OSSL-RELEASE-AUTHORIZATION-ARTIFACT-SET`, `PGA-ANO-HOSTED-QUALIFICATION` |
+| `DEFERRED_DECISION_NOT_SELECTED` | 5 | `PGA-OSSL-PRIVATE-REPORTING-DECISION`, `PGA-OSSL-OPERATIONAL-ROLE-ASSIGNMENT`, `PGA-OSSL-SUPPORT-STATE-APPROVAL`, `PGA-OSSL-SECURITY-SYSTEM-DECISION-OR-WAIVER`, `PGA-ANO-CUSTOMER-AUTHORIZATION` |
+| `KNOWN_LIMITATION_NOT_SELECTED` | 1 | `PGA-ANO-INSTALL-EXPORT-CPACK` |
+
+```text
+TOTAL_HISTORICAL_BLOCKER_IDS=29
+ACTIVE_BLOCKER_COUNT=0
+ACTIVE_NEXT_WORK=NONE
+```
+
+`UPSTREAM_IMPLEMENTED_NOT_REQUALIFIED_ARCHIVED` does not claim Enterprise
+validation against `98f544a...`. `KNOWN_LIMITATION_NOT_SELECTED` records the
+AnoCrypto-C package's missing `find_dependency(Threads)` requirement for any
+future install/export or customer-release reopening.
+
+## Historical routing and active-work projection
 
 ```text
 NOW:
 none
 
 EXTERNAL:
-GitHub billing/spending limit, hosted runners, CodeQL, hosted artifacts,
-attestation, trusted evidence, release authorization, and future AnoCrypto-C
-hosted/authorization evidence
+historical external reopen gates retained; not selected
 
 UPSTREAM:
-approved AnoCrypto-C reviewed source/digest, stable failure contract and test
-seams, static/shared package qualification, then Enterprise install/package work
+historical upstream/package reopen gates retained; not selected
 
 DECISION:
-private reporting, operational roles, support transition, and operational
-systems or explicit pre-GA waiver
+historical organizational/release decisions retained; not selected
 
 LATER:
-richer verification UX, optional platforms, future profiles, unselected vendor
-adapters, convenience features, extra links, and schema extensions
+historical optional items retained; not selected
 ```
 
-Every non-closed blocker appears exactly once in EXTERNAL, UPSTREAM, or
-DECISION. LATER items are named optional enhancements, not hard blockers.
+The JSON arrays preserve legacy routing. Only `NOW` represents active local
+work, and it is empty. EXTERNAL, UPSTREAM, DECISION, and LATER do not create an
+active roadmap or release action.
+
+## Archive-only source-offer limitation
+
+The LF/CRLF mismatch for archived
+`src/internal/secure_wipe.hpp` is
+`HISTORICAL_SOURCE_OFFER=ARCHIVE_ONLY_NON_CANONICAL` and
+`CLOSEOUT_BLOCKER=NO`. The ZIP, checksum, manifest, original SHA-256 values,
+and mismatch evidence remain archived unchanged. They are not canonical source
+or customer-release evidence; repair and republication are not selected.

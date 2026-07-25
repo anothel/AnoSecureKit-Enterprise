@@ -5,9 +5,8 @@
 P3-06 implements the previously approved AnoSecureKit primitive parity surface.
 Local compatibility validation used development revision
 `c101c9655f881044c14d8efbc20ea94a2e84f30b`, which reports AnoCrypto-C
-`0.1.0-p3-05-scrypt-fixed-profile`. The required reviewed revision and source
-digest were unavailable, so these results do not approve or substitute the
-pinned dependency.
+`0.1.0-p3-05-scrypt-fixed-profile`. This is the actual Enterprise validation
+identity, not the P3-06 reviewed contract or the later Phase 1 archive.
 
 ## Current result
 
@@ -35,13 +34,10 @@ and OpenSSL fallback are prohibited.
 - no-OpenSSL runtime dependency inspection;
 - wrong-key file-open no-output behavior.
 
-## Remaining non-primitive blockers
+## Archived limitations and conditional reopen gates
 
-Parity completion does not close:
+Parity completion does not establish:
 
-- availability and approval of reviewed source
-  `89e16a261ab7696d9489167d7403d9f2c704629e` with source SHA-256
-  `18aa9050a808e4d541b2a6a10e91aa8e51367b95962b90db2183e26377bdbac1`;
 - Linux installed-package consumption: the development package exports
   `Threads::Threads` without loading the `Threads` dependency;
 - hosted Linux/Windows/macOS qualification and review;
@@ -51,5 +47,13 @@ Parity completion does not close:
 - customer support transition and release authorization;
 - formal KCMVP or other validation work.
 
+The P3-06 reviewed contract remains
+`89e16a261ab7696d9489167d7403d9f2c704629e` with source SHA-256
+`18aa9050a808e4d541b2a6a10e91aa8e51367b95962b90db2183e26377bdbac1`.
+AnoCrypto-C Phase 1 archive
+`98f544a574f70b387c300f171243b4e87174937a` is retained externally;
+Enterprise validation against it was `NOT_RUN_AND_NOT_CLAIMED`.
+
 The AnoCrypto-C profile therefore remains an internal build-tree qualification
-profile, not an installable or externally releasable product package.
+profile, not an installable or externally releasable product package. All
+remaining items are archived or not selected; active next work is none.

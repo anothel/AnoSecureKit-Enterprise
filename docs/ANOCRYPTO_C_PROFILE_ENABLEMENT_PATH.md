@@ -1,10 +1,17 @@
 # SPDX-License-Identifier: LicenseRef-AnoSecureKit-Enterprise-Proprietary
 
-# AnoCrypto-C Profile Enablement Path
+# AnoCrypto-C Profile Enablement Path (Archived)
 
-This is a future-profile path, separate from OpenSSL GA. Current product policy
-does not require both profiles to become GA together. The profile remains
-`partial`, non-installable, non-exportable, and customer-blocked.
+This is a retained conditional-reopen checklist, not an active plan. Current
+product policy does not require both profiles to become GA together. The
+seven-capability adapter is implemented and has recorded local parity evidence
+against `c101c965...`; the profile remains non-installable, non-exportable, and
+customer-blocked.
+
+```text
+ACTIVE_NEXT_WORK=NONE
+FUTURE_WORK=NOT_SELECTED
+```
 
 | Step | Required evidence | Responsible owner | Registry blocker |
 |---|---|---|---|
@@ -23,11 +30,11 @@ does not require both profiles to become GA together. The profile remains
 | 13. Hosted qualification | complete platform/package matrix at one exact revision | `product-owner` | `PGA-ANO-HOSTED-QUALIFICATION` |
 | 14. Authorization | trusted evidence and separate exact profile/artifact authorization | `release-authorizer` | `PGA-ANO-CUSTOMER-AUTHORIZATION` |
 
-Steps are ordered gates, not permission to modify AnoCrypto-C source from this
-repository. Upstream primitives stay upstream; Enterprise implements adapters
-only after an approved package exists. No OpenSSL fallback and no v1 change.
+These historical steps are conditional gates only. They are not permission to
+modify AnoCrypto-C source, add primitives, enable OpenSSL fallback, change v1,
+or start release work.
 
-Current focused local profile tests prove lifecycle, SHA-256, HMAC-SHA-256,
-random, status mapping, dependency purity, and fail-closed partial behavior.
-They do not close any missing primitive, package, hosted, or authorization
-blocker.
+Recorded local profile validation covers all seven capabilities, exact product
+fixtures, status/failure behavior, dependency purity, and no fallback against
+`c101c965...`. AnoCrypto-C Phase 1 archive `98f544a...` was not requalified by
+Enterprise. Any use of this checklist requires a new product decision.

@@ -1,15 +1,18 @@
 # AnoSecureKit Enterprise
 
-AnoSecureKit Enterprise is the private/commercial superset of AnoSecureKit
+AnoSecureKit Enterprise is the private Enterprise superset of AnoSecureKit
 Community. It keeps the Community v0.4.0 API and product formats while selecting
 one explicit cryptographic backend at configure time.
 
-## Current baseline
+The canonical current-state record is
+[docs/CURRENT_STATUS.md](docs/CURRENT_STATUS.md).
+
+## Frozen engineering baseline
 
 | Profile | Current status |
 |---|---|
-| `openssl` | Implementation complete; local verification passed; hosted qualification not passed / `BLOCKED_EXTERNAL`; install/export and internal ZIP/TGZ delivery enabled; customer release blocked (`customer_release_ready: false`). |
-| `anocrypto-c` | P3-06 adapter and format compatibility pass locally against development revision `c101c9655f881044c14d8efbc20ea94a2e84f30b`, which reports runtime `0.1.0-p3-05-scrypt-fixed-profile`. All seven required primitive capabilities are connected, exact `SKT1`/`SKF1`/`SKP1` fixtures pass, and OpenSSL fallback/linkage is prohibited. The required reviewed source `89e16a261ab7696d9489167d7403d9f2c704629e` and digest were unavailable, so package approval, customer install/export and delivery remain blocked. |
+| `openssl` | Engineering implementation and local qualification complete against exact Community `v0.4.0`; install/export and internal delivery enabled; hosted qualification not run; customer release blocked. |
+| `anocrypto-c` | Seven-capability adapter, exact `SKT1`/`SKF1`/`SKP1` fixture compatibility, fail-closed behavior, and no-fallback behavior recorded PASS against `c101c9655f881044c14d8efbc20ea94a2e84f30b`; install/export and customer delivery disabled. |
 
 The AnoCrypto-C parity gate is:
 
@@ -17,15 +20,16 @@ The AnoCrypto-C parity gate is:
 enterprise-anocrypto-c-parity-check
 ```
 
-Enterprise `0.1.0` is `unsupported` pre-release/internal qualification work,
-not generally available or a production release, with no active customer
-support commitment.
+Enterprise `0.1.0` is closed and frozen at engineering baseline
+`dc87eae600713e482f490910233cb666b8f706b8`. It remains unsupported
+pre-release/internal qualification work, not generally available or a
+production release, with no active customer support commitment.
 
 ```text
 support: unsupported pre-release/internal qualification
 OpenSSL local qualification: PASS
-OpenSSL hosted qualification: not passed / BLOCKED_EXTERNAL
-AnoCrypto-C profile: P3-06 local compatibility; exact package/install/hosted/authorization blocked
+OpenSSL hosted qualification: NOT_RUN
+AnoCrypto-C profile: c101c965 local compatibility; Phase 1 final revalidation NOT_RUN_AND_NOT_CLAIMED
 actual operational systems: inactive
 assigned operational roles: none
 activation_ready: false
@@ -33,6 +37,8 @@ cryptographic evidence: unavailable
 trusted evidence: unavailable
 release authorization: denied-or-unavailable
 customer_release_ready: false
+active_next_work: none
+active_release_action: none
 ```
 
 Customer release additionally requires the strict
@@ -43,15 +49,16 @@ through `enterprise-release-evidence-verifier-check`. No hosted attestation
 exists, so cryptographic evidence remains unavailable. See
 [release authorization policy](docs/RELEASE_AUTHORIZATION_POLICY.md).
 
-This checkpoint is engineering evidence only. It is not a production release,
+This closeout is engineering evidence only. It is not a production release,
 formal validation, signing approval, or external distribution authorization.
 
-Pre-GA work control:
+Closeout and retained pre-GA records:
 
+- [Canonical current status](docs/CURRENT_STATUS.md)
 - [Blocker registry](docs/PRE_GA_BLOCKER_REGISTRY.md)
 - [Development freeze and change policy](docs/DEVELOPMENT_FREEZE_AND_CHANGE_POLICY.md)
-- [OpenSSL GA path](docs/OPENSSL_PROFILE_GA_PATH.md)
-- [AnoCrypto-C enablement path](docs/ANOCRYPTO_C_PROFILE_ENABLEMENT_PATH.md)
+- [Archived OpenSSL GA gate record](docs/OPENSSL_PROFILE_GA_PATH.md)
+- [Archived AnoCrypto-C enablement path](docs/ANOCRYPTO_C_PROFILE_ENABLEMENT_PATH.md)
 
 Product and OpenSSL profile:
 
@@ -67,7 +74,7 @@ AnoCrypto-C profile:
 - [Parity gaps](docs/ANOCRYPTO_C_PARITY_GAPS.md)
 - [P3-06 parity checkpoint](docs/ANOCRYPTO_C_P3_06_PARITY_CHECKPOINT.md)
 - [Upstream requirements](docs/ANOCRYPTO_C_UPSTREAM_REQUIREMENTS.md)
-- [Integration plan](docs/ANOCRYPTO_INTEGRATION_PLAN.md)
+- [Archived integration plan](docs/ANOCRYPTO_INTEGRATION_PLAN.md)
 
 Provider contracts:
 

@@ -6,7 +6,7 @@ AnoCrypto-C is an external generic C99 cryptographic module. Enterprise consumes
 its installed CMake package and public headers; it does not copy product formats
 or orchestration into AnoCrypto-C.
 
-## Dependency identity
+## P3-06 contract identity
 
 | Field | Required value |
 |---|---|
@@ -21,15 +21,18 @@ or orchestration into AnoCrypto-C.
 | Retained compatibility | P1-29 and all prior ABI lines |
 | License | `MPL-2.0` |
 
-## Dependency availability at reintegration
+## Closeout identity separation
 
-The required reviewed commit and matching source artifact were not available in
-the local AnoCrypto-C repository, upstream Git, or the inspected source
-artifacts. Development revision
-`c101c9655f881044c14d8efbc20ea94a2e84f30b` reports the required runtime and was
-used only for compatibility testing. It is not an approved substitute for the
-pinned commit or digest. Configuration with the pinned expected commit rejects
-that development package, as required.
+| Record | Identity | Disposition |
+|---|---|---|
+| P3-06 contract | `89e16a261ab7696d9489167d7403d9f2c704629e`; runtime `0.1.0-p3-05-scrypt-fixed-profile`; source SHA-256 `18aa9050a808e4d541b2a6a10e91aa8e51367b95962b90db2183e26377bdbac1` | Reviewed contract |
+| Actual Enterprise validation | `c101c9655f881044c14d8efbc20ea94a2e84f30b`; Windows DLL SHA-256 `051bcef36d99c43398e114198880645b3505bfcc3dad99217bfb10ebd7308c5d` | Recorded P3-06 Windows/WSL validation |
+| AnoCrypto-C Phase 1 archive | `98f544a574f70b387c300f171243b4e87174937a`; source ZIP SHA-256 `913979ceea9110de5dbfe9e6702c634071102b00901840763367ca83e15d59c4`; DLL SHA-256 `7dd56b00f38699509e90a62968ec0ff2c37a2735e4479c0df4a2c60f8b2e26cd` | External archive, not Enterprise pin |
+
+Enterprise validation against `98f544a...` was
+`NOT_RUN_AND_NOT_CLAIMED`. The three records are not interchangeable.
+Configuration with the pinned P3-06 expected commit rejects a different
+package, as required.
 
 Package discovery is exact:
 
@@ -119,5 +122,8 @@ cmake --build build-native --target enterprise-anocrypto-c-parity-check
 ```
 
 The completed primitive profile is still non-installable in this repository.
-Hosted qualification, signing, trusted provenance, support approval and external
-release authorization remain independent blockers.
+The installed upstream config also exports `Threads::Threads` without
+`find_dependency(Threads)`. Install/export, hosted qualification, signing,
+trusted provenance, support approval, and external release authorization remain
+disabled, unavailable, or not selected. Customer release is blocked and no
+follow-on integration work is active.

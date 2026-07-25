@@ -1,6 +1,16 @@
 # SPDX-License-Identifier: LicenseRef-AnoSecureKit-Enterprise-Proprietary
 
-# AnoCrypto-C Integration Plan
+# AnoCrypto-C Integration Plan (Archived)
+
+```text
+ACTIVE_INTEGRATION_PLAN=NONE
+ACTIVE_NEXT_WORK=NONE
+FUTURE_WORK=NOT_SELECTED
+```
+
+This file records the completed P3-06 engineering path. It does not authorize
+additional integration, dependency changes, install/export, hosted
+qualification, packaging, or release work.
 
 ## Adapter work completed through P3-06
 
@@ -15,22 +25,17 @@
 9. Reject OpenSSL linkage or fallback in the AnoCrypto-C profile.
 10. Keep customer installation and release authorization closed.
 
-## Next work
+The frozen Enterprise engineering baseline is
+`dc87eae600713e482f490910233cb666b8f706b8`. P3-06 contract identity is
+`89e16a261ab7696d9489167d7403d9f2c704629e`; actual Enterprise validation
+used `c101c9655f881044c14d8efbc20ea94a2e84f30b`. AnoCrypto-C Phase 1 archive
+`98f544a574f70b387c300f171243b4e87174937a` is retained externally, but
+Enterprise revalidation against it was `NOT_RUN_AND_NOT_CLAIMED`.
 
-P3-06 is a parity checkpoint, not a release. The next work belongs to product
-qualification and governance:
+The installed AnoCrypto-C config omits `find_dependency(Threads)` while
+exporting `Threads::Threads`. That known limitation must be resolved before any
+future install/export or customer-release reopening. It is not selected work
+and does not block the current engineering freeze.
 
-- resolve or externally confirm remaining source-provenance records;
-- run hosted platform lanes when billing/authorization allows;
-- review Windows and macOS dependency inspection;
-- define trusted signing/attestation intake;
-- obtain explicit customer release authorization;
-- only then design an install/export profile for AnoCrypto-C.
-
-No additional primitive is authorized by this plan.
-
-Local compatibility evidence currently comes from unapproved development
-revision `c101c9655f881044c14d8efbc20ea94a2e84f30b`. The pinned reviewed revision
-and source digest remain unavailable, and the development package's Linux CMake
-config does not load its exported `Threads::Threads` dependency. Exact package
-and install qualification therefore remain open.
+No additional primitive or future profile work is authorized by this archived
+plan. Reopening requires a new product decision.
