@@ -29,8 +29,21 @@ set(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID "" CACHE STRING
 set(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT "" CACHE STRING
   "Expected AnoCrypto-C commit for native lifecycle integration")
 option(ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS
-  "Development-only: allow native lifecycle tests against a package reporting an unknown commit"
+  "Debug-only native tests: allow a package reporting an unknown commit"
   OFF)
+
+if(ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS)
+  if(NOT BUILD_TESTING OR NOT ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
+    message(FATAL_ERROR
+      "The unknown-commit exception requires BUILD_TESTING=ON and native AnoCrypto-C tests")
+  endif()
+  # Reject multi-config generators: enabling this option must never affect a
+  # Release configuration selected later at build time.
+  get_property(_enterprise_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+  if(_enterprise_multi_config OR NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(FATAL_ERROR "The unknown-commit exception requires a single-config Debug build")
+  endif()
+endif()
 
 if(ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
   if(NOT BUILD_TESTING)

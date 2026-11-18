@@ -25,9 +25,18 @@ historical qualification evidence.
   authorization remains denied-or-unavailable; customer_release_ready: false.
 - Community CLI: investigate and recommend an explicit upstream maintenance or
   Enterprise packaging decision; no private patch or baseline update authorized.
-- Authorization: current user instructions permit publishing review branches and
-  PRs only to the verified private Enterprise repository. Keep vendor source and
-  credentials out of public repositories and review logs.
+- Authorization: the owner's 2026-11-18 recovery instructions explicitly confirm
+  that `anothel/AnoSecureKit-Enterprise` is intentionally public and authorize
+  public GitHub development and CI on the existing review branches. This
+  supersedes the earlier private-review restriction. Keep credentials out of
+  commits and logs; external native dependency source remains outside this repo.
+
+Recovery on 2026-11-18 independently reconstructs unavailable local commit
+`6a9b314`: no bundle, patch or original commit object was available, so the new
+commit SHA differs. The unknown-commit exception is limited to single-config
+Debug native testing. Regressions cover active stream continuation, recovery
+with valid authentication tags, and real native shutdown. Customer release
+authorization remains blocked.
 
 No production support, operational activation, KCMVP/FIPS validation or signing
 approval is implied. Further scope changes require an explicit owner decision.
