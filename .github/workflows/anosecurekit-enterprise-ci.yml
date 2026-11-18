@@ -56,9 +56,18 @@ jobs:
             shared: 'OFF'
 
     steps:
+      - name: Preserve source bytes on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        # Source offers must match the Linux revalidation checkout byte for byte.
+        run: git config --global core.autocrlf false
+
       - name: Checkout
         # actions/checkout v7
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          # Qualification verifies historical audited commits are ancestors.
+          fetch-depth: 0
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
@@ -147,6 +156,9 @@ jobs:
       - name: Checkout
         # actions/checkout v7
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          # Qualification verifies historical audited commits are ancestors.
+          fetch-depth: 0
 
       - name: Download matrix artifacts
         # actions/download-artifact v8
@@ -245,6 +257,9 @@ jobs:
       - name: Checkout exact source revision
         # actions/checkout v7
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          # Qualification verifies historical audited commits are ancestors.
+          fetch-depth: 0
 
       - name: Download verified matrix artifacts
         # actions/download-artifact v8
@@ -297,6 +312,9 @@ jobs:
       - name: Checkout
         # actions/checkout v7
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          # Qualification verifies historical audited commits are ancestors.
+          fetch-depth: 0
 
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libssl-dev ninja-build
@@ -335,6 +353,9 @@ jobs:
       - name: Checkout
         # actions/checkout v7
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          # Qualification verifies historical audited commits are ancestors.
+          fetch-depth: 0
 
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y clang libssl-dev ninja-build
@@ -371,6 +392,9 @@ jobs:
       - name: Checkout
         # actions/checkout v7
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        with:
+          # Qualification verifies historical audited commits are ancestors.
+          fetch-depth: 0
 
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libssl-dev ninja-build
