@@ -335,7 +335,7 @@ else()
       "Non-bundled Community package mode currently supports only the openssl Enterprise profile. "
       "The AnoCrypto-C profile requires the exact bundled Community source and its build-tree external provider hook.")
   endif()
-  find_package(anosecurekit 0.4 CONFIG REQUIRED)
+  find_package(anosecurekit ${ANOSECUREKIT_ENTERPRISE_COMMUNITY_VERSION} EXACT CONFIG REQUIRED)
 endif()
 
 add_library(anosecurekit_enterprise
@@ -414,6 +414,13 @@ configure_file(
   @ONLY)
 
 if(BUILD_TESTING)
+  add_test(NAME enterprise.community-version
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+      -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/community-version-test
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_community_version.cmake)
+  set_tests_properties(enterprise.community-version PROPERTIES LABELS "policy;dependency")
+
   add_test(NAME enterprise.sanitizer-selection
     COMMAND ${CMAKE_COMMAND}
       -DENTERPRISE_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
