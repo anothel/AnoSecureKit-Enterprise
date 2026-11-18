@@ -414,6 +414,13 @@ configure_file(
   @ONLY)
 
 if(BUILD_TESTING)
+  add_test(NAME enterprise.sanitizer-selection
+    COMMAND ${CMAKE_COMMAND}
+      -DENTERPRISE_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+      "-DENTERPRISE_BUILD_CONFIG=$<CONFIG>"
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_sanitizer_selection.cmake)
+  set_tests_properties(enterprise.sanitizer-selection PROPERTIES LABELS "policy;ci")
+
   add_custom_target(enterprise-release-evidence-verifier-check
     COMMAND ${CMAKE_COMMAND}
       "-DVERIFIER_EXECUTABLE=${ANOSECUREKIT_ENTERPRISE_RELEASE_EVIDENCE_VERIFIER}"
@@ -704,6 +711,11 @@ if(BUILD_TESTING)
   else()
     set_tests_properties(enterprise.random PROPERTIES LABELS "openssl;random")
   endif()
+
+  # The sanitizer target selects runtime tests. Keep primitive execution in
+  # that selection for either provider, not only the profile diagnostics.
+  set_property(TEST enterprise.sha256 enterprise.hmac-sha256 enterprise.random
+    APPEND PROPERTY LABELS runtime)
 
   if(ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
     add_executable(anosecurekit_enterprise_native_anocrypto_c_lifecycle_test
@@ -1137,7 +1149,11 @@ if(BUILD_TESTING)
       --output-on-failure
       --parallel ${ANOSECUREKIT_ENTERPRISE_TEST_PARALLEL_LEVEL}
       --label-regex runtime
-    DEPENDS anosecurekit_enterprise_profile_test
+    DEPENDS
+      anosecurekit_enterprise_profile_test
+      anosecurekit_enterprise_sha256_test
+      anosecurekit_enterprise_hmac_sha256_test
+      anosecurekit_enterprise_random_test
     USES_TERMINAL)
 
   if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl"
