@@ -29,8 +29,21 @@ set(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID "" CACHE STRING
 set(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT "" CACHE STRING
   "Expected AnoCrypto-C commit for native lifecycle integration")
 option(ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS
-  "Development-only: allow native lifecycle tests against a package reporting an unknown commit"
+  "Debug-only native tests: allow a package reporting an unknown commit"
   OFF)
+
+if(ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS)
+  if(NOT BUILD_TESTING OR NOT ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
+    message(FATAL_ERROR
+      "The unknown-commit exception requires BUILD_TESTING=ON and native AnoCrypto-C tests")
+  endif()
+  # Reject multi-config generators: enabling this option must never affect a
+  # Release configuration selected later at build time.
+  get_property(_enterprise_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
+  if(_enterprise_multi_config OR NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(FATAL_ERROR "The unknown-commit exception requires a single-config Debug build")
+  endif()
+endif()
 
 if(ANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS)
   if(NOT BUILD_TESTING)
@@ -203,6 +216,9 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
       "AnoCrypto-C provider target must link AnoCryptoC::AnoCryptoC directly")
   endif()
 
+  if(_anosecurekit_enterprise_builtin_provider AND NOT ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET STREQUAL "")
+    message(FATAL_ERROR "The built-in AnoCrypto-C provider requires the production identity-validating runtime")
+  endif()
   if(ANOSECUREKIT_ENTERPRISE_ANOCRYPTO_C_RUNTIME_TARGET STREQUAL "")
     if(ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID STREQUAL "")
       message(FATAL_ERROR
@@ -223,6 +239,15 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
       "${CMAKE_CURRENT_SOURCE_DIR}/include"
       "${CMAKE_CURRENT_SOURCE_DIR}/src/providers/anocrypto_c")
     target_compile_features(anosecurekit_enterprise_anocrypto_c_runtime PRIVATE cxx_std_20)
+    if(_anosecurekit_enterprise_builtin_provider)
+      target_compile_definitions(anosecurekit_enterprise_anocrypto_c_provider PRIVATE
+        ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID_VALUE="${ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID}"
+        ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT_VALUE="${ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT}")
+      if(ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS)
+        target_compile_definitions(anosecurekit_enterprise_anocrypto_c_provider PRIVATE
+          ANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_VALUE=1)
+      endif()
+    endif()
     target_compile_definitions(anosecurekit_enterprise_anocrypto_c_runtime PRIVATE
       ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID_VALUE="${ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_RUNTIME_ID}"
       ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT_VALUE="${ANOSECUREKIT_ENTERPRISE_EXPECTED_ANOCRYPTO_C_COMMIT}")
@@ -732,6 +757,20 @@ if(BUILD_TESTING)
     set_tests_properties(enterprise.native-anocrypto-c-status-mapping PROPERTIES
       LABELS "native-anocrypto-c;status")
 
+    get_target_property(_enterprise_native_library_type AnoCryptoC::AnoCryptoC TYPE)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND _enterprise_native_library_type STREQUAL "SHARED_LIBRARY"
+       AND ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "anocrypto-c")
+      add_executable(anosecurekit_enterprise_identity_gate_test
+        tests/native_anocrypto_c/identity_gate_test.cpp)
+      target_include_directories(anosecurekit_enterprise_identity_gate_test PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/third_party/anosecurekit-community/src")
+      target_link_libraries(anosecurekit_enterprise_identity_gate_test PRIVATE
+        anosecurekit::enterprise AnoCryptoC::AnoCryptoC ${CMAKE_DL_LIBS})
+      _anosecurekit_enterprise_apply_warnings(anosecurekit_enterprise_identity_gate_test)
+      add_test(NAME enterprise.native-identity-gate COMMAND anosecurekit_enterprise_identity_gate_test)
+      set_tests_properties(enterprise.native-identity-gate PROPERTIES LABELS "native-anocrypto-c;identity;runtime")
+    endif()
+
     set(_anosecurekit_enterprise_native_sha256_dependency_arg "")
     set(_anosecurekit_enterprise_native_hmac_sha256_dependency_arg "")
     set(_anosecurekit_enterprise_native_random_dependency_arg "")
@@ -1130,4 +1169,11 @@ if(BUILD_TESTING)
       COMMAND ${CMAKE_COMMAND} -E false
       USES_TERMINAL)
   endif()
+endif()
+
+# The Linux identity fault-injection executable is selected by both gates.
+if(TARGET anosecurekit_enterprise_identity_gate_test)
+  add_dependencies(enterprise-check anosecurekit_enterprise_identity_gate_test)
+  add_dependencies(enterprise-sanitizer-check anosecurekit_enterprise_identity_gate_test)
+  add_dependencies(enterprise-anocrypto-c-parity-check anosecurekit_enterprise_identity_gate_test)
 endif()
