@@ -223,19 +223,7 @@ native_identity_info query_native_identity() noexcept
 bool native_identity_matches_expected(const native_identity_info& identity, std::string_view expected_runtime,
                                       std::string_view expected_commit, bool allow_unknown) noexcept
 {
-    if (identity.query_status != backend_runtime_status::ready || identity.runtime_version != expected_runtime ||
-        expected_runtime.empty() || identity.abi_version != ANO_CRYPTO_BUILD_IDENTITY_ABI_VERSION ||
-        identity.product_name.empty() || identity.identity_version.empty() || identity.git_commit.empty() ||
-        identity.build_type.empty() || identity.compiler.empty() || identity.target.empty() || identity.notes.empty() ||
-        identity.fingerprint.empty() || expected_commit.empty())
-    {
-        return false;
-    }
-    if (identity.git_commit == "unknown")
-    {
-        return allow_unknown;
-    }
-    return identity.git_commit == expected_commit;
+    return identity_matches_expected(identity, expected_runtime, expected_commit, allow_unknown);
 }
 
 backend_runtime_info snapshot_native_runtime() noexcept

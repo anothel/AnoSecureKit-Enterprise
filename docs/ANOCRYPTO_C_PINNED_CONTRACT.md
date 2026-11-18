@@ -42,8 +42,10 @@ find_package(AnoCryptoC 0.1.0 EXACT CONFIG REQUIRED)
 
 Configuration additionally requires the expected runtime identity and reviewed
 commit. A package reporting an unknown or different identity fails closed unless
-the explicitly test-only unknown-commit override is used. That override is not
-provenance or release approval.
+the explicitly test-only unknown-commit override is used. The override requires
+`BUILD_TESTING=ON`, native AnoCrypto-C tests enabled and a single-config `Debug`
+build. Multi-config generators and non-Debug builds reject it. That override is
+not provenance or release approval; exact-revision qualification keeps it OFF.
 
 ## Public dependency surface
 

@@ -34,6 +34,44 @@ expect_configure_failure(invalid-profile "Unsupported ANOSECUREKIT_ENTERPRISE_CR
 expect_configure_failure(obsolete-option "ANOSECUREKIT_ENTERPRISE_ENABLE_ANOCRYPTO is obsolete"
   -DANOSECUREKIT_ENTERPRISE_ENABLE_ANOCRYPTO=ON)
 
+expect_configure_failure(unknown-commit-without-tests
+  "requires BUILD_TESTING=ON"
+  -DANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS=ON
+  -DBUILD_TESTING=OFF -DANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS=ON
+  -DCMAKE_BUILD_TYPE=Debug)
+expect_configure_failure(unknown-commit-without-native-tests
+  "requires BUILD_TESTING=ON"
+  -DANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS=ON
+  -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug)
+foreach(_config IN ITEMS Release RelWithDebInfo MinSizeRel "")
+  expect_configure_failure(unknown-commit-non-debug-${_config}
+    "requires a single-config Debug build"
+    -DANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS=ON
+    -DANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS=ON
+    -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=${_config})
+endforeach()
+# Use a real multi-config generator, including a false-looking configuration
+# list: that cache variable must not determine whether the generator is safe.
+if(ENTERPRISE_GENERATOR STREQUAL "Ninja")
+  set(_multi_generator_args -G "Ninja Multi-Config" -DCMAKE_CONFIGURATION_TYPES=OFF)
+elseif(ENTERPRISE_GENERATOR MATCHES "Visual Studio|Xcode|Ninja Multi-Config")
+  set(_multi_generator_args ${_generator_args})
+endif()
+if(DEFINED _multi_generator_args)
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -S "${ENTERPRISE_SOURCE_DIR}"
+      -B "${ENTERPRISE_BINARY_ROOT}/unknown-commit-multi-config"
+      ${_multi_generator_args}
+      -DANOSECUREKIT_ENTERPRISE_ALLOW_UNKNOWN_ANOCRYPTO_C_COMMIT_FOR_TESTS=ON
+      -DANOSECUREKIT_ENTERPRISE_ENABLE_NATIVE_ANOCRYPTO_C_TESTS=ON
+      -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+    RESULT_VARIABLE _multi_result OUTPUT_VARIABLE _multi_out ERROR_VARIABLE _multi_err)
+  string(CONCAT _multi_log "${_multi_out}" "${_multi_err}")
+  if(_multi_result EQUAL 0 OR NOT _multi_log MATCHES "requires a single-config Debug build")
+    message(FATAL_ERROR "Multi-config unknown-commit exception was not rejected: ${_multi_log}")
+  endif()
+endif()
+
 set(_fake_prefix "${ENTERPRISE_BINARY_ROOT}/fake-prefix")
 file(MAKE_DIRECTORY "${_fake_prefix}/lib/cmake/AnoCryptoC")
 file(WRITE "${_fake_prefix}/lib/cmake/AnoCryptoC/AnoCryptoCConfig.cmake"

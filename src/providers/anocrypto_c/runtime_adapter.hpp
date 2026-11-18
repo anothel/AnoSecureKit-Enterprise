@@ -3,6 +3,7 @@
 #define ANOSECUREKIT_ENTERPRISE_SRC_PROVIDERS_ANOCRYPTO_C_RUNTIME_ADAPTER_HPP_
 
 #include "anosecurekit_enterprise/provider_runtime.hpp"
+#include "identity_policy.hpp"
 
 #include <anocrypto/ac_module.h>
 #include <anocrypto/ac_status.h>
@@ -17,21 +18,6 @@ struct native_state_query
 {
     backend_runtime_status query_status;
     backend_module_state state;
-};
-
-struct native_identity_info
-{
-    backend_runtime_status query_status;
-    std::string_view runtime_version;
-    std::uint32_t abi_version;
-    std::string_view product_name;
-    std::string_view identity_version;
-    std::string_view git_commit;
-    std::string_view build_type;
-    std::string_view compiler;
-    std::string_view target;
-    std::string_view notes;
-    std::string_view fingerprint;
 };
 
 backend_module_state map_native_module_state(int state) noexcept;

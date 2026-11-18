@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-AnoSecureKit-Enterprise-Proprietary
 #include "random_adapter.hpp"
+#include "provider_gate.hpp"
 #include "status_mapping.hpp"
 
 #include "backend/crypto_backend.hpp"
@@ -80,7 +81,7 @@ std::uint8_t* native_data(std::span<std::byte> output) noexcept
 
 void require_operational(std::string_view operation)
 {
-    const auto status = ano_crypto_module_require_operational();
+    const auto status = anosecurekit_enterprise::providers::anocrypto_c::require_validated_provider();
     if (map_native_operation_status(status) != backend_operation_status::success)
     {
         throw_native_failure(status, operation);
@@ -182,7 +183,7 @@ void fill_native_random(std::span<std::byte> output)
     {
         return;
     }
-    if (ano_crypto_module_require_operational() != ANO_CRYPTO_OK)
+    if (anosecurekit_enterprise::providers::anocrypto_c::require_validated_provider() != ANO_CRYPTO_OK)
     {
         internal::secure_wipe(output);
         throw_random_failure(ANO_CRYPTO_ERR_NOT_INITIALIZED);
@@ -489,6 +490,7 @@ void Aes256GcmEncryptContext::update_aad(std::span<const std::byte> aad)
     {
         throw error(error_code::invalid_input, "AES-256-GCM encrypt context has no active state");
     }
+    require_operational("AnoCrypto-C streaming AES-256-GCM operation");
     const auto status = ano_crypto_aes256_gcm_stream_aad_update(impl_->context, native_data(aad), aad.size());
     if (map_native_operation_status(status) != backend_operation_status::success)
     {
@@ -503,6 +505,7 @@ bytes Aes256GcmEncryptContext::update(std::span<const std::byte> plaintext)
     }
     bytes ciphertext(plaintext.size());
     std::size_t written = 0;
+    require_operational("AnoCrypto-C streaming AES-256-GCM operation");
     const auto status =
         ano_crypto_aes256_gcm_stream_update(impl_->context, native_data(plaintext), plaintext.size(),
                                             native_data(std::span<std::byte>{ciphertext}), ciphertext.size(), &written);
@@ -520,6 +523,7 @@ std::array<std::byte, 16> Aes256GcmEncryptContext::finalize()
         throw error(error_code::invalid_input, "AES-256-GCM encrypt context has no active state");
     }
     std::array<std::byte, ANO_CRYPTO_AES256_GCM_TAG_SIZE> tag{};
+    require_operational("AnoCrypto-C streaming AES-256-GCM operation");
     const auto status = ano_crypto_aes256_gcm_stream_encrypt_final(
         impl_->context, reinterpret_cast<std::uint8_t*>(tag.data()), tag.size());
     impl_.reset();
@@ -544,6 +548,7 @@ void Aes256GcmDecryptContext::update_aad(std::span<const std::byte> aad)
     {
         throw error(error_code::invalid_input, "AES-256-GCM decrypt context has no active state");
     }
+    require_operational("AnoCrypto-C streaming AES-256-GCM operation");
     const auto status = ano_crypto_aes256_gcm_stream_aad_update(impl_->context, native_data(aad), aad.size());
     if (map_native_operation_status(status) != backend_operation_status::success)
     {
@@ -558,6 +563,7 @@ bytes Aes256GcmDecryptContext::update(std::span<const std::byte> ciphertext)
     }
     bytes plaintext(ciphertext.size());
     std::size_t written = 0;
+    require_operational("AnoCrypto-C streaming AES-256-GCM operation");
     const auto status =
         ano_crypto_aes256_gcm_stream_update(impl_->context, native_data(ciphertext), ciphertext.size(),
                                             native_data(std::span<std::byte>{plaintext}), plaintext.size(), &written);
@@ -578,6 +584,7 @@ bytes Aes256GcmDecryptContext::finalize(std::span<const std::byte> tag)
     {
         throw error(error_code::invalid_input, "AES-256-GCM tag must be 16 bytes");
     }
+    require_operational("AnoCrypto-C streaming AES-256-GCM operation");
     const auto status = ano_crypto_aes256_gcm_stream_decrypt_final(impl_->context, native_data(tag), tag.size());
     impl_.reset();
     if (map_native_operation_status(status) != backend_operation_status::success)

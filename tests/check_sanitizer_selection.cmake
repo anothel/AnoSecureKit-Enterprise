@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: LicenseRef-AnoSecureKit-Enterprise-Proprietary
+cmake_minimum_required(VERSION 3.20)
+if(NOT DEFINED ENTERPRISE_BUILD_DIR)
+  message(FATAL_ERROR "ENTERPRISE_BUILD_DIR is required")
+endif()
+execute_process(COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${ENTERPRISE_BUILD_DIR}"
+  --build-config "${ENTERPRISE_BUILD_CONFIG}"
+  --show-only=json-v1 --label-regex runtime
+  RESULT_VARIABLE _result OUTPUT_VARIABLE _json ERROR_VARIABLE _err)
+if(NOT _result EQUAL 0)
+  message(FATAL_ERROR "Could not inspect sanitizer selection: ${_err}")
+endif()
+string(JSON _count LENGTH "${_json}" tests)
+set(_names "")
+if(_count GREATER 0)
+  math(EXPR _last "${_count} - 1")
+  foreach(_index RANGE 0 ${_last})
+    string(JSON _name GET "${_json}" tests ${_index} name)
+    list(APPEND _names "${_name}")
+  endforeach()
+endif()
+foreach(_expected IN ITEMS enterprise.profile enterprise.sha256 enterprise.hmac-sha256 enterprise.random)
+  if(NOT _expected IN_LIST _names)
+    message(FATAL_ERROR "Sanitizer runtime selection omits ${_expected}")
+  endif()
+endforeach()
+message(STATUS "Sanitizer selection includes profile and primitive tests")
