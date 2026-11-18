@@ -392,6 +392,7 @@ if(BUILD_TESTING)
   add_test(NAME enterprise.sanitizer-selection
     COMMAND ${CMAKE_COMMAND}
       -DENTERPRISE_BUILD_DIR=${CMAKE_CURRENT_BINARY_DIR}
+      "-DENTERPRISE_BUILD_CONFIG=$<CONFIG>"
       -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_sanitizer_selection.cmake)
   set_tests_properties(enterprise.sanitizer-selection PROPERTIES LABELS "policy;ci")
 

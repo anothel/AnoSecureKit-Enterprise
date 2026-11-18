@@ -4,6 +4,7 @@ if(NOT DEFINED ENTERPRISE_BUILD_DIR)
   message(FATAL_ERROR "ENTERPRISE_BUILD_DIR is required")
 endif()
 execute_process(COMMAND "${CMAKE_CTEST_COMMAND}" --test-dir "${ENTERPRISE_BUILD_DIR}"
+  --build-config "${ENTERPRISE_BUILD_CONFIG}"
   --show-only=json-v1 --label-regex runtime
   RESULT_VARIABLE _result OUTPUT_VARIABLE _json ERROR_VARIABLE _err)
 if(NOT _result EQUAL 0)
