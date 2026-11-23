@@ -229,6 +229,20 @@ int main(int argc, char** argv)
     append(streamed_plaintext, decryptor.finalize(tag));
     check(streamed_plaintext == skt1_plaintext, "SKT1 streaming fixture and chunk split");
 
+    // Streaming plaintext is not authenticated until finalize succeeds.
+    // Keep the update output private and wipe it if tag validation fails.
+    std::array<std::byte, tag_size> corrupted_tag{};
+    std::copy(tag.begin(), tag.end(), corrupted_tag.begin());
+    corrupted_tag[0] ^= std::byte{0x01};
+    anosecurekit::packet_decryptor rejected_decryptor(zero_key, skt1_aad);
+    rejected_decryptor.begin(prefix);
+    auto pending_plaintext = rejected_decryptor.update(ciphertext);
+    const bool wrong_tag_rejected = throws_code(
+        [&] { (void)rejected_decryptor.finalize(std::span<const std::byte>{corrupted_tag}); },
+        anosecurekit::error_code::authentication_failed);
+    std::fill(pending_plaintext.begin(), pending_plaintext.end(), std::byte{0});
+    check(wrong_tag_rejected, "SKT1 streaming wrong-tag authentication failure");
+
     anosecurekit::packet_encryptor encryptor(zero_key, skt1_aad);
     anosecurekit::bytes streamed_packet = encryptor.begin();
     append(streamed_packet, encryptor.update(std::span<const std::byte>{skt1_plaintext}.first(5)));
