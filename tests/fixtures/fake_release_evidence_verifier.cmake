@@ -93,6 +93,7 @@ endif()
 # preserved on stdout.
 set(_runner_environment ",\"runnerEnvironment\":\"github-hosted\"")
 set(_attestation "{}")
+set(_verified_identity "")
 if(FAKE_MODE STREQUAL "runner-environment-missing")
   set(_runner_environment "")
 elseif(FAKE_MODE STREQUAL "runner-environment-duplicate")
@@ -100,8 +101,9 @@ elseif(FAKE_MODE STREQUAL "runner-environment-duplicate")
 elseif(FAKE_MODE STREQUAL "runner-environment-only-outside-certificate")
   set(_runner_environment "")
   set(_attestation "{\"runnerEnvironment\":\"github-hosted\"}")
-elseif(FAKE_MODE STREQUAL "runner-environment-extra-outside-certificate")
-  set(_attestation "{\"runnerEnvironment\":\"github-hosted\"}")
+elseif(FAKE_MODE STREQUAL "runner-environment-verified-identity")
+  # gh emits both the certificate summary and the matched certificate identity.
+  set(_verified_identity ",\"verifiedIdentity\":{\"runnerEnvironment\":\"github-hosted\"}")
 elseif(FAKE_MODE STREQUAL "runner-environment-malformed")
   set(_runner_environment ",\"runnerEnvironment\":github-hosted")
 elseif(FAKE_MODE STREQUAL "runner-environment-wrong-type")
@@ -135,6 +137,7 @@ set(_entry
   ",\"subject\":[{\"name\":\"${_subject_name}\",\"digest\":{\"sha256\":\"${_subject_digest}\"}}]"
   ",\"predicateType\":\"${_predicate}\",\"predicate\":{}}"
   "${_signature}"
+  "${_verified_identity}"
   ",\"verifiedTimestamps\":[{\"type\":\"transparency-log\",\"uri\":\"https://example.invalid/log\",\"timestamp\":\"2026-01-01T00:00:00Z\"}]}}")
 string(REPLACE ";" "" _entry "${_entry}")
 if(FAKE_MODE STREQUAL "multiple")

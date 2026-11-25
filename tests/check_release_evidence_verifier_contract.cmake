@@ -109,7 +109,7 @@ _run(runner-environment-duplicate runner-environment-duplicate FALSE
   "duplicate or missing JSON field: runnerEnvironment")
 _run(runner-environment-only-outside-certificate runner-environment-only-outside-certificate FALSE
   "unsigned or malformed verifier result")
-_run(runner-environment-extra-outside-certificate runner-environment-extra-outside-certificate FALSE
+_run(runner-environment-verified-identity runner-environment-verified-identity FALSE
   "duplicate or missing JSON field: runnerEnvironment")
 _run(runner-environment-malformed runner-environment-malformed FALSE
   "malformed machine-readable verifier output")
