@@ -57,7 +57,9 @@ function(_run name mode expect_success expected_text)
     message(FATAL_ERROR "${name}: unexpectedly succeeded\n${_log}")
   endif()
   if(NOT expected_text STREQUAL "")
-    string(FIND "${_log}" "${expected_text}" _found)
+    # CMake wraps fatal errors across lines.
+    string(REGEX REPLACE "[ \t\r\n]+" " " _comparison_log "${_log}")
+    string(FIND "${_comparison_log}" "${expected_text}" _found)
     if(_found EQUAL -1)
       message(FATAL_ERROR "${name}: expected '${expected_text}'\n${_log}")
     endif()
@@ -85,10 +87,8 @@ foreach(_field IN ITEMS attestation_generation verifier_backend verifier_backend
 endforeach()
 
 foreach(_case IN ITEMS unsupported-version malformed-version capability-fail
-    subcommand-missing timeout excessive-output nonzero malformed-json duplicate-json
-    text-output wrong-repository wrong-owner wrong-revision wrong-digest wrong-workflow
-    wrong-trust-domain missing-attestation multiple expired revoked unsigned
-    unsupported-predicate)
+    subcommand-missing timeout excessive-output malformed-json duplicate-json
+    text-output missing-attestation multiple unsigned unsupported-predicate)
   if(_case STREQUAL "unsupported-version")
     set(_expected "unsupported GitHub CLI version")
   elseif(_case STREQUAL "excessive-output")
@@ -101,6 +101,32 @@ foreach(_case IN ITEMS unsupported-version malformed-version capability-fail
     set(_expected "Release evidence verifier failed")
   endif()
   _run("${_case}" "${_case}" FALSE "${_expected}")
+endforeach()
+
+_run(runner-environment-missing runner-environment-missing FALSE
+  "duplicate or missing JSON field: runnerEnvironment")
+_run(runner-environment-duplicate runner-environment-duplicate FALSE
+  "duplicate or missing JSON field: runnerEnvironment")
+_run(runner-environment-only-outside-certificate runner-environment-only-outside-certificate FALSE
+  "unsigned or malformed verifier result")
+_run(runner-environment-verified-identity runner-environment-verified-identity FALSE
+  "duplicate or missing JSON field: runnerEnvironment")
+_run(runner-environment-malformed runner-environment-malformed FALSE
+  "malformed machine-readable verifier output")
+_run(runner-environment-wrong-type runner-environment-wrong-type FALSE
+  "self-hosted attestation is forbidden")
+_run(runner-environment-self-hosted runner-environment-self-hosted FALSE
+  "self-hosted attestation is forbidden")
+
+_run(wrong-subject wrong-subject FALSE "attestation subject name or digest mismatch")
+_run(wrong-digest wrong-digest FALSE "attestation subject name or digest mismatch")
+_run(wrong-repository wrong-repository FALSE "verified repository or owner mismatch")
+_run(wrong-owner wrong-owner FALSE "verified repository or owner mismatch")
+_run(wrong-revision wrong-revision FALSE "verified source revision mismatch")
+_run(wrong-workflow wrong-workflow FALSE "verified workflow identity mismatch")
+_run(wrong-trust-domain wrong-trust-domain FALSE "verified trust domain mismatch")
+foreach(_case IN ITEMS nonzero expired revoked)
+  _run("${_case}" "${_case}" FALSE "verifier rejected the attestation")
 endforeach()
 
 execute_process(
