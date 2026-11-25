@@ -74,6 +74,8 @@ elseif(FAKE_MODE STREQUAL "wrong-owner")
   string(REGEX REPLACE "^[^/]+/" "other-owner/" _repository "${_repository}")
 elseif(FAKE_MODE STREQUAL "wrong-revision")
   set(_revision "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+elseif(FAKE_MODE STREQUAL "wrong-subject")
+  set(_subject_name "other.zip")
 elseif(FAKE_MODE STREQUAL "wrong-digest")
   set(_subject_digest "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 elseif(FAKE_MODE STREQUAL "wrong-workflow")
@@ -87,12 +89,33 @@ else()
   set(_predicate "https://slsa.dev/provenance/v1")
 endif()
 
+# Vary the runner member as raw JSON so duplicate keys and syntax errors are
+# preserved on stdout.
+set(_runner_environment ",\"runnerEnvironment\":\"github-hosted\"")
+set(_attestation "{}")
+if(FAKE_MODE STREQUAL "runner-environment-missing")
+  set(_runner_environment "")
+elseif(FAKE_MODE STREQUAL "runner-environment-duplicate")
+  string(APPEND _runner_environment ",\"runnerEnvironment\":\"github-hosted\"")
+elseif(FAKE_MODE STREQUAL "runner-environment-only-outside-certificate")
+  set(_runner_environment "")
+  set(_attestation "{\"runnerEnvironment\":\"github-hosted\"}")
+elseif(FAKE_MODE STREQUAL "runner-environment-extra-outside-certificate")
+  set(_attestation "{\"runnerEnvironment\":\"github-hosted\"}")
+elseif(FAKE_MODE STREQUAL "runner-environment-malformed")
+  set(_runner_environment ",\"runnerEnvironment\":github-hosted")
+elseif(FAKE_MODE STREQUAL "runner-environment-wrong-type")
+  set(_runner_environment ",\"runnerEnvironment\":true")
+elseif(FAKE_MODE STREQUAL "runner-environment-self-hosted")
+  set(_runner_environment ",\"runnerEnvironment\":\"self-hosted\"")
+endif()
+
 set(_certificate
   "\"certificateIssuer\":\"CN=fake-test-only\""
   ",\"subjectAlternativeName\":\"https://github.com/${_workflow}@refs/heads/main\""
   ",\"issuer\":\"${_trust_domain}\""
   ",\"buildSignerURI\":\"https://github.com/${_workflow}@refs/heads/main\""
-  ",\"runnerEnvironment\":\"github-hosted\""
+  "${_runner_environment}"
   ",\"sourceRepositoryURI\":\"https://github.com/${_repository}\""
   ",\"sourceRepositoryDigest\":\"${_revision}\"")
 string(REPLACE ";" "" _certificate "${_certificate}")
@@ -106,7 +129,7 @@ else()
   set(_signature ",\"signature\":{\"certificate\":{${_certificate}}}")
 endif()
 set(_entry
-  "{\"attestation\":{},\"verificationResult\":{"
+  "{\"attestation\":${_attestation},\"verificationResult\":{"
   "\"mediaType\":\"application/vnd.dev.sigstore.verification-result+json\""
   ",\"statement\":{\"_type\":\"https://in-toto.io/Statement/v1\""
   ",\"subject\":[{\"name\":\"${_subject_name}\",\"digest\":{\"sha256\":\"${_subject_digest}\"}}]"
