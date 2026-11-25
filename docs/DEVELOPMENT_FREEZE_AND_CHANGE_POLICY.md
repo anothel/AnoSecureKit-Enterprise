@@ -2,9 +2,13 @@
 
 # Development Freeze and Change Policy
 
-Enterprise `0.1.0` engineering is closed and frozen. The canonical state is
+Enterprise `0.1.0` internal engineering is reopened only for the selected
+scope in the [2026-11-25 decision](ENGINEERING_REOPENING_2026_11_25.md). The canonical state is
 [CURRENT_STATUS.md](CURRENT_STATUS.md). The retained blocker registry preserves
-historical IDs and conditional reopen gates; it is not an active work queue.
+historical IDs and conditional reopen gates; Jira ASK is the active work queue.
+
+The following freeze record and restrictions remain historical and apply to
+work outside the authorized reopening scope.
 
 ```text
 ENGINEERING_STATUS=CLOSED_AND_FROZEN
@@ -22,7 +26,7 @@ commit identity. After closeout, any code, dependency, product, release,
 qualification, support, or operational change requires a new product decision
 that explicitly reopens the repository.
 
-Until that decision exists, do not:
+For work outside an explicit reopening decision, do not:
 
 - new abstract policy, schema, fixture, or document contract;
 - select or implement a speculative vendor adapter or unselected system;
@@ -47,4 +51,5 @@ passes. Historical evidence cannot be promoted silently.
 NOW: none
 ```
 
-No locally actionable named blocker or roadmap exists at this baseline.
+The historical NOW queue above remains unchanged; see the reopening decision
+for current selected internal engineering work.

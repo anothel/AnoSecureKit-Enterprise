@@ -2,11 +2,26 @@
 
 # AnoSecureKit Enterprise Current Status
 
-This is the canonical current-state document for Enterprise `0.1.0`. Historical
-plans, checkpoints, registries, authorization records, packages, manifests, and
-checksums remain evidence only and do not override this document.
+This is the canonical current-state document for Enterprise `0.1.0`. The active
+engineering decision below supersedes the historical closeout for selected work.
+Historical evidence does not constitute new verification or release authorization.
 
-## Canonical closeout state
+## Active engineering decision — 2026-11-25 KST
+
+```text
+ENGINEERING_STATUS=REOPENED_SCOPED
+ACTIVE_NEXT_WORK=ASK-3;ASK-2;ASK-8;ASK-9
+CUSTOMER_RELEASE_READY=FALSE
+```
+
+The owner has reopened selected internal engineering under the
+[2026-11-25 decision](ENGINEERING_REOPENING_2026_11_25.md). Jira ASK governs the active execution
+queue; actual acceptance, original SDK access, verifier diagnosis and
+release gates remain unresolved. No dependency, release, or support decision
+is changed. The remainder of this document records the historical closeout
+and its evidence, not the active execution prohibition.
+
+## Historical closeout state
 
 ```text
 PROJECT=AnoSecureKit-Enterprise
