@@ -49,6 +49,7 @@ function(_run name mode expect_success expected_text)
       ${_limits}
       "-DVERIFIER_JSON_OUTPUT=${_json}" "-DVERIFIER_TEXT_OUTPUT=${_text}"
       -P "${_adapter}"
+    WORKING_DIRECTORY "${TEST_ROOT}"
     RESULT_VARIABLE _result OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
   string(CONCAT _log "${_out}" "${_err}")
   if(expect_success AND NOT _result EQUAL 0)
@@ -67,7 +68,9 @@ function(_run name mode expect_success expected_text)
   if(EXISTS "${_json}.tmp" OR EXISTS "${_text}.tmp")
     message(FATAL_ERROR "${name}: verifier temporary output was not cleaned")
   endif()
-  if(NOT expect_success)
+  if(expect_success)
+    set_property(GLOBAL APPEND PROPERTY _positive_cases "${name}")
+  else()
     set_property(GLOBAL APPEND PROPERTY _negative_cases "${name}")
   endif()
 endfunction()
@@ -85,6 +88,12 @@ foreach(_field IN ITEMS attestation_generation verifier_backend verifier_backend
     message(FATAL_ERROR "valid diagnostics missing ${_field}: ${_json_error}")
   endif()
 endforeach()
+
+_run(runner-environment-verified-identity runner-environment-verified-identity TRUE
+  "cryptographic_evidence: verified")
+_run(runner-environment-escaped-identity runner-environment-escaped-identity TRUE
+  "cryptographic_evidence: verified")
+_run(long-escaped-json long-escaped-json TRUE "cryptographic_evidence: verified")
 
 foreach(_case IN ITEMS unsupported-version malformed-version capability-fail
     subcommand-missing timeout excessive-output malformed-json duplicate-json
@@ -104,15 +113,32 @@ foreach(_case IN ITEMS unsupported-version malformed-version capability-fail
 endforeach()
 
 _run(runner-environment-missing runner-environment-missing FALSE
-  "duplicate or missing JSON field: runnerEnvironment")
+  "missing certificate runnerEnvironment")
 _run(runner-environment-duplicate runner-environment-duplicate FALSE
-  "duplicate or missing JSON field: runnerEnvironment")
+  "duplicate JSON object member")
 _run(runner-environment-only-outside-certificate runner-environment-only-outside-certificate FALSE
-  "unsigned or malformed verifier result")
-_run(runner-environment-verified-identity runner-environment-verified-identity FALSE
-  "duplicate or missing JSON field: runnerEnvironment")
+  "unexpected runnerEnvironment path")
+_run(runner-environment-misplaced runner-environment-misplaced FALSE
+  "unexpected runnerEnvironment path")
+_run(runner-environment-identity-without-certificate
+  runner-environment-identity-without-certificate FALSE "missing certificate runnerEnvironment")
+_run(runner-environment-identity-conflict runner-environment-identity-conflict FALSE
+  "invalid verifiedIdentity runnerEnvironment")
+_run(runner-environment-identity-missing runner-environment-identity-missing FALSE
+  "invalid verifiedIdentity runnerEnvironment")
+_run(runner-environment-identity-wrong-type runner-environment-identity-wrong-type FALSE
+  "invalid verifiedIdentity runnerEnvironment")
+_run(runner-environment-identity-not-object runner-environment-identity-not-object FALSE
+  "invalid verifiedIdentity runnerEnvironment")
+_run(runner-environment-identity-duplicate runner-environment-identity-duplicate FALSE
+  "duplicate JSON object member")
+_run(runner-environment-escaped-duplicate runner-environment-escaped-duplicate FALSE
+  "duplicate JSON object member")
+_run(duplicate-escaped-issuer duplicate-escaped-issuer FALSE "duplicate JSON object member")
 _run(runner-environment-malformed runner-environment-malformed FALSE
   "malformed machine-readable verifier output")
+_run(trailing-json-comma trailing-json-comma FALSE "malformed machine-readable verifier output")
+_run(trailing-json-control trailing-json-control FALSE "malformed machine-readable verifier output")
 _run(runner-environment-wrong-type runner-environment-wrong-type FALSE
   "self-hosted attestation is forbidden")
 _run(runner-environment-self-hosted runner-environment-self-hosted FALSE
@@ -182,5 +208,7 @@ set_property(GLOBAL APPEND PROPERTY _negative_cases test-verifier-production)
 
 get_property(_negative_cases GLOBAL PROPERTY _negative_cases)
 list(LENGTH _negative_cases _negative_count)
+get_property(_positive_cases GLOBAL PROPERTY _positive_cases)
+list(LENGTH _positive_cases _positive_count)
 message(STATUS
-  "Release evidence verifier contract passed: fake isolated, ${_negative_count} fail-closed cases")
+  "Release evidence verifier contract passed: fake isolated, ${_positive_count} positive and ${_negative_count} fail-closed cases")
