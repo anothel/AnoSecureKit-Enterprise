@@ -4,6 +4,7 @@ project(anosecurekit_enterprise_installed_consumer LANGUAGES CXX)
 
 find_package(anosecurekit 0.4 CONFIG REQUIRED)
 find_package(anosecurekitEnterprise 0.1 CONFIG REQUIRED)
+find_package(Threads REQUIRED)
 
 if(NOT TARGET anosecurekit::anosecurekit)
   message(FATAL_ERROR "Installed Community target anosecurekit::anosecurekit is missing")
@@ -48,7 +49,7 @@ if(NOT ANOSECUREKIT_ENTERPRISE_RELEASE_AUTHORIZATION_REQUIRED
 endif()
 
 add_executable(anosecurekit_enterprise_installed_consumer main.cpp)
-target_link_libraries(anosecurekit_enterprise_installed_consumer PRIVATE anosecurekit::enterprise)
+target_link_libraries(anosecurekit_enterprise_installed_consumer PRIVATE anosecurekit::enterprise Threads::Threads)
 target_compile_features(anosecurekit_enterprise_installed_consumer PRIVATE cxx_std_20)
 file(GENERATE
   OUTPUT "anosecurekit-enterprise-consumer-$<CONFIG>.path"
