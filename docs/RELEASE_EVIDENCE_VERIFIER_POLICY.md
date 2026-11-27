@@ -21,11 +21,51 @@ silently replaced by another backend. Malformed output, timeout, excessive
 output, unsafe paths, and process errors are `error`. No automatic download or
 fallback is permitted.
 
-`cmake/check_release_evidence_verifier.cmake` invokes processes with separate
-arguments through CMake `execute_process`; it never constructs a shell command.
-Version, capability, verification stdout, stderr, exit status, timeout, and a
-1 MiB per-stream output limit are handled independently. Output must be the
-GitHub CLI JSON format and contain exactly one verified attestation result.
+`cmake/check_release_evidence_verifier.cmake` launches the repository-owned
+`anosecurekit-verifier-capture` helper for every version, capability, and
+verification invocation. The helper passes an exact argument vector to the
+backend without a shell. It collects stdout and stderr independently in
+anonymous pipes and validates UTF-8 and rejects raw NUL before returning an
+ASCII JSON record to CMake. The verification adapter requires the GitHub CLI
+JSON format and exactly one verified attestation result.
+
+The default and maximum output limit is 1 MiB per stream (2 MiB combined).
+The ASCII bridge is bounded by 12 times the configured per-stream limit plus
+128 bytes. The default subprocess deadline is 15 seconds, configurable up to
+60. A limit, timeout, malformed transport, or helper error is fail closed.
+The helper terminates the Windows job or POSIX process group and limits
+inheritance to standard streams. POSIX process groups contain processes that
+remain in the group. The backend executable and services running with the
+same account or administrative access are within the host trust boundary.
+
+For source builds, build the helper with the Enterprise project or on its
+own and supply its absolute canonical path to the existing adapter call:
+
+```sh
+cmake -S tools/verifier_capture -B /trusted/build/capture -DCMAKE_BUILD_TYPE=Release
+cmake --build /trusted/build/capture --config Release --target anosecurekit-verifier-capture
+cmake -DPROBE_ONLY=ON \
+  -DVERIFIER_CAPTURE_EXECUTABLE=/trusted/build/capture/anosecurekit-verifier-capture \
+  -DVERIFIER_CAPTURE_BUILD_RECEIPT=/trusted/build/capture/receipt-Release.sha256 \
+  -P cmake/check_release_evidence_verifier.cmake
+```
+
+Use the configuration subdirectory for multi-config builds and the `.exe`
+suffix on Windows. The OpenSSL install places the helper and its SHA-256
+inventory record alongside the installed adapter. Invoking that adapter selects
+the adjacent helper and requires `VERIFIER_CAPTURE_EXPECTED_SHA256` from a
+separately trusted installation receipt for the host architecture. The adapter
+checks the fixed filename, canonical path, expected digest and protocol. It
+does not use the adjacent inventory as an expected identity. The workflow pins
+the digest from its controlled build before downloading delivery artifacts.
+
+Build and installation roots must be provisioned by the operator and protected
+against writes by untrusted accounts. CMake does not audit host ACLs. The
+operator must establish safe directories and receipts before invoking the
+adapter. Path checks and hashing precede execution and assume the trusted files
+and directories cannot be swapped during invocation. A packaged digest alone
+does not establish publisher identity. Do not execute the helper or adapter
+from the unverified delivery being checked.
 
 ## Trust and identity policy
 
