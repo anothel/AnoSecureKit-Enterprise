@@ -20,8 +20,107 @@ set(_sha "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
 set(_repo "anothel/AnoSecureKit-Enterprise")
 set(_workflow "${_repo}/.github/workflows/anosecurekit-enterprise-ci.yml")
 
+set(_fixture_executable "${CMAKE_COMMAND}")
+if(CMAKE_VERSION VERSION_LESS 3.24)
+  # Older CMake scans past -- for documentation flags before running -P.
+  # Use a native launcher to escape the final probe flag without a shell.
+  set(_launcher_source "${TEST_ROOT}/launcher")
+  file(MAKE_DIRECTORY "${_launcher_source}")
+  file(WRITE "${_launcher_source}/CMakeLists.txt" [=[
+cmake_minimum_required(VERSION 3.20)
+project(VerifierFixtureLauncher LANGUAGES CXX)
+add_executable(fixture-launcher main.cpp)
+target_compile_features(fixture-launcher PRIVATE cxx_std_11)
+if(MINGW)
+  target_link_options(fixture-launcher PRIVATE -municode)
+endif()
+file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/launcher-$<CONFIG>.txt"
+  CONTENT "$<TARGET_FILE:fixture-launcher>")
+]=])
+  file(WRITE "${_launcher_source}/main.cpp" [=[
+#include <cstdlib>
+#include <string>
+
+#ifdef _WIN32
+#include <windows.h>
+
+int wmain(int argc, wchar_t** argv)
+{
+    const wchar_t* cmake = _wgetenv(L"VERIFIER_FIXTURE_CMAKE");
+    if (!cmake || argc < 2) {
+        return EXIT_FAILURE;
+    }
+
+    // Preserve the native quoting of every argument supplied by the adapter.
+    std::wstring command = GetCommandLineW();
+    const auto firstArgument = command.front() == L'"'
+        ? command.find(L'"', 1) + 1 : command.find_first_of(L" \t");
+    command.replace(0, firstArgument, L"\"" + std::wstring(cmake) + L"\"");
+    const std::wstring last = argv[argc - 1];
+    if (last == L"--version" || last == L"--help") {
+        command.insert(command.rfind(last), L"fixture:");
+    }
+
+    STARTUPINFOW startup{};
+    startup.cb = sizeof(startup);
+    startup.dwFlags = STARTF_USESTDHANDLES;
+    startup.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
+    startup.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+    startup.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+    PROCESS_INFORMATION child{};
+    if (!CreateProcessW(cmake, &command[0], nullptr, nullptr, TRUE, 0,
+                        nullptr, nullptr, &startup, &child)) {
+        return EXIT_FAILURE;
+    }
+    CloseHandle(child.hThread);
+    DWORD exitCode = EXIT_FAILURE;
+    if (WaitForSingleObject(child.hProcess, INFINITE) == WAIT_OBJECT_0) {
+        GetExitCodeProcess(child.hProcess, &exitCode);
+    }
+    CloseHandle(child.hProcess);
+    return static_cast<int>(exitCode);
+}
+#else
+#include <unistd.h>
+
+int main(int argc, char** argv)
+{
+    char* cmake = std::getenv("VERIFIER_FIXTURE_CMAKE");
+    if (!cmake || argc < 2) {
+        return EXIT_FAILURE;
+    }
+
+    const std::string last = argv[argc - 1];
+    std::string escaped;
+    if (last == "--version" || last == "--help") {
+        escaped = "fixture:" + last;
+        argv[argc - 1] = &escaped[0];
+    }
+    argv[0] = cmake;
+    execv(cmake, argv);
+    return EXIT_FAILURE;
+}
+#endif
+]=])
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -S "${_launcher_source}" -B "${_launcher_source}/build"
+      -DCMAKE_BUILD_TYPE=Release
+    RESULT_VARIABLE _launcher_configure)
+  if(NOT _launcher_configure STREQUAL "0")
+    message(FATAL_ERROR "could not configure the CMake fixture launcher")
+  endif()
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" --build "${_launcher_source}/build" --config Release
+    RESULT_VARIABLE _launcher_build)
+  if(NOT _launcher_build STREQUAL "0")
+    message(FATAL_ERROR "could not build the CMake fixture launcher")
+  endif()
+  file(READ "${_launcher_source}/build/launcher-Release.txt" _fixture_executable)
+  set(ENV{VERIFIER_FIXTURE_CMAKE} "${CMAKE_COMMAND}")
+endif()
+
 set(_common
-  "-DVERIFIER_EXECUTABLE=${CMAKE_COMMAND}"
+  "-DVERIFIER_EXECUTABLE=${_fixture_executable}"
   "-DTEST_VERIFIER_SCRIPT=${_fixture}"
   "-DALLOW_TEST_VERIFIER=ON"
   "-DARTIFACT_PATH=${_artifact}"
