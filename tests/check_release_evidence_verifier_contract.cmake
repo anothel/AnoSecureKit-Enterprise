@@ -35,6 +35,49 @@ set(_common
   "-DATTESTATION_BUNDLE=${_bundle}"
   "-DREQUIRE_VERIFIED=ON")
 
+# Use a probe to prove the helper is checked before the backend is invoked.
+function(_check_helper_rejection name path diagnostic)
+  set(_json "${TEST_ROOT}/${name}.json")
+  file(WRITE "${_json}" "{\"verification_status\":\"verified\"}\n")
+  execute_process(COMMAND "${CMAKE_COMMAND}" ${_common}
+    "-DVERIFIER_CAPTURE_EXECUTABLE=${path}" "-DVERIFIER_JSON_OUTPUT=${_json}"
+    -DPROBE_ONLY=ON -P "${_adapter}"
+    RESULT_VARIABLE _result OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+  string(REGEX REPLACE "[ \t\r\n]+" " " _log "${_out}${_err}")
+  if(NOT _result EQUAL 1 OR NOT _log MATCHES "${diagnostic}")
+    message(FATAL_ERROR "${name}: expected helper rejection\n${_out}${_err}")
+  endif()
+  file(READ "${_json}" _record)
+  foreach(_field IN ITEMS verification_status trusted_evidence release_authorization customer_release_ready)
+    string(JSON _${_field} GET "${_record}" "${_field}")
+  endforeach()
+  if(NOT _verification_status STREQUAL "rejected"
+     OR NOT _trusted_evidence STREQUAL "unavailable"
+     OR NOT _release_authorization STREQUAL "denied-or-unavailable"
+     OR _customer_release_ready)
+    message(FATAL_ERROR "${name}: stale or unexpected verifier evidence")
+  endif()
+  set_property(GLOBAL APPEND PROPERTY _negative_cases "${name}")
+endfunction()
+
+if(NOT DEFINED VERIFIER_CAPTURE_EXECUTABLE OR NOT EXISTS "${VERIFIER_CAPTURE_EXECUTABLE}"
+   OR NOT DEFINED VERIFIER_CAPTURE_BUILD_RECEIPT OR NOT EXISTS "${VERIFIER_CAPTURE_BUILD_RECEIPT}")
+  message(FATAL_ERROR "A built capture helper and its trusted build receipt are required")
+endif()
+get_filename_component(_helper_name "${VERIFIER_CAPTURE_EXECUTABLE}" NAME)
+_check_helper_rejection(missing-capture-helper "${TEST_ROOT}/missing/${_helper_name}"
+  "verifier capture helper is missing or unsafe")
+_check_helper_rejection(missing-capture-receipt "${VERIFIER_CAPTURE_EXECUTABLE}"
+  "trusted verifier capture identity is missing or unsafe")
+list(APPEND _common "-DVERIFIER_CAPTURE_EXECUTABLE=${VERIFIER_CAPTURE_EXECUTABLE}"
+  "-DVERIFIER_CAPTURE_BUILD_RECEIPT=${VERIFIER_CAPTURE_BUILD_RECEIPT}")
+set(_wrong_helper "${TEST_ROOT}/mismatched-helper/${_helper_name}")
+file(WRITE "${_wrong_helper}" "not the expected verifier capture helper")
+file(SHA256 "${_wrong_helper}" _wrong_digest)
+file(WRITE "${_wrong_helper}.sha256" "${_wrong_digest}")
+_check_helper_rejection(mismatched-capture-helper "${_wrong_helper}"
+  "verifier capture helper identity mismatch")
+
 function(_run name mode expect_success expected_text)
   set(_json "${TEST_ROOT}/${name}.json")
   set(_text "${TEST_ROOT}/${name}.txt")

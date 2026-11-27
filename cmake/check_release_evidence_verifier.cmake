@@ -1,6 +1,13 @@
 # SPDX-License-Identifier: LicenseRef-AnoSecureKit-Enterprise-Proprietary
 cmake_minimum_required(VERSION 3.20)
 
+# A failure before the result is written must not leave an earlier success.
+foreach(_output IN ITEMS VERIFIER_TEXT_OUTPUT VERIFIER_JSON_OUTPUT)
+  if(DEFINED ${_output} AND NOT "${${_output}}" STREQUAL "")
+    file(REMOVE "${${_output}}")
+  endif()
+endforeach()
+
 if(NOT DEFINED REQUIRE_VERIFIED)
   set(REQUIRE_VERIFIED OFF)
 endif()
@@ -20,8 +27,9 @@ if(NOT VERIFIER_TIMEOUT_SECONDS MATCHES "^[1-9][0-9]*$"
    OR VERIFIER_TIMEOUT_SECONDS GREATER 60)
   message(FATAL_ERROR "VERIFIER_TIMEOUT_SECONDS must be an integer from 1 to 60")
 endif()
-if(NOT VERIFIER_MAX_OUTPUT_BYTES MATCHES "^[1-9][0-9]*$")
-  message(FATAL_ERROR "VERIFIER_MAX_OUTPUT_BYTES must be a positive integer")
+if(NOT VERIFIER_MAX_OUTPUT_BYTES MATCHES "^[1-9][0-9]*$"
+   OR VERIFIER_MAX_OUTPUT_BYTES GREATER 1048576)
+  message(FATAL_ERROR "VERIFIER_MAX_OUTPUT_BYTES must be an integer from 1 to 1048576")
 endif()
 
 set(_backend_id none)
@@ -237,6 +245,12 @@ function(_verifier_check_json_members json reason)
       endif()
       if(_token STREQUAL "{" OR _token STREQUAL _array_open)
         math(EXPR _depth "${_depth} + 1")
+        # Leave room for a scalar at the bundled JSON decoder's 1000-node
+        # stack limit. Reject before passing the document to string(JSON).
+        if(_depth GREATER 999)
+          set("${reason}" "machine-readable verifier output exceeds JSON nesting limit" PARENT_SCOPE)
+          return()
+        endif()
         set("_key_${_depth}" "")
         if(_token STREQUAL "{")
           math(EXPR _object_id "${_object_id} + 1")
@@ -260,14 +274,151 @@ function(_verifier_check_json_members json reason)
   endif()
 endfunction()
 
-function(_verifier_output_within_limit stdout stderr label)
-  string(LENGTH "${stdout}" _stdout_size)
-  string(LENGTH "${stderr}" _stderr_size)
-  if(_stdout_size GREATER VERIFIER_MAX_OUTPUT_BYTES
-     OR _stderr_size GREATER VERIFIER_MAX_OUTPUT_BYTES)
-    message(FATAL_ERROR "${label} exceeded verifier output limit")
+function(_verifier_capture_identity reason)
+  set("${reason}" "verifier capture helper is missing or unsafe" PARENT_SCOPE)
+  if(CMAKE_HOST_WIN32)
+    set(_name "anosecurekit-verifier-capture.exe")
+  else()
+    set(_name "anosecurekit-verifier-capture")
   endif()
+  if(DEFINED VERIFIER_CAPTURE_EXECUTABLE)
+    set(_path "${VERIFIER_CAPTURE_EXECUTABLE}")
+  else()
+    set(_path "${CMAKE_CURRENT_LIST_DIR}/${_name}")
+  endif()
+  get_filename_component(_basename "${_path}" NAME)
+  if(NOT IS_ABSOLUTE "${_path}" OR NOT _basename STREQUAL _name)
+    return()
+  endif()
+  if(NOT EXISTS "${_path}" OR IS_DIRECTORY "${_path}" OR IS_SYMLINK "${_path}")
+    return()
+  endif()
+  file(REAL_PATH "${_path}" _real_path)
+  if(NOT _path STREQUAL _real_path)
+    return()
+  endif()
+  set("${reason}" "trusted verifier capture identity is missing or unsafe" PARENT_SCOPE)
+  if(DEFINED VERIFIER_CAPTURE_BUILD_RECEIPT)
+    # Only callers that supply an explicit controlled build executable and
+    # its separately designated receipt can use this form of provenance.
+    set(_receipt "${VERIFIER_CAPTURE_BUILD_RECEIPT}")
+    if(NOT DEFINED VERIFIER_CAPTURE_EXECUTABLE OR DEFINED VERIFIER_CAPTURE_EXPECTED_SHA256
+       OR NOT IS_ABSOLUTE "${_receipt}" OR NOT EXISTS "${_receipt}"
+       OR IS_DIRECTORY "${_receipt}" OR IS_SYMLINK "${_receipt}")
+      return()
+    endif()
+    file(REAL_PATH "${_receipt}" _real_receipt)
+    file(SIZE "${_receipt}" _receipt_size)
+    if(NOT _receipt STREQUAL _real_receipt OR NOT _receipt_size EQUAL 64)
+      return()
+    endif()
+    file(READ "${_receipt}" _expected LIMIT 64)
+  else()
+    set(_expected "${VERIFIER_CAPTURE_EXPECTED_SHA256}")
+  endif()
+  string(LENGTH "${_expected}" _expected_length)
+  if(NOT _expected_length EQUAL 64 OR NOT _expected MATCHES "^[0-9a-f]+$")
+    return()
+  endif()
+  set("${reason}" "verifier capture helper identity mismatch" PARENT_SCOPE)
+  file(SIZE "${_path}" _binary_size)
+  if(_binary_size LESS 1)
+    return()
+  endif()
+  file(SHA256 "${_path}" _actual)
+  if(NOT _expected STREQUAL _actual)
+    return()
+  endif()
+  set(_capture_executable "${_path}" PARENT_SCOPE)
+  set("${reason}" "" PARENT_SCOPE)
 endfunction()
+
+function(_verifier_append_arguments destination)
+  set(_encoded "${${destination}}")
+  math(EXPR _last "${ARGC} - 1")
+  foreach(_index RANGE 1 ${_last})
+    # A nonempty ASCII item for every argument, including empty values and
+    # values containing CMake list separators or Windows quoting characters.
+    string(HEX "${ARGV${_index}}" _hex)
+    list(APPEND _encoded "x${_hex}")
+  endforeach()
+  set("${destination}" "${_encoded}" PARENT_SCOPE)
+endfunction()
+
+function(_verifier_capture mode result stdout stderr)
+  math(EXPR _milliseconds "1000 * ${VERIFIER_TIMEOUT_SECONDS}")
+  math(EXPR _watchdog "${VERIFIER_TIMEOUT_SECONDS} + 3")
+  set(_capture_status 65 PARENT_SCOPE)
+  execute_process(
+    COMMAND "${_capture_executable}" capture "${_milliseconds}" "${VERIFIER_MAX_OUTPUT_BYTES}"
+      "${mode}" ${ARGN}
+    TIMEOUT "${_watchdog}" ENCODING NONE
+    RESULT_VARIABLE _status OUTPUT_VARIABLE _bridge ERROR_QUIET)
+  if(NOT _status STREQUAL "0")
+    set(_capture_status "${_status}" PARENT_SCOPE)
+    return()
+  endif()
+  math(EXPR _bridge_limit "12 * ${VERIFIER_MAX_OUTPUT_BYTES} + 128")
+  string(LENGTH "${_bridge}" _length)
+  if(_length GREATER _bridge_limit)
+    return()
+  endif()
+
+  # Enforce one complete record with exactly four fields before decoding.
+  # Removing escaped backslash pairs first preserves the quote boundaries.
+  string(REPLACE [[\\]] "" _layout "${_bridge}")
+  string(REPLACE [[\"]] "" _layout "${_layout}")
+  string(REGEX REPLACE [["[^"]*"]] "\"\"" _layout "${_layout}")
+  if(NOT _layout MATCHES "^[{]\"\":\"\",\"\":(0|[1-9][0-9]*),\"\":\"\",\"\":\"\"[}]\n$")
+    return()
+  endif()
+  foreach(_member IN ITEMS protocol exit stdout stderr)
+    string(JSON _type ERROR_VARIABLE _error TYPE "${_bridge}" "${_member}")
+    if(_error OR (_member STREQUAL "exit" AND NOT _type STREQUAL "NUMBER")
+       OR (NOT _member STREQUAL "exit" AND NOT _type STREQUAL "STRING"))
+      return()
+    endif()
+    string(JSON _${_member} ERROR_VARIABLE _error GET "${_bridge}" "${_member}")
+    if(_error)
+      return()
+    endif()
+  endforeach()
+  if(NOT _protocol STREQUAL "ask-verifier-capture-v1" OR NOT _exit MATCHES "^[0-9]+$")
+    return()
+  endif()
+  string(LENGTH "${_stdout}" _out_size)
+  string(LENGTH "${_stderr}" _err_size)
+  if(_out_size GREATER VERIFIER_MAX_OUTPUT_BYTES OR _err_size GREATER VERIFIER_MAX_OUTPUT_BYTES)
+    return()
+  endif()
+  set(_capture_status 0 PARENT_SCOPE)
+  set("${result}" "${_exit}" PARENT_SCOPE)
+  set("${stdout}" "${_stdout}" PARENT_SCOPE)
+  set("${stderr}" "${_stderr}" PARENT_SCOPE)
+endfunction()
+
+macro(_verifier_require_capture label timeout_reason)
+  if(NOT _capture_status STREQUAL "0")
+    set(_backend error)
+    set(_verification rejected)
+    if(NOT _capability STREQUAL "available")
+      set(_capability error)
+      set(_version_policy error)
+    endif()
+    if(_capture_status STREQUAL "66")
+      set(_reason "${label} exceeded verifier output limit")
+    elseif(_capture_status STREQUAL "67")
+      set(_reason "${timeout_reason}")
+    elseif(_capture_status STREQUAL "68")
+      set(_reason "${label} contains invalid verifier output bytes")
+    elseif(_capture_status STREQUAL "70")
+      set(_reason "malformed machine-readable verifier output")
+    else()
+      set(_reason "${label} failed at the verifier capture boundary")
+    endif()
+    _verifier_finish(TRUE)
+  endif()
+endmacro()
 
 if(_test_mode AND NOT ALLOW_TEST_VERIFIER)
   set(_backend error)
@@ -314,7 +465,8 @@ if(NOT _test_mode AND NOT _verifier_name MATCHES "^gh(\.exe)?$")
   _verifier_finish(TRUE)
 endif()
 
-set(_command "${_verifier}")
+set(_command)
+_verifier_append_arguments(_command "${_verifier}")
 if(_test_mode)
   if(NOT EXISTS "${TEST_VERIFIER_SCRIPT}" OR IS_DIRECTORY "${TEST_VERIFIER_SCRIPT}")
     set(_backend error)
@@ -325,7 +477,7 @@ if(_test_mode)
   if(NOT DEFINED TEST_VERIFIER_MODE OR TEST_VERIFIER_MODE STREQUAL "")
     set(TEST_VERIFIER_MODE valid)
   endif()
-  list(APPEND _command
+  _verifier_append_arguments(_command
     "-DFAKE_MODE=${TEST_VERIFIER_MODE}"
     "-DFAKE_REPOSITORY=${EXPECTED_SOURCE_REPOSITORY}"
     "-DFAKE_REVISION=${EXPECTED_SOURCE_REVISION}"
@@ -336,19 +488,18 @@ if(_test_mode)
     -P "${TEST_VERIFIER_SCRIPT}" --)
 endif()
 
-execute_process(
-  COMMAND ${_command} --version
-  TIMEOUT ${VERIFIER_TIMEOUT_SECONDS}
-  RESULT_VARIABLE _version_result OUTPUT_VARIABLE _version_out ERROR_VARIABLE _version_err
-  OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE)
-_verifier_output_within_limit("${_version_out}" "${_version_err}" "version probe")
-if(NOT _version_result MATCHES "^-?[0-9]+$")
+_verifier_capture_identity(_reason)
+if(_reason)
   set(_backend error)
   set(_capability error)
-  set(_version_policy error)
-  set(_reason "verifier version probe timed out")
+  set(_verification rejected)
   _verifier_finish(TRUE)
 endif()
+set(_version_command "${_command}")
+_verifier_append_arguments(_version_command --version)
+_verifier_capture(text _version_result _version_out _version_err ${_version_command})
+_verifier_require_capture("version probe" "verifier version probe timed out")
+string(REGEX REPLACE "[ \t\r\n]+$" "" _version_out "${_version_out}")
 if(NOT _version_result EQUAL 0
    OR NOT _version_out MATCHES "^gh version ([0-9]+\.[0-9]+\.[0-9]+)([ \r\n]|$)")
   set(_backend error)
@@ -360,26 +511,14 @@ endif()
 set(_version "${CMAKE_MATCH_1}")
 set(_backend_id github-cli-attestation)
 
-execute_process(
-  COMMAND ${_command} attestation --help
-  TIMEOUT ${VERIFIER_TIMEOUT_SECONDS}
-  RESULT_VARIABLE _attestation_result
-  OUTPUT_VARIABLE _attestation_out ERROR_VARIABLE _attestation_err)
-_verifier_output_within_limit("${_attestation_out}" "${_attestation_err}" "attestation probe")
-execute_process(
-  COMMAND ${_command} attestation verify --help
-  TIMEOUT ${VERIFIER_TIMEOUT_SECONDS}
-  RESULT_VARIABLE _verify_help_result
-  OUTPUT_VARIABLE _verify_help_out ERROR_VARIABLE _verify_help_err)
-_verifier_output_within_limit("${_verify_help_out}" "${_verify_help_err}" "verify capability probe")
-if(NOT _attestation_result MATCHES "^-?[0-9]+$"
-   OR NOT _verify_help_result MATCHES "^-?[0-9]+$")
-  set(_backend error)
-  set(_capability error)
-  set(_version_policy error)
-  set(_reason "verifier capability probe timed out")
-  _verifier_finish(TRUE)
-endif()
+set(_help_command "${_command}")
+_verifier_append_arguments(_help_command attestation --help)
+_verifier_capture(text _attestation_result _attestation_out _attestation_err ${_help_command})
+_verifier_require_capture("attestation probe" "verifier capability probe timed out")
+set(_help_command "${_command}")
+_verifier_append_arguments(_help_command attestation verify --help)
+_verifier_capture(text _verify_help_result _verify_help_out _verify_help_err ${_help_command})
+_verifier_require_capture("verify capability probe" "verifier capability probe timed out")
 if(_version VERSION_LESS "2.49.0" OR NOT _version VERSION_LESS "3.0.0")
   set(_backend unsupported)
   set(_capability unsupported)
@@ -496,7 +635,8 @@ if(NOT EXPECTED_SUBJECT_NAME MATCHES
   _verifier_finish(TRUE)
 endif()
 
-set(_verify_command ${_command} attestation verify "${ARTIFACT_PATH}"
+set(_verify_command "${_command}")
+_verifier_append_arguments(_verify_command attestation verify "${ARTIFACT_PATH}"
   --repo "${EXPECTED_SOURCE_REPOSITORY}"
   --signer-workflow "${EXPECTED_WORKFLOW_IDENTITY}"
   --source-digest "${EXPECTED_SOURCE_REVISION}"
@@ -504,20 +644,10 @@ set(_verify_command ${_command} attestation verify "${ARTIFACT_PATH}"
   --predicate-type "https://slsa.dev/provenance/v1"
   --deny-self-hosted-runners --limit 2 --format json)
 if(DEFINED ATTESTATION_BUNDLE AND NOT ATTESTATION_BUNDLE STREQUAL "")
-  list(APPEND _verify_command --bundle "${ATTESTATION_BUNDLE}")
+  _verifier_append_arguments(_verify_command --bundle "${ATTESTATION_BUNDLE}")
 endif()
-execute_process(
-  COMMAND ${_verify_command}
-  TIMEOUT ${VERIFIER_TIMEOUT_SECONDS}
-  RESULT_VARIABLE _verify_result OUTPUT_VARIABLE _verify_out ERROR_VARIABLE _verify_err
-  ERROR_STRIP_TRAILING_WHITESPACE)
-_verifier_output_within_limit("${_verify_out}" "${_verify_err}" "verification output")
-if(NOT _verify_result MATCHES "^-?[0-9]+$")
-  set(_backend error)
-  set(_verification rejected)
-  set(_reason "verifier process timed out")
-  _verifier_finish(TRUE)
-endif()
+_verifier_capture(json _verify_result _verify_out _verify_err ${_verify_command})
+_verifier_require_capture("verification output" "verifier process timed out")
 if(NOT _verify_result EQUAL 0)
   if(_verify_err MATCHES "[Nn]o attestations found|attestation missing")
     set(_verification unavailable)

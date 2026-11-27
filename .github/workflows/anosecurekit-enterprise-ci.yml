@@ -261,6 +261,17 @@ jobs:
           # Qualification verifies historical audited commits are ancestors.
           fetch-depth: 0
 
+      - name: Build verifier capture helper from the checked-out source
+        id: build_verifier_capture
+        shell: bash
+        run: |
+          [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          cmake -S tools/verifier_capture -B "$RUNNER_TEMP/enterprise-verifier-capture" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/enterprise-verifier-capture" --target anosecurekit-verifier-capture
+          digest=$(< "$RUNNER_TEMP/enterprise-verifier-capture/receipt-Release.sha256")
+          [[ "$digest" =~ ^[0-9a-f]{64}$ ]]
+          echo "sha256=$digest" >> "$GITHUB_OUTPUT"
+
       - name: Download verified matrix artifacts
         # actions/download-artifact v8
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
@@ -277,6 +288,8 @@ jobs:
 
       - name: Verify attested artifact set
         shell: bash
+        env:
+          VERIFIER_CAPTURE_SHA256: ${{ steps.build_verifier_capture.outputs.sha256 }}
         run: |
           [[ "$ATTESTATION_REFERENCE" =~ ^https://github.com/${GITHUB_REPOSITORY}/attestations/[1-9][0-9]*$ ]]
           echo "${SUBJECT_LIST_DIGEST#sha256:}  attestation-inputs/attestation-subjects.sha256" | sha256sum --check --strict
@@ -285,6 +298,8 @@ jobs:
             test -f "$artifact" && test ! -L "$artifact"
             cmake \
               "-DVERIFIER_EXECUTABLE=$(command -v gh)" \
+              "-DVERIFIER_CAPTURE_EXECUTABLE=$RUNNER_TEMP/enterprise-verifier-capture/anosecurekit-verifier-capture" \
+              "-DVERIFIER_CAPTURE_EXPECTED_SHA256=$VERIFIER_CAPTURE_SHA256" \
               "-DARTIFACT_PATH=$artifact" \
               "-DEXPECTED_SUBJECT_NAME=$name" \
               "-DEXPECTED_SUBJECT_DIGEST=sha256:$digest" \

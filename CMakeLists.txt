@@ -79,6 +79,8 @@ function(_anosecurekit_enterprise_apply_warnings target_name)
   endif()
 endfunction()
 
+add_subdirectory(tools/verifier_capture)
+
 set(ANOSECUREKIT_ENTERPRISE_COMMUNITY_VERSION "0.4.0")
 
 option(ANOSECUREKIT_ENTERPRISE_USE_BUNDLED_COMMUNITY "Use bundled Community source" ON)
@@ -414,6 +416,22 @@ configure_file(
   @ONLY)
 
 if(BUILD_TESTING)
+  add_executable(anosecurekit-verifier-capture-fixture tests/verifier_capture/fixture.cpp)
+  target_compile_features(anosecurekit-verifier-capture-fixture PRIVATE cxx_std_17)
+  _anosecurekit_enterprise_apply_warnings(anosecurekit-verifier-capture-fixture)
+  if(MINGW)
+    target_link_options(anosecurekit-verifier-capture-fixture PRIVATE -municode)
+  endif()
+  add_test(NAME enterprise.verifier-capture
+    COMMAND "${CMAKE_COMMAND}"
+      "-DCAPTURE=$<TARGET_FILE:anosecurekit-verifier-capture>"
+      "-DCAPTURE_RECEIPT=${_enterprise_capture_receipt}"
+      "-DFIXTURE=$<TARGET_FILE:anosecurekit-verifier-capture-fixture>"
+      "-DADAPTER=${CMAKE_CURRENT_SOURCE_DIR}/cmake/check_release_evidence_verifier.cmake"
+      -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/verifier_capture/check_capture.cmake")
+  set_tests_properties(enterprise.verifier-capture PROPERTIES
+    LABELS "policy;release-evidence;cryptographic-adapter" TIMEOUT 30)
+
   add_test(NAME enterprise.community-version
     COMMAND ${CMAKE_COMMAND}
       -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
@@ -430,6 +448,8 @@ if(BUILD_TESTING)
 
   add_custom_target(enterprise-release-evidence-verifier-check
     COMMAND ${CMAKE_COMMAND}
+      "-DVERIFIER_CAPTURE_EXECUTABLE=$<TARGET_FILE:anosecurekit-verifier-capture>"
+      "-DVERIFIER_CAPTURE_BUILD_RECEIPT=${_enterprise_capture_receipt}"
       "-DVERIFIER_EXECUTABLE=${ANOSECUREKIT_ENTERPRISE_RELEASE_EVIDENCE_VERIFIER}"
       "-DINSTALLED_VERIFIER_EXECUTABLE=${ANOSECUREKIT_ENTERPRISE_INSTALLED_RELEASE_EVIDENCE_VERIFIER}"
       -DPROBE_ONLY=ON
@@ -438,13 +458,18 @@ if(BUILD_TESTING)
     COMMAND ${CMAKE_COMMAND}
       -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
       -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/release-evidence-verifier-contract-check
+      "-DVERIFIER_CAPTURE_EXECUTABLE=$<TARGET_FILE:anosecurekit-verifier-capture>"
+      "-DVERIFIER_CAPTURE_BUILD_RECEIPT=${_enterprise_capture_receipt}"
       -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_release_evidence_verifier_contract.cmake
+    DEPENDS anosecurekit-verifier-capture
     USES_TERMINAL)
 
   add_test(NAME enterprise.release-evidence-verifier
     COMMAND ${CMAKE_COMMAND}
       -DENTERPRISE_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
       -DTEST_ROOT=${CMAKE_CURRENT_BINARY_DIR}/release-evidence-verifier-contract-test
+      "-DVERIFIER_CAPTURE_EXECUTABLE=$<TARGET_FILE:anosecurekit-verifier-capture>"
+      "-DVERIFIER_CAPTURE_BUILD_RECEIPT=${_enterprise_capture_receipt}"
       -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_release_evidence_verifier_contract.cmake)
   set_tests_properties(enterprise.release-evidence-verifier
     PROPERTIES LABELS "policy;release-evidence;cryptographic-adapter")
@@ -975,6 +1000,19 @@ if(ANOSECUREKIT_ENTERPRISE_CRYPTO_BACKEND STREQUAL "openssl")
     ${CMAKE_CURRENT_BINARY_DIR}/anosecurekitEnterpriseConfigVersion.cmake
     cmake/check_release_evidence_verifier.cmake
     DESTINATION ${_anosecurekit_enterprise_cmake_install_dir})
+  install(TARGETS anosecurekit-verifier-capture
+    RUNTIME DESTINATION "${_anosecurekit_enterprise_cmake_install_dir}")
+  # Hash the installed executable after any install-time stripping or RPATH changes.
+  set(_capture_install_dir "${_anosecurekit_enterprise_cmake_install_dir}")
+  if(NOT IS_ABSOLUTE "${_capture_install_dir}")
+    string(PREPEND _capture_install_dir "\${CMAKE_INSTALL_PREFIX}/")
+  endif()
+  install(CODE "
+    set(CAPTURE \"\$ENV{DESTDIR}${_capture_install_dir}/$<TARGET_FILE_NAME:anosecurekit-verifier-capture>\")
+    set(RECEIPT \"\${CAPTURE}.sha256\")
+    include(\"${CMAKE_CURRENT_SOURCE_DIR}/tools/verifier_capture/manifest.cmake\")
+    list(APPEND CMAKE_INSTALL_MANIFEST_FILES
+      \"${_capture_install_dir}/$<TARGET_FILE_NAME:anosecurekit-verifier-capture>.sha256\")")
 else()
   message(STATUS
     "AnoSecureKit Enterprise installation/export remains disabled for the "
@@ -1003,7 +1041,13 @@ if(BUILD_TESTING)
         "-DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR}"
         "-DENTERPRISE_OPENSSL_RUNTIME_DIR=${ANOSECUREKIT_OPENSSL_RUNTIME_DIR}"
         -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/package/check_installed_consumer.cmake
+      COMMAND ${CMAKE_COMMAND}
+        "-DINSTALLED_ROOT=${CMAKE_CURRENT_BINARY_DIR}/enterprise-package-check/install"
+        "-DCAPTURE_RECEIPT=${_enterprise_capture_receipt}"
+        "-DFIXTURE=$<TARGET_FILE:anosecurekit-verifier-capture-fixture>"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/verifier_capture/check_installed_and_package.cmake"
       DEPENDS anosecurekit_enterprise anosecurekit_enterprise_info
+        anosecurekit-verifier-capture anosecurekit-verifier-capture-fixture
       USES_TERMINAL)
     add_test(NAME enterprise.installed-consumer
       COMMAND ${CMAKE_COMMAND}
@@ -1045,7 +1089,11 @@ if(BUILD_TESTING)
         -DENTERPRISE_SOURCE_REVISION=${_anosecurekit_enterprise_source_revision}
         -DENTERPRISE_CPACK_COMMAND=${CMAKE_CPACK_COMMAND}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/package/check_delivery_package.cmake
-      DEPENDS anosecurekit_enterprise anosecurekit_enterprise_info
+      COMMAND ${CMAKE_COMMAND}
+        "-DDELIVERY_ROOT=${CMAKE_CURRENT_BINARY_DIR}/enterprise-delivery-check"
+        "-DCAPTURE_RECEIPT=${_enterprise_capture_receipt}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/verifier_capture/check_installed_and_package.cmake"
+      DEPENDS anosecurekit_enterprise anosecurekit_enterprise_info anosecurekit-verifier-capture
       USES_TERMINAL)
     add_test(NAME enterprise.delivery-package
       COMMAND ${CMAKE_COMMAND}
@@ -1101,9 +1149,12 @@ if(BUILD_TESTING)
         -DEXPECTED_CODEQL_REQUIRED=ON
         "-DVERIFIER_EXECUTABLE=${ANOSECUREKIT_ENTERPRISE_RELEASE_EVIDENCE_VERIFIER}"
         "-DINSTALLED_VERIFIER_EXECUTABLE=${ANOSECUREKIT_ENTERPRISE_INSTALLED_RELEASE_EVIDENCE_VERIFIER}"
+        "-DVERIFIER_CAPTURE_EXECUTABLE=$<TARGET_FILE:anosecurekit-verifier-capture>"
+        "-DVERIFIER_CAPTURE_BUILD_RECEIPT=${_enterprise_capture_receipt}"
         "-DATTESTATION_BUNDLE=${ANOSECUREKIT_ENTERPRISE_ATTESTATION_BUNDLE}"
         -DGIT_EXECUTABLE=${GIT_EXECUTABLE}
         -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/check_customer_release_authorization.cmake
+      DEPENDS anosecurekit-verifier-capture
       USES_TERMINAL)
     add_custom_target(enterprise-customer-delivery-check
       COMMAND ${CMAKE_COMMAND} -E echo
@@ -1125,6 +1176,8 @@ if(BUILD_TESTING)
 endif()
 if(BUILD_TESTING)
   set(_anosecurekit_enterprise_check_dependencies
+    anosecurekit-verifier-capture
+    anosecurekit-verifier-capture-fixture
     anosecurekit_enterprise_profile_test
     anosecurekit_enterprise_sha256_test
     anosecurekit_enterprise_hmac_sha256_test
